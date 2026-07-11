@@ -1,7 +1,7 @@
 import './styles.css';import { supabase } from './supabase.js';
 const app=document.querySelector('#app');let session,state={bikes:[],tasks:[],parts:[],notes:[],maintenance:[],rides:[],firmware:[],engineering_items:[],task_media:[],task_attachments:[],task_dependencies:[],pcb_projects:[],pcb_components:[],pcb_pins:[],pcb_connectors:[],pcb_revisions:[]},view='dashboard',engType='features',modal=null,roadMode='cards';
 const tables=['bikes','tasks','parts','notes','maintenance','rides','firmware','engineering_items','task_media','task_attachments','task_dependencies','ai_messages','ai_change_proposals','pcb_projects','pcb_components','pcb_pins','pcb_connectors','pcb_revisions'];
-const stageOrder=['0 - Definition','1 - Bench Core','2 - Vehicle Read-Only','3 - Suspension Telemetry','4 - Motion & GNSS','5 - Display & App','6 - Quickshifter Experiment','7 - Wideband & Tuning','8 - Productization'];
+const stageOrder=['0 - Scope & Plan','1 - Standalone Bench Logger','2 - Ride Testing','3 - Honda K-Line','4 - Later Upgrades'];
 const statusList=['Not Started','Researching','Ordered','In Progress','Blocked','Testing','Validated','Deferred','Complete'];
 const $=q=>document.querySelector(q),$$=q=>[...document.querySelectorAll(q)],uid=()=>session.user.id;
 const esc=(s='')=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
@@ -243,7 +243,30 @@ async function downloadAttachment(id){let a=state.task_attachments.find(x=>x.id=
 async function loadAttachmentThumbs(){}
 async function applyRecommendedOrder(){let ordered=[...state.tasks].sort((a,b)=>stageRank(a.stage)-stageRank(b.stage)||(a.source_id||'').localeCompare(b.source_id||''));for(let i=0;i<ordered.length;i++)await supabase.from('tasks').update({sort_order:i+1}).eq('id',ordered[i].id);toast('Roadmap reordered');await load()}
 function inferTemplate(task){let s=(task.title+' '+task.stage+' '+task.notes).toLowerCase();if(/cad|bracket|mount|enclosure|mechanical|harness/.test(s))return /cad|design/.test(s)?'CAD':'Mechanical';if(/software|implement|app|firmware|decoder|parser|logger|algorithm|display/.test(s))return'Software';if(/suspension|string-pot|travel|motion-ratio/.test(s))return'Suspension';if(/research|define|requirements|architecture|survey/.test(s))return'Research';if(/power|esp32|imu|adc|can|k-line|gnss|interface|sensor/.test(s))return'Electronics';return'General'}
-async function seedStarter(){if(!confirm('Refresh workbook and apply structured work-package templates?'))return;let d=await fetch('/starter-project.json').then(r=>r.json());let roadmap=[...d.roadmap].sort((a,b)=>stageRank(String(a.Stage||''))-stageRank(String(b.Stage||''))||String(a.ID||'').localeCompare(String(b.ID||'')));for(let i=0;i<roadmap.length;i++){let x=roadmap[i],title=String(x['Task / Step']||''),type=inferTemplate({title,stage:String(x.Stage||''),notes:String(x.Notes||'')}),tpl=templates[type],rec={user_id:uid(),source_id:String(x.ID||''),title,stage:String(x.Stage||''),bike:'Universal',priority:String(x.Priority||''),status:String(x.Status||'Not Started'),notes:String(x.Notes||x['Deliverable / Exit Criteria']||''),sort_order:i+1,owner_name:'Matthew',progress:x.Status==='Complete'?100:0,work_type:type,objective:tpl.objective,background:tpl.background,prerequisites:tpl.prerequisites,safety_notes:tpl.safety_notes,procedure:tpl.procedure,acceptance_criteria:tpl.acceptance_criteria,deliverables:tpl.deliverables,test_procedure:tpl.test_procedure,proof_rules:tpl.proof_rules,gate_status:'Locked'};let old=state.tasks.find(z=>z.source_id===rec.source_id);old?await supabase.from('tasks').update({...rec,checklist:old.checklist||[],results:old.results,lessons_learned:old.lessons_learned,progress:old.progress||rec.progress}).eq('id',old.id):await supabase.from('tasks').insert(rec)}toast('Structured work packages applied');await load()}
+async function seedStarter(){
+ if(!confirm('Load the simplified Honda-first Rev A roadmap? Matching work-package proof and progress will be preserved; superseded packages will be archived.'))return;
+ let d=await fetch('/roadmap-rev-a.json').then(r=>r.json());
+ let roadmap=[...d.roadmap].sort((a,b)=>stageRank(String(a.Stage||''))-stageRank(String(b.Stage||''))||String(a.ID||'').localeCompare(String(b.ID||'')));
+ let activeIds=new Set(roadmap.map(x=>String(x.ID||'')));
+ for(let i=0;i<roadmap.length;i++){
+  let x=roadmap[i],title=String(x['Task / Step']||''),type=inferTemplate({title,stage:String(x.Stage||''),notes:String(x.Notes||'')}),tpl=templates[type];
+  let rec={user_id:uid(),source_id:String(x.ID||''),title,stage:String(x.Stage||''),bike:'CRF450RL',priority:String(x.Priority||''),status:String(x.Status||'Not Started'),notes:String(x.Notes||x['Deliverable / Exit Criteria']||''),sort_order:i+1,owner_name:'Matthew',progress:x.Status==='Complete'?100:0,work_type:type,objective:tpl.objective,background:tpl.background,prerequisites:String(x['Depends On']||'None'),safety_notes:tpl.safety_notes,procedure:tpl.procedure,acceptance_criteria:String(x['Deliverable / Exit Criteria']||tpl.acceptance_criteria),deliverables:tpl.deliverables,test_procedure:tpl.test_procedure,proof_rules:tpl.proof_rules,gate_status:x.Status==='Complete'?'Passed':'Locked'};
+  let old=state.tasks.find(z=>z.source_id===rec.source_id);
+  old?await supabase.from('tasks').update({...rec,checklist:old.checklist||[],results:old.results,lessons_learned:old.lessons_learned,progress:x.Status==='Complete'?100:(old.progress||0)}).eq('id',old.id):await supabase.from('tasks').insert(rec)
+ }
+ let {data:freshTasks}=await supabase.from('tasks').select('id,source_id').eq('user_id',uid());
+ let taskBySource=new Map((freshTasks||[]).map(x=>[x.source_id,x.id]));
+ for(let x of roadmap){
+  let taskId=taskBySource.get(String(x.ID||''));if(!taskId)continue;
+  await supabase.from('task_dependencies').delete().eq('task_id',taskId);
+  let deps=String(x['Depends On']||'').split(',').map(v=>v.trim()).filter(Boolean);
+  for(let dep of deps){let dependsOn=taskBySource.get(dep);if(dependsOn)await supabase.from('task_dependencies').insert({user_id:uid(),task_id:taskId,depends_on_task_id:dependsOn})}
+ }
+ for(let old of state.tasks.filter(x=>x.source_id&&!activeIds.has(x.source_id))){
+  await supabase.from('tasks').update({stage:'Archived - Superseded',status:'Deferred',gate_status:'Locked'}).eq('id',old.id)
+ }
+ toast('Simplified Rev A roadmap loaded');await load()
+}
 
 
 

@@ -235,6 +235,17 @@
       "Depends On": "R-402",
       "Priority": "Low",
       "Status": "Deferred"
+    },
+    {
+      "ID": "R-410",
+      "Stage": "4 - Later Upgrades",
+      "Workstream": "Optional iOS & CarPlay",
+      "Task / Step": "Build an optional native iOS and CarPlay companion",
+      "Deliverable / Exit Criteria": "Existing web app is packaged for iOS, native BLE ride transfer works, a driver-safe CarPlay interface is tested, and a CarPlay entitlement submission path is documented",
+      "Depends On": "R-106",
+      "Priority": "Low",
+      "Status": "Deferred",
+      "Notes": "Optional feature only. No logger, ride-test, K-line, mileage, maintenance, PCB or productization package may depend on R-410. The full phone app handles maps, graphs and settings; CarPlay is limited to safe ride controls, connection state, speed, distance, recording status and warnings."
     }
   ]
 }

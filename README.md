@@ -1,3 +1,16 @@
+# Moto Engineering Cloud v7.3 — PCB Data Load Fix
+
+This patch adds the five PCB tables to the application data-loading list. Previous builds saved the Rev A starter records successfully but did not reload them into the page state.
+
+## Upgrade
+
+1. Replace the GitHub repository files with this package.
+2. Commit and allow Vercel to redeploy.
+3. Hard-refresh the app.
+4. Open PCB Designer. Existing Rev A records should appear immediately.
+
+No new Supabase migration is required if migration_v7.sql already ran.
+
 # Moto Engineering Cloud v7.2 — PCB Starter Display Fix
 
 Fixes stale selected-board IDs, automatically selects the first valid PCB project, and reports any failed starter insert instead of displaying a false success message.

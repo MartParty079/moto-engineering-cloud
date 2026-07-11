@@ -1,6 +1,6 @@
 import './styles.css';import { supabase } from './supabase.js';
 const app=document.querySelector('#app');let session,state={bikes:[],tasks:[],parts:[],notes:[],maintenance:[],rides:[],firmware:[],engineering_items:[],task_media:[],task_attachments:[],task_dependencies:[],pcb_projects:[],pcb_components:[],pcb_pins:[],pcb_connectors:[],pcb_revisions:[]},view='dashboard',engType='features',modal=null,roadMode='cards';
-const tables=['bikes','tasks','parts','notes','maintenance','rides','firmware','engineering_items','task_media','task_attachments','task_dependencies','ai_messages','ai_change_proposals'];
+const tables=['bikes','tasks','parts','notes','maintenance','rides','firmware','engineering_items','task_media','task_attachments','task_dependencies','ai_messages','ai_change_proposals','pcb_projects','pcb_components','pcb_pins','pcb_connectors','pcb_revisions'];
 const stageOrder=['0 - Definition','1 - Bench Core','2 - Vehicle Read-Only','3 - Suspension Telemetry','4 - Motion & GNSS','5 - Display & App','6 - Quickshifter Experiment','7 - Wideband & Tuning','8 - Productization'];
 const statusList=['Not Started','Researching','Ordered','In Progress','Blocked','Testing','Validated','Deferred','Complete'];
 const $=q=>document.querySelector(q),$$=q=>[...document.querySelectorAll(q)],uid=()=>session.user.id;

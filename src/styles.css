@@ -67,3 +67,12 @@ textarea{min-height:125px;resize:vertical}.item h3,.item h4,.card h3{margin:0 0 
 .empty{padding:25px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:14px}.toast{position:fixed;right:18px;bottom:18px;background:#142b45;border:1px solid var(--line);padding:11px 15px;border-radius:11px;opacity:0;transition:.2s;z-index:120}.toast.show{opacity:1}
 @media(max-width:1000px){.layout{grid-template-columns:1fr}.nav{position:fixed;left:-250px;top:74px;width:235px;z-index:60;transition:.25s}.nav.open{left:0}.metrics{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr 1fr}.two{grid-template-columns:1fr}.filters{grid-template-columns:1fr}.stageLane{grid-template-columns:1fr}.stageTitle{position:static}.searchResults{left:14px}}
 @media(max-width:580px){main{padding:14px}.metrics,.grid,.bikeStats{grid-template-columns:1fr}.formgrid{grid-template-columns:1fr}.full{grid-column:auto}.hero{flex-direction:column;align-items:flex-start}.thumbs{grid-template-columns:repeat(2,1fr)}}
+
+.lockedCard{opacity:.62;filter:saturate(.72)}.lockedBanner{padding:10px 12px;border-radius:11px;background:rgba(255,189,89,.12);border:1px solid rgba(255,189,89,.35);color:#ffd18b;margin:10px 0}
+.gatePass{padding:10px 12px;border-radius:11px;background:rgba(82,227,165,.12);border:1px solid rgba(82,227,165,.35);color:#8ff3c4;margin:10px 0}
+.wpSection{margin-top:15px;padding-top:13px;border-top:1px solid var(--line)}.wpSection h4{margin:0 0 7px;color:#dfeaf5}
+.proofGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.proofBox{padding:10px;border:1px solid var(--line);border-radius:11px;background:#0a1727}.proofBox.pass{border-color:rgba(82,227,165,.55)}.proofBox.fail{border-color:rgba(255,107,107,.4)}
+.attachmentList{display:flex;flex-direction:column;gap:7px;margin-top:10px}.attachment{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:10px;background:#0b192a}
+.fileType{display:inline-grid;place-items:center;min-width:44px;height:28px;padding:0 7px;border-radius:8px;background:#213b59;font-size:11px;font-weight:800}
+.templateGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.templateCard{padding:14px;border:1px solid var(--line);border-radius:14px;background:#0c1d30;cursor:pointer}.templateCard:hover{border-color:var(--blue)}
+@media(max-width:800px){.proofGrid,.templateGrid{grid-template-columns:1fr}}

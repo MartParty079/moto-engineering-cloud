@@ -1,36 +1,47 @@
-# Moto Engineering Cloud v3
+# Moto Engineering Cloud v4 — Gated Work Packages
 
-## New in v3
+## Main change
 
-- Polished command-center dashboard
-- Dedicated bike cards with maintenance, ride, and part counts
-- Ordered roadmap with easy setup first
-- Roadmap card view and timeline/Gantt view
-- Task progress bars
-- Task owner and target dates
-- Task checklists
-- Photos and videos attached to roadmap tasks
-- Global search across tasks, parts, notes, maintenance, rides, firmware, and engineering records
-- Parts lifecycle: owned, installed, tested
-- Notebook timeline
-- Better mobile layout
+Roadmap tasks are now Engineering Work Packages with mandatory proof gates.
 
-## Upgrade an existing deployment
+A work package cannot be marked complete until:
 
-1. Run `supabase/migration_v3.sql` in Supabase SQL Editor.
+1. Every prerequisite work package is complete.
+2. Every checklist item is complete.
+3. Acceptance criteria are documented.
+4. Results are documented.
+5. Every required proof category has enough uploaded files.
+
+## Proof rules
+
+Templates automatically require appropriate evidence:
+
+- Software: source code, design/readme, test evidence
+- Electronics: code, physical build photos, test evidence
+- Mechanical: CAD, installed photos, validation evidence
+- CAD: CAD file, drawing/document, screenshot or physical proof
+- Suspension: mount CAD, installed photos, calibration file, dynamic test evidence
+- Research: written summary and source material
+- Maintenance: before/after photos and service record
+- General: at least one completion document
+
+## File support
+
+Task attachments can include:
+
+- Word: DOC/DOCX
+- Excel: XLS/XLSX/CSV
+- PDF, Markdown, text
+- CAD: STEP, SLDPRT, SLDASM, STL, DXF, DWG, IGES, F3D
+- Code: INO, CPP, C, H, PY, JS, TS, JSON
+- Photos: JPG, PNG, HEIC, WEBP, TIFF
+- Video: MP4, MOV, WEBM
+- ZIP and other project files
+
+## Upgrade
+
+1. Run `supabase/migration_v4.sql`.
 2. Replace the GitHub repository files with this package.
-3. Commit to `main`; Vercel redeploys automatically.
-4. Open the app and click **Apply recommended order**.
-5. Click **Load/refresh workbook** to update imported records while preserving existing checklist/progress data where possible.
-
-## Recommended roadmap order
-
-1. Definition and project setup
-2. Bench controller, power, storage, IMU, ADC, and display
-3. Read-only Honda K-line and BMW CAN
-4. Suspension installation and calibration
-5. GNSS, synchronized logging, jumps, lap timing, and wheel speed
-6. Display, phone app, log transfer, and analysis
-7. Quickshifter experiment
-8. Wideband and tuning
-9. PCB, enclosure, validation, documentation, and capstone report
+3. Commit to main and let Vercel redeploy.
+4. Sign in and click **Refresh workbook**.
+5. Existing roadmap items receive structured templates and proof rules.

@@ -96,12 +96,23 @@
       "Notes": "No dedicated display is required; PV3 remains the engine-data screen"
     },
     {
+      "ID": "R-107",
+      "Stage": "1 - Standalone Bench Logger",
+      "Workstream": "Cloud Sync",
+      "Task / Step": "Sync rides and estimated bike mileage",
+      "Deliverable / Exit Criteria": "A completed ride uploads once, appears in Moto Engineering Cloud, adds filtered GPS distance to estimated mileage and updates maintenance calculations while preserving manual odometer correction",
+      "Depends On": "R-106",
+      "Priority": "High",
+      "Status": "Not Started",
+      "Notes": "Store a unique ride ID to prevent duplicate mileage. Display verified odometer separately from GPS-estimated current mileage and allow periodic dashboard-odometer reconciliation."
+    },
+    {
       "ID": "R-201",
       "Stage": "2 - Ride Testing",
       "Workstream": "Bench Validation",
       "Task / Step": "Complete a one-hour stationary logger test",
       "Deliverable / Exit Criteria": "No crashes, corrupt files, timing gaps or unacceptable sensor drift during one continuous hour",
-      "Depends On": "R-106",
+      "Depends On": "R-107",
       "Priority": "Critical",
       "Status": "Not Started"
     },

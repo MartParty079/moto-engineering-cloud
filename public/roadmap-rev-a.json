@@ -1,0 +1,239 @@
+{
+  "roadmap": [
+    {
+      "ID": "R-001",
+      "Stage": "0 - Scope & Plan",
+      "Workstream": "Requirements",
+      "Task / Step": "Freeze Rev A scope",
+      "Deliverable / Exit Criteria": "Approved Honda-first scope: standalone GPS/IMU ride logger first; K-line hardware included but disabled; no suspension, wheel sensors, BMW CAN, or dedicated display",
+      "Depends On": null,
+      "Priority": "Critical",
+      "Status": "Complete",
+      "Notes": "Approved requirements document: R-001_Rev_A_Scope_Requirements.docx"
+    },
+    {
+      "ID": "R-002",
+      "Stage": "0 - Scope & Plan",
+      "Workstream": "Hardware",
+      "Task / Step": "Freeze prototype hardware and pinout",
+      "Deliverable / Exit Criteria": "ESP32-S3, ICM-42688-P, u-blox M10, microSD, BLE, status controls, L9637D and TX-disable jumper documented with no pin conflicts",
+      "Depends On": "R-001",
+      "Priority": "Critical",
+      "Status": "In Progress",
+      "Notes": "K-line circuit is installed now but disconnected and firmware-disabled during standalone development"
+    },
+    {
+      "ID": "R-003",
+      "Stage": "0 - Scope & Plan",
+      "Workstream": "Data & Safety",
+      "Task / Step": "Define ride log format and safety rules",
+      "Deliverable / Exit Criteria": "Timestamp, GPS, IMU, device status, event fields and read-only K-line boundary documented",
+      "Depends On": "R-002",
+      "Priority": "High",
+      "Status": "Not Started",
+      "Notes": "microSD is the authoritative recorder; phone connection must never be required to preserve a ride"
+    },
+    {
+      "ID": "R-101",
+      "Stage": "1 - Standalone Bench Logger",
+      "Workstream": "Controller",
+      "Task / Step": "Bring up ESP32-S3 base firmware",
+      "Deliverable / Exit Criteria": "Board programs reliably, restarts cleanly, reports errors and runs a stable timed acquisition loop",
+      "Depends On": "R-003",
+      "Priority": "Critical",
+      "Status": "Not Started"
+    },
+    {
+      "ID": "R-102",
+      "Stage": "1 - Standalone Bench Logger",
+      "Workstream": "Hardware Assembly",
+      "Task / Step": "Assemble the complete prototype harness",
+      "Deliverable / Exit Criteria": "IMU, GNSS, microSD, button, status LED and unconnected L9637D circuit are wired to the frozen pinout",
+      "Depends On": "R-101",
+      "Priority": "Critical",
+      "Status": "Not Started",
+      "Notes": "Leave K-line connector unplugged and TX-disable jumper removed"
+    },
+    {
+      "ID": "R-103",
+      "Stage": "1 - Standalone Bench Logger",
+      "Workstream": "Motion",
+      "Task / Step": "Bring up and calibrate the IMU",
+      "Deliverable / Exit Criteria": "ICM-42688-P records stable accelerometer and gyroscope data at 100–200 Hz with mounting orientation documented",
+      "Depends On": "R-102",
+      "Priority": "Critical",
+      "Status": "Not Started"
+    },
+    {
+      "ID": "R-104",
+      "Stage": "1 - Standalone Bench Logger",
+      "Workstream": "Storage",
+      "Task / Step": "Build reliable microSD logging",
+      "Deliverable / Exit Criteria": "Timestamped ride file survives start, stop, restart and normal power removal without corruption",
+      "Depends On": "R-103",
+      "Priority": "Critical",
+      "Status": "Not Started"
+    },
+    {
+      "ID": "R-105",
+      "Stage": "1 - Standalone Bench Logger",
+      "Workstream": "GNSS",
+      "Task / Step": "Bring up u-blox M10 GNSS",
+      "Deliverable / Exit Criteria": "Position, time, speed, altitude and fix quality are recorded at the selected stable rate",
+      "Depends On": "R-104",
+      "Priority": "High",
+      "Status": "Not Started"
+    },
+    {
+      "ID": "R-106",
+      "Stage": "1 - Standalone Bench Logger",
+      "Workstream": "Synchronization",
+      "Task / Step": "Synchronize GPS, IMU and device status",
+      "Deliverable / Exit Criteria": "One continuous log uses a common monotonic timeline and flags missing or stale values",
+      "Depends On": "R-105",
+      "Priority": "Critical",
+      "Status": "Not Started"
+    },
+    {
+      "ID": "R-107",
+      "Stage": "1 - Standalone Bench Logger",
+      "Workstream": "Phone",
+      "Task / Step": "Add simple BLE ride controls and live status",
+      "Deliverable / Exit Criteria": "Phone can start/stop a ride and view GPS lock, recording state, storage state and live pitch without interrupting microSD logging",
+      "Depends On": "R-106",
+      "Priority": "High",
+      "Status": "Not Started",
+      "Notes": "No dedicated display is required; PV3 remains the engine-data screen"
+    },
+    {
+      "ID": "R-201",
+      "Stage": "2 - Ride Testing",
+      "Workstream": "Bench Validation",
+      "Task / Step": "Complete a one-hour stationary logger test",
+      "Deliverable / Exit Criteria": "No crashes, corrupt files, timing gaps or unacceptable sensor drift during one continuous hour",
+      "Depends On": "R-107",
+      "Priority": "Critical",
+      "Status": "Not Started"
+    },
+    {
+      "ID": "R-202",
+      "Stage": "2 - Ride Testing",
+      "Workstream": "Packaging",
+      "Task / Step": "Mount the USB-powered prototype safely",
+      "Deliverable / Exit Criteria": "Rigid temporary enclosure and antenna mount pass steering, heat, vibration, water and retention inspection",
+      "Depends On": "R-201",
+      "Priority": "Critical",
+      "Status": "Not Started"
+    },
+    {
+      "ID": "R-203",
+      "Stage": "2 - Ride Testing",
+      "Workstream": "Road Test",
+      "Task / Step": "Record and review the first controlled ride",
+      "Deliverable / Exit Criteria": "GPS route, speed, IMU and device status are complete and correctly aligned throughout the ride",
+      "Depends On": "R-202",
+      "Priority": "Critical",
+      "Status": "Not Started"
+    },
+    {
+      "ID": "R-204",
+      "Stage": "2 - Ride Testing",
+      "Workstream": "Ride Events",
+      "Task / Step": "Implement wheelie and ride-event detection",
+      "Deliverable / Exit Criteria": "Controlled tests identify wheelie start, duration and maximum pitch with manually reviewed false positives",
+      "Depends On": "R-203",
+      "Priority": "High",
+      "Status": "Not Started"
+    },
+    {
+      "ID": "R-205",
+      "Stage": "2 - Ride Testing",
+      "Workstream": "Ride Review",
+      "Task / Step": "Build the first post-ride viewer",
+      "Deliverable / Exit Criteria": "Ride route, speed, pitch, acceleration and detected events can be reviewed from a saved log",
+      "Depends On": "R-204",
+      "Priority": "High",
+      "Status": "Not Started"
+    },
+    {
+      "ID": "R-301",
+      "Stage": "3 - Honda K-Line",
+      "Workstream": "K-Line Bench",
+      "Task / Step": "Bench-test the L9637D interface",
+      "Deliverable / Exit Criteria": "Protected 12 V K-line circuit receives simulated traffic; ESP logic levels are verified; hardware TX-disable is proven",
+      "Depends On": "R-205",
+      "Priority": "Critical",
+      "Status": "Not Started"
+    },
+    {
+      "ID": "R-302",
+      "Stage": "3 - Honda K-Line",
+      "Workstream": "Honda Harness",
+      "Task / Step": "Build and verify the Honda diagnostic Y-harness",
+      "Deliverable / Exit Criteria": "Pinout, continuity, polarity and pass-through operation are verified without modifying the factory harness",
+      "Depends On": "R-301",
+      "Priority": "Critical",
+      "Status": "Not Started"
+    },
+    {
+      "ID": "R-303",
+      "Stage": "3 - Honda K-Line",
+      "Workstream": "Receive Only",
+      "Task / Step": "Capture Honda/PV3 traffic with TX disabled",
+      "Deliverable / Exit Criteria": "Repeatable K-line captures are recorded while the physical TX jumper remains removed",
+      "Depends On": "R-302",
+      "Priority": "Critical",
+      "Status": "Not Started"
+    },
+    {
+      "ID": "R-304",
+      "Stage": "3 - Honda K-Line",
+      "Workstream": "Decode",
+      "Task / Step": "Decode and validate useful Honda channels",
+      "Deliverable / Exit Criteria": "Available RPM, TPS, temperature, voltage and diagnostic values are cross-checked against PV3 readings",
+      "Depends On": "R-303",
+      "Priority": "High",
+      "Status": "Not Started"
+    },
+    {
+      "ID": "R-305",
+      "Stage": "3 - Honda K-Line",
+      "Workstream": "Integration",
+      "Task / Step": "Add validated Honda data to the ride log",
+      "Deliverable / Exit Criteria": "Honda channels share the GPS/IMU timeline without degrading standalone logging reliability",
+      "Depends On": "R-304",
+      "Priority": "High",
+      "Status": "Not Started"
+    },
+    {
+      "ID": "R-401",
+      "Stage": "4 - Later Upgrades",
+      "Workstream": "Power",
+      "Task / Step": "Add protected motorcycle power",
+      "Deliverable / Exit Criteria": "Logger operates across the defined motorcycle supply range and passes reverse-polarity and restart tests",
+      "Depends On": "R-305",
+      "Priority": "Medium",
+      "Status": "Deferred"
+    },
+    {
+      "ID": "R-402",
+      "Stage": "4 - Later Upgrades",
+      "Workstream": "Productization",
+      "Task / Step": "Design a custom PCB and sealed enclosure",
+      "Deliverable / Exit Criteria": "Validated prototype circuit is converted to a serviceable motorcycle-ready assembly",
+      "Depends On": "R-401",
+      "Priority": "Low",
+      "Status": "Deferred"
+    },
+    {
+      "ID": "R-403",
+      "Stage": "4 - Later Upgrades",
+      "Workstream": "Future Features",
+      "Task / Step": "Review deferred expansion features",
+      "Deliverable / Exit Criteria": "BMW CAN, suspension sensing, wheel sensors, dedicated display, wideband and quickshifter are reconsidered only after the Honda logger is stable",
+      "Depends On": "R-402",
+      "Priority": "Low",
+      "Status": "Deferred"
+    }
+  ]
+}

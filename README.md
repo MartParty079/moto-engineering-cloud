@@ -1,36 +1,36 @@
-# Moto Engineering Cloud v2
+# Moto Engineering Cloud v3
 
-This update imports the complete engineering workbook and adds photo/video attachments to roadmap tasks.
+## New in v3
 
-## Update an existing deployment
+- Polished command-center dashboard
+- Dedicated bike cards with maintenance, ride, and part counts
+- Ordered roadmap with easy setup first
+- Roadmap card view and timeline/Gantt view
+- Task progress bars
+- Task owner and target dates
+- Task checklists
+- Photos and videos attached to roadmap tasks
+- Global search across tasks, parts, notes, maintenance, rides, firmware, and engineering records
+- Parts lifecycle: owned, installed, tested
+- Notebook timeline
+- Better mobile layout
 
-1. In Supabase SQL Editor, run `supabase/migration_v2.sql`.
-2. Replace the files in your GitHub repository with this package's files.
-3. Commit the changes. Vercel redeploys automatically.
-4. Sign in and click **Load/refresh starter project** on the Dashboard.
-5. Open Roadmap. Every task has **Add photos/videos**.
+## Upgrade an existing deployment
 
-The importer is repeatable: it updates matching workbook source IDs rather than intentionally creating duplicates.
+1. Run `supabase/migration_v3.sql` in Supabase SQL Editor.
+2. Replace the GitHub repository files with this package.
+3. Commit to `main`; Vercel redeploys automatically.
+4. Open the app and click **Apply recommended order**.
+5. Click **Load/refresh workbook** to update imported records while preserving existing checklist/progress data where possible.
 
-## Included workbook sections
+## Recommended roadmap order
 
-- Roadmap
-- BOM
-- Feature Matrix
-- Interfaces
-- Power Budget
-- Pin Plan
-- Data Dictionary
-- Test Plan
-- Calibration
-- Risk Register
-- Bike Profiles
-- Software Backlog
-- Decision Log
-
-## Storage
-
-Task media uses the existing private `project-media` bucket with paths:
-`<user-id>/tasks/<task-id>/<file>`
-
-Row-level security keeps task records and attachment metadata isolated per user.
+1. Definition and project setup
+2. Bench controller, power, storage, IMU, ADC, and display
+3. Read-only Honda K-line and BMW CAN
+4. Suspension installation and calibration
+5. GNSS, synchronized logging, jumps, lap timing, and wheel speed
+6. Display, phone app, log transfer, and analysis
+7. Quickshifter experiment
+8. Wideband and tuning
+9. PCB, enclosure, validation, documentation, and capstone report

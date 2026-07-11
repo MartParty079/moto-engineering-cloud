@@ -104,7 +104,7 @@ function render(){
   let projects=state.pcb_projects||[],storedId=localStorage.getItem('pcbProjectId')||'',p=projects.find(x=>x.id===storedId)||projects[0]||null,projectId=p?.id||'',tab=localStorage.getItem('pcbTab')||'overview';if(projectId&&storedId!==projectId)localStorage.setItem('pcbProjectId',projectId);
   m.innerHTML=`<div class="section"><div><span class="eyebrow">REV A HARDWARE DESIGN</span><h2>PCB Designer</h2></div><div class="actions"><button id="seedPCB" class="secondary">Load Rev A starter</button><button class="primary" data-pcb-add="pcb_projects">New board</button></div></div>
   <div class="pcbProjectBar">${projects.map(x=>`<button data-pcb-project="${x.id}" class="${x.id===projectId?'active':''}">${esc(x.name)} · ${esc(x.revision)}</button>`).join('')||'<div class="empty">Create or load the Rev A starter project.</div>'}</div>
-  ${p?`<div class="card pcbHero"><div class="rowtop"><div><span class="eyebrow">${esc(p.revision)} · ${esc(p.status)}</span><h2>${esc(p.name)}</h2><p>${esc(p.description||'')}</p></div><button class="mini" data-pcb-edit="pcb_projects:${p.id}">Edit board</button></div><div class="pcbStats"><div><span>Size</span><b>${p.board_width_mm||'—'} × ${p.board_height_mm||'—'} mm</b></div><div><span>Layers</span><b>${p.layer_count||4}</b></div><div><span>Components</span><b>${(state.pcb_components||[]).filter(x=>x.pcb_project_id===p.id).length}</b></div><div><span>Pins assigned</span><b>${(state.pcb_pins||[]).filter(x=>x.pcb_project_id===p.id&&x.function).length}</b></div></div></div>
+  ${p?`<div class="card pcbHero"><div class="rowtop"><div><span class="eyebrow">${esc(p.revision)} · ${esc(p.status)}</span><h2>${esc(p.name)}</h2><p>${esc(p.description||'')}</p></div><div class="actions"><button class="mini" data-pcb-edit="pcb_projects:${p.id}">Edit board</button><button class="danger mini" data-pcb-del="pcb_projects:${p.id}">Delete PCB</button></div></div><div class="pcbStats"><div><span>Size</span><b>${p.board_width_mm||'—'} × ${p.board_height_mm||'—'} mm</b></div><div><span>Layers</span><b>${p.layer_count||4}</b></div><div><span>Components</span><b>${(state.pcb_components||[]).filter(x=>x.pcb_project_id===p.id).length}</b></div><div><span>Pins assigned</span><b>${(state.pcb_pins||[]).filter(x=>x.pcb_project_id===p.id&&x.function).length}</b></div></div></div>
   <div class="tabs pcbTabs">${[['overview','Overview'],['pins','Pin Map'],['connectors','Connectors'],['components','Components/BOM'],['revisions','Revisions']].map(([id,l])=>`<button data-pcb-tab="${id}" class="tab ${tab===id?'active':''}">${l}</button>`).join('')}</div>
   ${renderPCBTab(p,tab)}`:''}`;
  }
@@ -131,8 +131,102 @@ async function attemptComplete(id){let t=state.tasks.find(x=>x.id===id);if(!task
 async function toggleChecklist(id,index,done){let t=state.tasks.find(x=>x.id===id);if(!taskUnlocked(t)){toast('This work package is locked.');return}let list=Array.isArray(t.checklist)?[...t.checklist]:[];if(!list[index])return;list[index]={...list[index],done};await supabase.from('tasks').update({checklist:list}).eq('id',id);await load()}
 function chooseTemplate(){let z=$('#modal');z.innerHTML=`<div class="modalCard card"><div class="rowtop"><h3>Choose work-package template</h3><button id="x" class="icon">✕</button></div><div class="templateGrid">${Object.keys(templates).map(k=>`<div class="templateCard" data-template="${k}"><span class="eyebrow">${k.toUpperCase()}</span><h3>${k}</h3><p class="sub">${esc(templates[k].objective)}</p></div>`).join('')}</div></div>`;z.classList.remove('hidden');$('#x').onclick=()=>z.classList.add('hidden');$$('[data-template]').forEach(b=>b.onclick=()=>openForm('tasks',{work_type:b.dataset.template,...templates[b.dataset.template]}))}
 function field(n,l,v='',type='text',full=false,opts=[]){if(type==='textarea')return `<div class="field full"><label>${l}</label><textarea name="${n}">${esc(v)}</textarea></div>`;if(type==='select')return `<div class="field ${full?'full':''}"><label>${l}</label><select name="${n}">${opts.map(o=>`<option ${o===v?'selected':''}>${esc(o)}</option>`).join('')}</select></div>`;return `<div class="field ${full?'full':''}"><label>${l}</label><input name="${n}" type="${type}" value="${esc(v)}"></div>`}
-function openForm(t,o){modal={t,id:o.id};if(t!=='tasks')return;let checklist=(Array.isArray(o.checklist)?o.checklist:[]).map(x=>x.text).join('\n'),deps=depsFor(o.id||'').map(d=>d.depends_on_task_id),all=state.tasks.filter(x=>x.id!==o.id);let h=field('title','Work package title',o.title,'text',true)+field('source_id','ID',o.source_id)+field('work_type','Type',o.work_type||'General','select',false,Object.keys(templates))+field('stage','Stage',o.stage||stageOrder[0],'select',false,stageOrder)+field('priority','Priority',o.priority||'Medium','select',false,['Critical','High','Medium','Low'])+field('difficulty','Difficulty',o.difficulty||'Medium','select',false,['Easy','Medium','Hard','Expert'])+field('risk_level','Risk',o.risk_level||'Medium','select',false,['Low','Medium','High','Critical'])+field('estimated_hours','Estimated hours',o.estimated_hours||'','number')+field('owner_name','Owner',o.owner_name||'Matthew')+field('target_date','Target date',o.target_date||'','date')+field('objective','Objective',o.objective,'textarea')+field('background','Background',o.background,'textarea')+field('prerequisites','Prerequisites',o.prerequisites,'textarea')+field('safety_notes','Safety notes',o.safety_notes,'textarea')+field('procedure','Step-by-step procedure',o.procedure,'textarea')+field('acceptance_criteria','Acceptance criteria / definition of done',o.acceptance_criteria,'textarea')+field('deliverables','Deliverables',o.deliverables,'textarea')+field('test_procedure','Test procedure',o.test_procedure,'textarea')+field('results','Measured results',o.results,'textarea')+field('lessons_learned','Lessons learned',o.lessons_learned,'textarea')+field('checklist_text','Checklist, one item per line',checklist,'textarea')+`<div class="field full"><label>Dependencies</label><select name="dependencies" multiple size="7">${all.map(x=>`<option value="${x.id}" ${deps.includes(x.id)?'selected':''}>${esc(x.source_id||'')} ${esc(x.title)}</option>`).join('')}</select></div>`;let z=$('#modal');z.innerHTML=`<div class="modalCard card"><div class="rowtop"><h3>${o.id?'Edit':'Create'} work package</h3><button id="x" class="icon">✕</button></div><form id="form"><div class="formgrid">${h}</div><div class="formactions"><button type="button" id="cancel" class="secondary">Cancel</button><button class="primary">Save</button></div></form></div>`;z.classList.remove('hidden');$('#x').onclick=$('#cancel').onclick=()=>z.classList.add('hidden');$('#form').onsubmit=saveForm}
-async function saveForm(e){e.preventDefault();let f=new FormData(e.target),r=Object.fromEntries(f.entries()),depIds=f.getAll('dependencies');delete r.dependencies;r.user_id=uid();r.estimated_hours=r.estimated_hours?+r.estimated_hours:null;r.checklist=(r.checklist_text||'').split('\n').map(x=>x.trim()).filter(Boolean).map(text=>({text,done:false}));delete r.checklist_text;let template=templates[r.work_type]||templates.General;if(!modal.id)r.proof_rules=template.proof_rules;let result=modal.id?await supabase.from('tasks').update(r).eq('id',modal.id).select().single():await supabase.from('tasks').insert(r).select().single();if(result.error){toast(result.error.message);return}let taskId=result.data.id;await supabase.from('task_dependencies').delete().eq('task_id',taskId);for(let d of depIds)await supabase.from('task_dependencies').insert({user_id:uid(),task_id:taskId,depends_on_task_id:d});$('#modal').classList.add('hidden');await load()}
+
+function openForm(t,o){
+ modal={t,id:o.id};
+ let h='';
+ if(t==='parts'){
+  h=
+   field('part','Part name',o.part,'text',true)+
+   field('source_id','BOM ID',o.source_id)+
+   field('system','System',o.system)+
+   field('stage','Stage',o.stage)+
+   field('bike','Bike',o.bike||'Universal')+
+   field('qty','Quantity',o.qty||1,'number')+
+   field('unit_cost','Unit cost',o.unit_cost||0,'number')+
+   field('status','Status',o.status||'Not Started','select',false,statusList)+
+   `<div class="field"><label><input type="checkbox" name="owned" ${o.owned?'checked':''}> Owned</label></div>`+
+   `<div class="field"><label><input type="checkbox" name="installed" ${o.installed?'checked':''}> Installed</label></div>`+
+   `<div class="field"><label><input type="checkbox" name="tested" ${o.tested?'checked':''}> Tested</label></div>`+
+   field('source_url','Source URL',o.source_url||'','url',true)+
+   field('specification','Specification',o.specification,'textarea')+
+   field('notes','Notes',o.notes,'textarea');
+ }else if(t==='tasks'){
+  let checklist=(Array.isArray(o.checklist)?o.checklist:[]).map(x=>x.text).join('\n'),
+      deps=depsFor(o.id||'').map(d=>d.depends_on_task_id),
+      all=state.tasks.filter(x=>x.id!==o.id);
+  h=
+   field('title','Work package title',o.title,'text',true)+
+   field('source_id','ID',o.source_id)+
+   field('work_type','Type',o.work_type||'General','select',false,Object.keys(templates))+
+   field('stage','Stage',o.stage||stageOrder[0],'select',false,stageOrder)+
+   field('priority','Priority',o.priority||'Medium','select',false,['Critical','High','Medium','Low'])+
+   field('difficulty','Difficulty',o.difficulty||'Medium','select',false,['Easy','Medium','Hard','Expert'])+
+   field('risk_level','Risk',o.risk_level||'Medium','select',false,['Low','Medium','High','Critical'])+
+   field('estimated_hours','Estimated hours',o.estimated_hours||'','number')+
+   field('owner_name','Owner',o.owner_name||'Matthew')+
+   field('target_date','Target date',o.target_date||'','date')+
+   field('objective','Objective',o.objective,'textarea')+
+   field('background','Background',o.background,'textarea')+
+   field('prerequisites','Prerequisites',o.prerequisites,'textarea')+
+   field('safety_notes','Safety notes',o.safety_notes,'textarea')+
+   field('procedure','Step-by-step procedure',o.procedure,'textarea')+
+   field('acceptance_criteria','Acceptance criteria / definition of done',o.acceptance_criteria,'textarea')+
+   field('deliverables','Deliverables',o.deliverables,'textarea')+
+   field('test_procedure','Test procedure',o.test_procedure,'textarea')+
+   field('results','Measured results',o.results,'textarea')+
+   field('lessons_learned','Lessons learned',o.lessons_learned,'textarea')+
+   field('checklist_text','Checklist, one item per line',checklist,'textarea')+
+   `<div class="field full"><label>Dependencies</label><select name="dependencies" multiple size="7">${all.map(x=>`<option value="${x.id}" ${deps.includes(x.id)?'selected':''}>${esc(x.source_id||'')} ${esc(x.title)}</option>`).join('')}</select></div>`;
+ }else{
+  toast('Editing this record type is not available yet.');
+  return;
+ }
+ let z=$('#modal');
+ z.innerHTML=`<div class="modalCard card"><div class="rowtop"><h3>${o.id?'Edit':'Create'} ${t==='parts'?'part':'work package'}</h3><button id="x" class="icon">✕</button></div><form id="form"><div class="formgrid">${h}</div><div class="formactions"><button type="button" id="cancel" class="secondary">Cancel</button><button class="primary">Save</button></div></form></div>`;
+ z.classList.remove('hidden');
+ $('#x').onclick=$('#cancel').onclick=()=>z.classList.add('hidden');
+ $('#form').onsubmit=saveForm
+}
+
+async function saveForm(e){
+ e.preventDefault();
+ let f=new FormData(e.target),r=Object.fromEntries(f.entries());
+ r.user_id=uid();
+
+ if(modal.t==='parts'){
+  r.qty=+r.qty||1;
+  r.unit_cost=+r.unit_cost||0;
+  r.owned=f.has('owned');
+  r.installed=f.has('installed');
+  r.tested=f.has('tested');
+  let result=modal.id
+   ? await supabase.from('parts').update(r).eq('id',modal.id).select().single()
+   : await supabase.from('parts').insert(r).select().single();
+  if(result.error){toast(result.error.message);return}
+  $('#modal').classList.add('hidden');
+  toast('Part saved');
+  await load();
+  return;
+ }
+
+ let depIds=f.getAll('dependencies');
+ delete r.dependencies;
+ r.estimated_hours=r.estimated_hours?+r.estimated_hours:null;
+ r.checklist=(r.checklist_text||'').split('\n').map(x=>x.trim()).filter(Boolean).map(text=>({text,done:false}));
+ delete r.checklist_text;
+ let template=templates[r.work_type]||templates.General;
+ if(!modal.id)r.proof_rules=template.proof_rules;
+ let result=modal.id
+  ? await supabase.from('tasks').update(r).eq('id',modal.id).select().single()
+  : await supabase.from('tasks').insert(r).select().single();
+ if(result.error){toast(result.error.message);return}
+ let taskId=result.data.id;
+ await supabase.from('task_dependencies').delete().eq('task_id',taskId);
+ for(let d of depIds)await supabase.from('task_dependencies').insert({user_id:uid(),task_id:taskId,depends_on_task_id:d});
+ $('#modal').classList.add('hidden');
+ await load()
+}
 async function uploadAttachment(taskId,files,proofCategory=''){for(let file of files){let safe=`${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`,path=`${uid()}/tasks/${taskId}/files/${safe}`,extension=ext(file.name);let{error}=await supabase.storage.from('project-media').upload(path,file);if(error){toast(error.message);continue}await supabase.from('task_attachments').insert({user_id:uid(),task_id:taskId,storage_path:path,file_name:file.name,extension,mime_type:file.type,file_size:file.size,attachment_kind:kind(extension),proof_category:proofCategory||null,version_label:'v1'})}toast('Files uploaded');await load()}
 function kind(e){if(['doc','docx','pdf','md','txt'].includes(e))return'document';if(['xls','xlsx','csv'].includes(e))return'spreadsheet';if(['step','stp','sldprt','sldasm','stl','dxf','dwg','iges','igs','f3d'].includes(e))return'cad';if(['ino','cpp','c','h','py','js','ts','json'].includes(e))return'code';if(['jpg','jpeg','png','heic','webp','tif','tiff'].includes(e))return'image';if(['mp4','mov','webm'].includes(e))return'video';return'other'}
 async function downloadAttachment(id){let a=state.task_attachments.find(x=>x.id===id);if(!a)return;let{data,error}=await supabase.storage.from('project-media').createSignedUrl(a.storage_path,3600,{download:a.file_name});if(error)toast(error.message);else window.open(data.signedUrl,'_blank')}
@@ -253,7 +347,22 @@ function openPCBForm(table,obj){
  if(table==='pcb_components'){let opts=(state.parts||[]).map(x=>`<option value="${x.id}" ${x.id===obj.bom_part_id?'selected':''}>${esc(x.source_id||'')} ${esc(x.part)}</option>`).join('');h=field('reference','Reference',obj.reference)+field('value','Value',obj.value,'text',true)+field('category','Category',obj.category)+field('manufacturer_part','Manufacturer part',obj.manufacturer_part,'text',true)+field('footprint','Footprint',obj.footprint)+field('quantity','Quantity',obj.quantity||1,'number')+field('status','Status',obj.status||'Planned')+`<div class="field full"><label>Linked BOM item</label><select name="bom_part_id"><option value="">None</option>${opts}</select></div>`+field('notes','Notes',obj.notes,'textarea')}
  if(table==='pcb_revisions')h=field('revision','Revision',obj.revision||'Rev A1')+field('status','Status',obj.status||'Draft')+field('summary','Summary',obj.summary,'textarea');
  let z=$('#modal');z.innerHTML=`<div class="modalCard card"><div class="rowtop"><h3>${obj.id?'Edit':'Add'} ${table.replace('pcb_','')}</h3><button id="pcbClose" class="icon">✕</button></div><form id="pcbForm"><div class="formgrid">${h}</div><div class="formactions"><button type="button" id="pcbCancel" class="secondary">Cancel</button><button class="primary">Save</button></div></form></div>`;z.classList.remove('hidden');$('#pcbClose').onclick=$('#pcbCancel').onclick=()=>z.classList.add('hidden');$('#pcbForm').onsubmit=async e=>{e.preventDefault();let f=new FormData(e.target),r=Object.fromEntries(f.entries());r.user_id=uid();if(table!=='pcb_projects')r.pcb_project_id=obj.pcb_project_id||pId;if(table==='pcb_projects'){r.board_width_mm=+r.board_width_mm||null;r.board_height_mm=+r.board_height_mm||null;r.layer_count=+r.layer_count||4}if(table==='pcb_pins')r.required=true;if(table==='pcb_connectors'){r.pin_count=+r.pin_count||0;try{r.pinout=JSON.parse(r.pinout_text||'[]')}catch{toast('Pinout JSON is invalid');return}delete r.pinout_text}if(table==='pcb_components'){r.quantity=+r.quantity||1;r.bom_part_id=r.bom_part_id||null}let q=obj.id?supabase.from(table).update(r).eq('id',obj.id):supabase.from(table).insert(r);let{error}=await q;if(error)toast(error.message);else{z.classList.add('hidden');await load()}}}
-async function deletePCBRecord(v){let[t,id]=v.split(':');if(!confirm('Delete this PCB record?'))return;let{error}=await supabase.from(t).delete().eq('id',id);if(error)toast(error.message);else await load()}
+async function deletePCBRecord(v){
+ let[t,id]=v.split(':');
+ let isProject=t==='pcb_projects';
+ let message=isProject
+  ? 'Delete this entire PCB project? This also removes its pins, connectors, components, and revision history. This cannot be undone.'
+  : 'Delete this PCB record? This cannot be undone.';
+ if(!confirm(message))return;
+ let{error}=await supabase.from(t).delete().eq('id',id);
+ if(error){toast(error.message);return}
+ if(isProject){
+  localStorage.removeItem('pcbProjectId');
+  localStorage.removeItem('pcbTab');
+  toast('PCB project deleted');
+ }else toast('PCB record deleted');
+ await load()
+}
 
 async function garageUpload(files,proofCategory){
  const taskId=localStorage.getItem('garageTaskId');if(!taskId){toast('Choose an active work package first.');return}

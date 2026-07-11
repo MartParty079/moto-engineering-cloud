@@ -93,3 +93,5 @@ textarea{min-height:125px;resize:vertical}.item h3,.item h4,.card h3{margin:0 0 
 .pcbCheck{display:flex;justify-content:space-between;gap:10px;padding:12px;border-radius:11px;border:1px solid var(--line);margin-bottom:8px;background:#0b192a}.pcbCheck.good{border-color:rgba(82,227,165,.4)}.pcbCheck.bad{border-color:rgba(255,107,107,.45)}
 .pcbPinGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}.pcbPin{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:13px;border:1px solid var(--line);border-radius:13px;background:#0b192a}.pcbPin.conflict{border-color:var(--red)}.pcbPin b,.pcbPin small{display:block}.pcbPin small{color:var(--muted);margin-top:3px}.pinLabel{display:inline-block;background:#213b59;border-radius:8px;padding:4px 7px;font-size:11px;margin-bottom:5px}
 @media(max-width:760px){.pcbStats{grid-template-columns:repeat(2,1fr)}.pcbBlockDiagram{grid-template-columns:1fr 1fr}.pcbNode.main{grid-column:1/-1}.pcbPinGrid{grid-template-columns:1fr}}
+
+.pcbHero .danger{background:var(--red);color:#220707}.field input[type='checkbox']{width:auto;margin-right:7px}

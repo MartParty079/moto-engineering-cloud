@@ -1,3 +1,22 @@
+# Moto Engineering Cloud v7.4 — Parts Editing and PCB Deletion Fix
+
+## Fixes
+
+- Restores the complete Parts edit form
+- Saves part quantity, cost, status, ownership, installation, testing, links, specification, and notes
+- Adds a visible **Delete PCB** button beside **Edit board**
+- Deleting a PCB project also deletes its related pins, connectors, components, and revisions through database cascade rules
+- Clears the saved PCB selector after project deletion
+
+## Upgrade
+
+No new Supabase migration is required.
+
+1. Replace the repository files with this package.
+2. Commit to main.
+3. Let Vercel redeploy.
+4. Hard-refresh the app.
+
 # Moto Engineering Cloud v7.3 — PCB Data Load Fix
 
 This patch adds the five PCB tables to the application data-loading list. Previous builds saved the Rev A starter records successfully but did not reload them into the page state.

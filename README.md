@@ -1,3 +1,13 @@
+# Moto Engineering Cloud v7.1 — PCB Loading Fix
+
+Fixes the PCB Designer crash caused by rendering before the new Supabase tables finish loading. All PCB collections now default safely to empty arrays.
+
+Deployment:
+1. Confirm `supabase/migration_v7.sql` has been run.
+2. Replace the GitHub files with this package.
+3. Commit and wait for Vercel to redeploy.
+4. Hard-refresh the website.
+
 # Moto Engineering Cloud v7 — Rev A PCB Designer
 
 ## New PCB Designer module

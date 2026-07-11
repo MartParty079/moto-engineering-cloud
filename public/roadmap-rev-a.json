@@ -4,44 +4,23 @@
       "ID": "R-001",
       "Stage": "0 - Scope & Plan",
       "Workstream": "Requirements",
-      "Task / Step": "Freeze Rev A scope",
-      "Deliverable / Exit Criteria": "Approved Honda-first scope: standalone GPS/IMU ride logger first; K-line hardware included but disabled; no suspension, wheel sensors, BMW CAN, or dedicated display",
+      "Task / Step": "Finalize hardware selection and pinout",
+      "Deliverable / Exit Criteria": "Approved Rev A scope, exact prototype BOM, ESP32-S3 pin map and schematic-level connections are frozen; K-line hardware is included with a physical TX-disable",
       "Depends On": null,
       "Priority": "Critical",
-      "Status": "Complete",
-      "Notes": "Approved requirements document: R-001_Rev_A_Scope_Requirements.docx"
+      "Status": "In Progress",
+      "Notes": "The scope portion is approved in R-001_Rev_A_Scope_Requirements.docx. Complete this package by selecting exact breakout boards and documenting the final wiring/pinout."
     },
     {
       "ID": "R-002",
       "Stage": "0 - Scope & Plan",
-      "Workstream": "Hardware",
-      "Task / Step": "Freeze prototype hardware and pinout",
-      "Deliverable / Exit Criteria": "ESP32-S3, ICM-42688-P, u-blox M10, microSD, BLE, status controls, L9637D and TX-disable jumper documented with no pin conflicts",
+      "Workstream": "Firmware",
+      "Task / Step": "Build base firmware and validate the controller",
+      "Deliverable / Exit Criteria": "ESP32-S3 programs reliably, restarts cleanly, reports errors and runs a stable timed acquisition loop with a documented bench-validation result",
       "Depends On": "R-001",
       "Priority": "Critical",
-      "Status": "In Progress",
-      "Notes": "K-line circuit is installed now but disconnected and firmware-disabled during standalone development"
-    },
-    {
-      "ID": "R-003",
-      "Stage": "0 - Scope & Plan",
-      "Workstream": "Data & Safety",
-      "Task / Step": "Define ride log format and safety rules",
-      "Deliverable / Exit Criteria": "Timestamp, GPS, IMU, device status, event fields and read-only K-line boundary documented",
-      "Depends On": "R-002",
-      "Priority": "High",
       "Status": "Not Started",
-      "Notes": "microSD is the authoritative recorder; phone connection must never be required to preserve a ride"
-    },
-    {
-      "ID": "R-101",
-      "Stage": "1 - Standalone Bench Logger",
-      "Workstream": "Controller",
-      "Task / Step": "Bring up ESP32-S3 base firmware",
-      "Deliverable / Exit Criteria": "Board programs reliably, restarts cleanly, reports errors and runs a stable timed acquisition loop",
-      "Depends On": "R-003",
-      "Priority": "Critical",
-      "Status": "Not Started"
+      "Notes": "Validate the controller independently before attaching sensor modules. K-line firmware remains disabled."
     },
     {
       "ID": "R-102",
@@ -49,7 +28,7 @@
       "Workstream": "Hardware Assembly",
       "Task / Step": "Assemble the complete prototype harness",
       "Deliverable / Exit Criteria": "IMU, GNSS, microSD, button, status LED and unconnected L9637D circuit are wired to the frozen pinout",
-      "Depends On": "R-101",
+      "Depends On": "R-002",
       "Priority": "Critical",
       "Status": "Not Started",
       "Notes": "Leave K-line connector unplugged and TX-disable jumper removed"

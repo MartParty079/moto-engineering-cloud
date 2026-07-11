@@ -1,92 +1,78 @@
-# Moto Engineering Cloud v5 — Server-Side OpenAI
+# Moto Engineering Cloud v6 — Garage Mode
 
-This version adds a secure AI Project Assistant through Supabase Edge Functions.
+## New Garage Mode
 
-## What it does
+A mobile-first, glove-friendly workspace for use beside the motorcycle:
 
-- Keeps the OpenAI API key on the server
-- Authenticates the signed-in Supabase user
-- Reads only that user's project records through Row Level Security
-- Answers questions about roadmap tasks, proof requirements, parts, notes, rides, maintenance, and engineering records
-- Can focus on one selected work package
-- Creates structured change proposals
-- Requires human approval before applying changes
-- Records chat messages, proposals, and token usage
+- Select one active work package
+- Take progress photos directly from the iPhone camera
+- Record test videos
+- Dictate or type an engineering note
+- Complete checklist items with large controls
+- See required proof and recent files
+- Ask the AI about the active task with one button
+- Open a live telemetry connection panel
+- Refresh project state without leaving Garage Mode
 
-## Safety model
+Notes are stored in the Engineering Notebook and linked in their text to the active work package.
+Photos and videos are stored as proof attachments on the active package.
 
-The AI cannot silently edit the project. Proposed changes are stored in `ai_change_proposals` and appear in the AI Assistant page. You must approve or reject each proposal.
+The telemetry panel currently reports an honest disconnected state until the ESP32 live-upload backend is built.
 
-The apply function only permits a small whitelist of actions and fields:
+## Upgrade
 
-- Update a task
-- Create a task
-- Create a note
-- Update a part
+No new database migration is required if v5 is already installed.
 
-It does not allow automatic deletion, proof-gate bypass, dependency removal, or unreviewed completion approval.
+1. Replace the existing GitHub repository files with this package.
+2. Commit to main.
+3. Let Vercel redeploy.
+4. Sign in and open **Garage Mode**.
+5. Choose an active work package before capturing media or notes.
 
-## 1. Run the database migration
+# Moto Engineering Cloud v4 — Gated Work Packages
 
-In Supabase SQL Editor, run:
+## Main change
 
-```text
-supabase/migration_v5.sql
-```
+Roadmap tasks are now Engineering Work Packages with mandatory proof gates.
 
-## 2. Add your OpenAI API secret
+A work package cannot be marked complete until:
 
-Create an OpenAI API key in your OpenAI Platform project. Do not put this key in GitHub, Vercel, or any variable beginning with `VITE_`.
+1. Every prerequisite work package is complete.
+2. Every checklist item is complete.
+3. Acceptance criteria are documented.
+4. Results are documented.
+5. Every required proof category has enough uploaded files.
 
-Using Supabase CLI:
+## Proof rules
 
-```bash
-supabase secrets set OPENAI_API_KEY=your_openai_api_key
-supabase secrets set OPENAI_MODEL=gpt-5-mini
-```
+Templates automatically require appropriate evidence:
 
-`OPENAI_MODEL` is optional. Change it later without editing the application.
+- Software: source code, design/readme, test evidence
+- Electronics: code, physical build photos, test evidence
+- Mechanical: CAD, installed photos, validation evidence
+- CAD: CAD file, drawing/document, screenshot or physical proof
+- Suspension: mount CAD, installed photos, calibration file, dynamic test evidence
+- Research: written summary and source material
+- Maintenance: before/after photos and service record
+- General: at least one completion document
 
-You can also add Edge Function secrets through the Supabase dashboard if that option is available in your project.
+## File support
 
-## 3. Deploy the Edge Functions
+Task attachments can include:
 
-Install and sign in to the Supabase CLI, then from the project directory:
+- Word: DOC/DOCX
+- Excel: XLS/XLSX/CSV
+- PDF, Markdown, text
+- CAD: STEP, SLDPRT, SLDASM, STL, DXF, DWG, IGES, F3D
+- Code: INO, CPP, C, H, PY, JS, TS, JSON
+- Photos: JPG, PNG, HEIC, WEBP, TIFF
+- Video: MP4, MOV, WEBM
+- ZIP and other project files
 
-```bash
-supabase link --project-ref YOUR_PROJECT_REFERENCE
-supabase functions deploy ai-chat --no-verify-jwt
-supabase functions deploy ai-apply-proposal --no-verify-jwt
-```
+## Upgrade
 
-The functions deliberately use `--no-verify-jwt` because the code manually validates the signed-in user's access token before reading or changing anything.
-
-## 4. Update GitHub
-
-Replace the existing repository files with this package and commit:
-
-```text
-Add server-side OpenAI project assistant
-```
-
-Vercel will redeploy the front end automatically.
-
-## 5. Test it
-
-1. Sign in to Moto Engineering Cloud.
-2. Open **AI Assistant**.
-3. Choose the whole project or one work package.
-4. Ask: `What is the safest next task and what proof will I need?`
-5. Review any pending change proposals.
-6. Approve or reject each proposal.
-
-## Current file-reading scope
-
-This first AI release reads:
-
-- Database records
-- Work-package fields
-- Proof rules
-- Attachment names, types, categories, and metadata
-
-It does not yet send the actual contents of private Word, Excel, PDF, CAD, code, image, or video files to OpenAI. That is the next stage: a secure attachment-analysis function with size limits and per-file approval.
+1. Run `supabase/migration_v4.sql`.
+2. Replace the GitHub repository files with this package.
+3. Commit to main and let Vercel redeploy.
+4. Sign in and click **Refresh workbook**.
+5. Existing roadmap items receive structured templates and proof rules.

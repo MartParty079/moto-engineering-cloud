@@ -21,11 +21,22 @@ const templates={
 async function load(){for(const t of tables){const{data,error}=await supabase.from(t).select('*').order('created_at',{ascending:false});if(error)console.error(t,error);state[t]=data||[]}normalizeTasks();render()}
 function normalizeTasks(){state.tasks.sort((a,b)=>(a.sort_order??9999)-(b.sort_order??9999)||stageOrder.indexOf(a.stage)-stageOrder.indexOf(b.stage)||(a.source_id||'').localeCompare(b.source_id||''))}
 function auth(){app.innerHTML=`<main><div class="card" style="max-width:480px;margin:8vh auto"><span class="eyebrow">MOTO ENGINEERING CLOUD</span><h2>Sign in to your garage</h2><form id="auth" class="stack"><input name="email" type="email" placeholder="Email" required><input name="password" type="password" placeholder="Password" required><button class="primary" value="signin">Sign in</button><button class="secondary" value="signup">Create account</button></form><p id="msg" class="muted"></p></div></main>`;$('#auth').onsubmit=async e=>{e.preventDefault();let f=new FormData(e.target),a=e.submitter.value,r=a==='signup'?await supabase.auth.signUp({email:f.get('email'),password:f.get('password')}):await supabase.auth.signInWithPassword({email:f.get('email'),password:f.get('password')});$('#msg').textContent=r.error?.message||'Success'}}
-function shell(){app.innerHTML=`<header class="top"><button id="menu" class="icon">☰</button><div><h1>Moto Engineering Cloud</h1><p>${esc(session.user.email)}</p></div><div class="spacer"></div><input id="globalSearch" style="max-width:320px" placeholder="Search everything…"><button id="logout" class="secondary">Sign out</button></header><div class="layout"><nav id="nav" class="nav">${[['dashboard','Dashboard'],['garage','Garage'],['roadmap','Work Packages'],['engineering','Engineering'],['parts','Parts'],['notes','Notebook'],['maintenance','Maintenance'],['rides','Rides'],['media','Files'],['firmware','Firmware'],['ai','AI Assistant']].map(([x,l])=>`<button data-v="${x}" class="${view===x?'active':''}">${l}</button>`).join('')}</nav><main id="main"></main></div><div id="searchResults" class="searchResults hidden"></div><div id="modal" class="modal hidden"></div><div id="toast" class="toast"></div>`;$('#menu').onclick=()=>$('#nav').classList.toggle('open');$('#logout').onclick=()=>supabase.auth.signOut();$$('[data-v]').forEach(b=>b.onclick=()=>{view=b.dataset.v;shell();render()});$('#globalSearch').oninput=globalSearch}
+function shell(){app.innerHTML=`<header class="top"><button id="menu" class="icon">☰</button><div><h1>Moto Engineering Cloud</h1><p>${esc(session.user.email)}</p></div><div class="spacer"></div><input id="globalSearch" style="max-width:320px" placeholder="Search everything…"><button id="logout" class="secondary">Sign out</button></header><div class="layout"><nav id="nav" class="nav">${[['dashboard','Dashboard'],['garageMode','Garage Mode'],['garage','Garage'],['roadmap','Work Packages'],['engineering','Engineering'],['parts','Parts'],['notes','Notebook'],['maintenance','Maintenance'],['rides','Rides'],['media','Files'],['firmware','Firmware'],['ai','AI Assistant']].map(([x,l])=>`<button data-v="${x}" class="${view===x?'active':''}">${l}</button>`).join('')}</nav><main id="main"></main></div><div id="searchResults" class="searchResults hidden"></div><div id="modal" class="modal hidden"></div><div id="toast" class="toast"></div>`;$('#menu').onclick=()=>$('#nav').classList.toggle('open');$('#logout').onclick=()=>supabase.auth.signOut();$$('[data-v]').forEach(b=>b.onclick=()=>{view=b.dataset.v;shell();render()});$('#globalSearch').oninput=globalSearch}
 const metric=(a,b,c='')=>`<div class="metric"><span>${a}</span><strong>${b}</strong>${c?`<small>${c}</small>`:''}</div>`;
 function buttons(t,id){return `<div class="actions"><button class="mini" data-edit="${t}:${id}">Edit</button><button class="mini" data-del="${t}:${id}">Delete</button></div>`}
 function globalSearch(e){let q=e.target.value.trim().toLowerCase(),box=$('#searchResults');if(q.length<2){box.classList.add('hidden');return}let res=[];for(const t of ['tasks','parts','notes','maintenance','rides','firmware','engineering_items'])for(const x of state[t]||[])if(JSON.stringify(x).toLowerCase().includes(q))res.push({t,x});box.innerHTML=res.slice(0,40).map(({t,x})=>`<div class="item" style="margin-bottom:7px"><b>${esc(x.title||x.part||x.service||x.name||x.source_id||t)}</b><div class="sub">${esc(t)} · ${esc(x.stage||x.bike||x.category||'')}</div></div>`).join('')||'<div class="empty">No results</div>';box.classList.remove('hidden')}
-function bind(){$$('[data-add]').forEach(b=>b.onclick=()=>chooseTemplate());$$('[data-edit]').forEach(b=>b.onclick=()=>{let[t,id]=b.dataset.edit.split(':');openForm(t,state[t].find(x=>x.id===id))});$$('[data-del]').forEach(b=>b.onclick=async()=>{let[t,id]=b.dataset.del.split(':');if(confirm('Delete this item?')){await supabase.from(t).delete().eq('id',id);await load()}});$$('[data-upload]').forEach(b=>b.onchange=e=>uploadAttachment(b.dataset.upload,e.target.files,b.dataset.proof||''));$$('[data-complete]').forEach(b=>b.onclick=()=>attemptComplete(b.dataset.complete));$$('[data-check]').forEach(c=>c.onchange=()=>toggleChecklist(c.dataset.check,+c.dataset.index,c.checked));$$('[data-seed]').forEach(b=>b.onclick=seedStarter);$$('[data-order]').forEach(b=>b.onclick=applyRecommendedOrder);$$('[data-download]').forEach(b=>b.onclick=()=>downloadAttachment(b.dataset.download));$$('[data-proposal]').forEach(b=>b.onclick=()=>reviewProposal(b.dataset.proposal,b.dataset.decision));if($('#aiForm'))$('#aiForm').onsubmit=sendAI}
+function bind(){$$('[data-add]').forEach(b=>b.onclick=()=>chooseTemplate());$$('[data-edit]').forEach(b=>b.onclick=()=>{let[t,id]=b.dataset.edit.split(':');openForm(t,state[t].find(x=>x.id===id))});$$('[data-del]').forEach(b=>b.onclick=async()=>{let[t,id]=b.dataset.del.split(':');if(confirm('Delete this item?')){await supabase.from(t).delete().eq('id',id);await load()}});$$('[data-upload]').forEach(b=>b.onchange=e=>uploadAttachment(b.dataset.upload,e.target.files,b.dataset.proof||''));$$('[data-complete]').forEach(b=>b.onclick=()=>attemptComplete(b.dataset.complete));$$('[data-check]').forEach(c=>c.onchange=()=>toggleChecklist(c.dataset.check,+c.dataset.index,c.checked));$$('[data-seed]').forEach(b=>b.onclick=seedStarter);$$('[data-order]').forEach(b=>b.onclick=applyRecommendedOrder);$$('[data-download]').forEach(b=>b.onclick=()=>downloadAttachment(b.dataset.download));$$('[data-proposal]').forEach(b=>b.onclick=()=>reviewProposal(b.dataset.proposal,b.dataset.decision));
+if($('#aiForm'))$('#aiForm').onsubmit=sendAI;
+if($('#garageTask'))$('#garageTask').onchange=e=>{localStorage.setItem('garageTaskId',e.target.value);render()};
+$$('[data-garage-photo]').forEach(x=>x.onchange=e=>garageUpload(e.target.files,'physical'));
+$$('[data-garage-video]').forEach(x=>x.onchange=e=>garageUpload(e.target.files,'test'));
+$$('[data-garage-check]').forEach(x=>x.onchange=()=>toggleChecklist(x.dataset.garageCheck,+x.dataset.index,x.checked));
+if($('#garageNoteBtn'))$('#garageNoteBtn').onclick=startGarageDictation;
+if($('#garageSaveNote'))$('#garageSaveNote').onclick=saveGarageNote;
+if($('#garageAskAI'))$('#garageAskAI').onclick=garageAskAI;
+if($('#garageTelemetry'))$('#garageTelemetry').onclick=showTelemetryPanel;
+if($('#garageRefresh'))$('#garageRefresh').onclick=load
+}
 function depsFor(taskId){return state.task_dependencies.filter(x=>x.task_id===taskId)}
 function dependenciesComplete(taskId){return depsFor(taskId).every(d=>state.tasks.find(t=>t.id===d.depends_on_task_id)?.status==='Complete')}
 function proofStatus(task){let rules=Array.isArray(task.proof_rules)?task.proof_rules:[],files=state.task_attachments.filter(x=>x.task_id===task.id);return rules.map(r=>{let count=files.filter(f=>f.proof_category===r.category||r.extensions.includes((f.extension||'').toLowerCase())).length;return{...r,count,pass:count>=(r.min||1)}})}
@@ -36,6 +47,50 @@ function stageRank(s){let i=stageOrder.indexOf(s);return i<0?999:i}
 function render(){
  const m=$('#main');if(!m)return;
  if(view==='dashboard'){let done=state.tasks.filter(x=>x.status==='Complete').length,total=state.tasks.length,budget=state.parts.reduce((s,x)=>s+(x.qty||0)*(x.unit_cost||0),0),locked=state.tasks.filter(x=>!taskUnlocked(x)).length,proofReady=state.tasks.filter(x=>x.status!=='Complete'&&gatePass(x)).length;m.innerHTML=`<div class="hero card"><div><span class="eyebrow">GATED ENGINEERING WORKFLOW</span><h2>Universal Motorcycle Data System</h2><p>Every work package has a defined objective, method, acceptance criteria, deliverables, and mandatory proof. Dependent work stays locked until upstream work is proven complete.</p></div><div class="actions"><button class="secondary" data-order>Apply recommended order</button><button class="primary" data-seed>Refresh workbook</button></div></div><div class="metrics">${metric('Complete',`${done}/${total}`)}${metric('Locked packages',locked)}${metric('Ready for approval',proofReady)}${metric('Planned budget',money(budget))}</div><div class="two"><div class="card"><h3>Next unlocked work</h3>${state.tasks.filter(x=>x.status!=='Complete'&&taskUnlocked(x)).slice(0,8).map(x=>`<div class="item" style="margin-bottom:8px"><b>${esc(x.title)}</b><div class="sub">${esc(x.work_type||'General')} · ${esc(x.stage)}</div><div class="progress" style="margin-top:8px"><i style="width:${taskCompletion(x)}%"></i></div></div>`).join('')||'<div class="empty">No unlocked work.</div>'}</div><div class="card"><h3>Proof enforcement</h3><p>Software requires source code. Physical work requires photos. CAD work requires design files. Calibration and testing require result files. Completion is blocked until all required proof and dependencies pass.</p></div></div>`}
+
+ if(view==='garageMode'){
+  let activeId=localStorage.getItem('garageTaskId')||state.tasks.find(t=>t.status!=='Complete'&&taskUnlocked(t))?.id||state.tasks[0]?.id||'';
+  let t=state.tasks.find(x=>x.id===activeId),files=t?state.task_attachments.filter(x=>x.task_id===t.id):[],proof=t?proofStatus(t):[],checks=t&&Array.isArray(t.checklist)?t.checklist:[];
+  m.innerHTML=`<div class="garageMode">
+    <div class="garageHeader">
+      <div><span class="eyebrow">IPHONE GARAGE COMPANION</span><h2>Garage Mode</h2><p>Capture proof, update the active package, dictate notes, and ask AI without navigating the full app.</p></div>
+      <button id="garageRefresh" class="garageRound">↻</button>
+    </div>
+    <div class="garageTaskPicker card">
+      <label>Active work package</label>
+      <select id="garageTask"><option value="">Choose a package</option>${state.tasks.filter(x=>x.status!=='Complete').map(x=>`<option value="${x.id}" ${x.id===activeId?'selected':''}>${esc(x.source_id||'')} ${esc(x.title)}</option>`).join('')}</select>
+    </div>
+    ${t?`<div class="garageActive card">
+      <div class="rowtop"><div><span class="eyebrow">${esc(t.work_type||'GENERAL')} · ${esc(t.stage)}</span><h2>${esc(t.title)}</h2></div><span class="garagePct">${taskCompletion(t)}%</span></div>
+      ${taskUnlocked(t)?'<div class="gatePass">Package is unlocked.</div>':'<div class="lockedBanner">Package is locked by an incomplete prerequisite.</div>'}
+      <div class="progress"><i style="width:${taskCompletion(t)}%"></i></div>
+      <p>${esc(t.objective||t.notes||'')}</p>
+    </div>
+    <div class="garageButtons">
+      <label class="garageAction photo"><span>📸</span><b>Progress Photo</b><small>Take or select pictures</small><input hidden type="file" accept="image/*" capture="environment" multiple data-garage-photo></label>
+      <label class="garageAction video"><span>🎥</span><b>Test Video</b><small>Record proof of operation</small><input hidden type="file" accept="video/*" capture="environment" multiple data-garage-video></label>
+      <button id="garageNoteBtn" class="garageAction note"><span>🎤</span><b>Dictate Note</b><small>Speak while you work</small></button>
+      <button id="garageAskAI" class="garageAction ai"><span>🤖</span><b>Ask AI</b><small>Review this package</small></button>
+      <button id="garageTelemetry" class="garageAction telemetry"><span>📊</span><b>Live Telemetry</b><small>Check device connection</small></button>
+      <button class="garageAction checklist" onclick="document.getElementById('garageChecklist').scrollIntoView({behavior:'smooth'})"><span>✅</span><b>Checklist</b><small>Update the next step</small></button>
+    </div>
+    <div id="garageNotePanel" class="card garageNotePanel">
+      <h3>Quick engineering note</h3>
+      <textarea id="garageNoteText" placeholder="Tap Dictate Note, or type what changed, what you measured, and what needs attention."></textarea>
+      <button id="garageSaveNote" class="primary">Save note to this package</button>
+      <div id="speechStatus" class="sub"></div>
+    </div>
+    <div id="garageChecklist" class="card">
+      <div class="rowtop"><h3>Checklist</h3><span class="badge">${checks.filter(x=>x.done).length}/${checks.length}</span></div>
+      <div class="garageCheckList">${checks.map((c,i)=>`<label class="garageCheck ${c.done?'done':''}"><input type="checkbox" data-garage-check="${t.id}" data-index="${i}" ${c.done?'checked':''} ${taskUnlocked(t)?'':'disabled'}><span>${esc(c.text)}</span></label>`).join('')||'<div class="empty">No checklist has been defined yet.</div>'}</div>
+    </div>
+    <div class="two garageBottom">
+      <div class="card"><h3>Required proof</h3><div class="proofGrid">${proof.map(p=>`<div class="proofBox ${p.pass?'pass':'fail'}"><b>${esc(p.label)}</b><div class="sub">${p.count}/${p.min||1}</div></div>`).join('')||'<div class="empty">No proof rules.</div>'}</div></div>
+      <div class="card"><h3>Recent files</h3><div class="attachmentList">${files.slice(0,8).map(attachmentRow).join('')||'<div class="empty">No files yet.</div>'}</div></div>
+    </div>`:`<div class="empty">Choose an active work package to begin.</div>`}
+  </div>`;
+ }
+
  if(view==='garage')m.innerHTML=`<div class="section"><div><span class="eyebrow">GARAGE</span><h2>Motorcycles</h2></div><button class="primary" data-add="bikes">Add bike</button></div><div class="grid">${state.bikes.map(x=>`<div class="card bikeHero"><div style="width:100%"><div class="rowtop"><div><span class="eyebrow">${esc(x.year)} ${esc(x.make)}</span><h2 style="margin:4px 0">${esc(x.name)}</h2></div>${buttons('bikes',x.id)}</div><p>${esc(x.notes)}</p></div></div>`).join('')||'<div class="empty">No bikes yet.</div>'}</div>`;
  if(view==='roadmap'){let grouped=stageOrder.map(s=>[s,state.tasks.filter(x=>x.stage===s)]).filter(x=>x[1].length);m.innerHTML=`<div class="section"><div><span class="eyebrow">ENGINEERING WORK PACKAGES</span><h2>Roadmap</h2></div><div class="actions"><button class="secondary" data-order>Apply recommended order</button><button class="primary" data-add="tasks">New work package</button></div></div><div class="stack">${grouped.map(([s,rows],si)=>`<section class="stageLane"><div class="stageTitle"><span class="num">${si+1}</span><h3>${esc(s)}</h3><p class="sub">${rows.length} packages</p></div><div class="stack">${rows.map(workPackageCard).join('')}</div></section>`).join('')}</div>`;setTimeout(loadAttachmentThumbs,0)}
  if(view==='engineering'){let types=[['features','Features'],['interfaces','Interfaces'],['power_budget','Power'],['pin_plan','Pins'],['data_dictionary','Data'],['tests','Tests'],['calibrations','Calibration'],['risks','Risks'],['bike_profiles','Bike profiles'],['software','Software'],['decisions','Decisions']];let rows=state.engineering_items.filter(x=>x.item_type===engType);m.innerHTML=`<div class="section"><div><span class="eyebrow">WORKBOOK DATABASE</span><h2>Engineering</h2></div></div><div class="tabs">${types.map(([x,l])=>`<button class="tab ${engType===x?'active':''}" data-eng="${x}">${l}</button>`).join('')}</div><div class="stack">${rows.map(x=>`<article class="item"><h3>${esc(x.source_id||'')} ${esc(x.title)}</h3><p>${esc(x.notes||'')}</p></article>`).join('')||'<div class="empty">No records.</div>'}</div>`;setTimeout(()=>$$('[data-eng]').forEach(b=>b.onclick=()=>{engType=b.dataset.eng;render()}),0)}
@@ -69,6 +124,43 @@ async function loadAttachmentThumbs(){}
 async function applyRecommendedOrder(){let ordered=[...state.tasks].sort((a,b)=>stageRank(a.stage)-stageRank(b.stage)||(a.source_id||'').localeCompare(b.source_id||''));for(let i=0;i<ordered.length;i++)await supabase.from('tasks').update({sort_order:i+1}).eq('id',ordered[i].id);toast('Roadmap reordered');await load()}
 function inferTemplate(task){let s=(task.title+' '+task.stage+' '+task.notes).toLowerCase();if(/cad|bracket|mount|enclosure|mechanical|harness/.test(s))return /cad|design/.test(s)?'CAD':'Mechanical';if(/software|implement|app|firmware|decoder|parser|logger|algorithm|display/.test(s))return'Software';if(/suspension|string-pot|travel|motion-ratio/.test(s))return'Suspension';if(/research|define|requirements|architecture|survey/.test(s))return'Research';if(/power|esp32|imu|adc|can|k-line|gnss|interface|sensor/.test(s))return'Electronics';return'General'}
 async function seedStarter(){if(!confirm('Refresh workbook and apply structured work-package templates?'))return;let d=await fetch('/starter-project.json').then(r=>r.json());let roadmap=[...d.roadmap].sort((a,b)=>stageRank(String(a.Stage||''))-stageRank(String(b.Stage||''))||String(a.ID||'').localeCompare(String(b.ID||'')));for(let i=0;i<roadmap.length;i++){let x=roadmap[i],title=String(x['Task / Step']||''),type=inferTemplate({title,stage:String(x.Stage||''),notes:String(x.Notes||'')}),tpl=templates[type],rec={user_id:uid(),source_id:String(x.ID||''),title,stage:String(x.Stage||''),bike:'Universal',priority:String(x.Priority||''),status:String(x.Status||'Not Started'),notes:String(x.Notes||x['Deliverable / Exit Criteria']||''),sort_order:i+1,owner_name:'Matthew',progress:x.Status==='Complete'?100:0,work_type:type,objective:tpl.objective,background:tpl.background,prerequisites:tpl.prerequisites,safety_notes:tpl.safety_notes,procedure:tpl.procedure,acceptance_criteria:tpl.acceptance_criteria,deliverables:tpl.deliverables,test_procedure:tpl.test_procedure,proof_rules:tpl.proof_rules,gate_status:'Locked'};let old=state.tasks.find(z=>z.source_id===rec.source_id);old?await supabase.from('tasks').update({...rec,checklist:old.checklist||[],results:old.results,lessons_learned:old.lessons_learned,progress:old.progress||rec.progress}).eq('id',old.id):await supabase.from('tasks').insert(rec)}toast('Structured work packages applied');await load()}
+
+
+async function garageUpload(files,proofCategory){
+ const taskId=localStorage.getItem('garageTaskId');if(!taskId){toast('Choose an active work package first.');return}
+ await uploadAttachment(taskId,files,proofCategory)
+}
+function startGarageDictation(){
+ const area=$('#garageNoteText'),status=$('#speechStatus');
+ const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!SpeechRecognition){status.textContent='Voice dictation is not available in this browser. Use the iPhone keyboard microphone or type the note.';area.focus();return}
+ const rec=new SpeechRecognition();rec.lang='en-US';rec.interimResults=true;rec.continuous=false;
+ status.textContent='Listening…';
+ rec.onresult=e=>{let text=[...e.results].map(r=>r[0].transcript).join(' ');area.value=(area.value+' '+text).trim()};
+ rec.onerror=e=>status.textContent='Dictation error: '+e.error;
+ rec.onend=()=>status.textContent='Dictation stopped. Review and save the note.';
+ rec.start()
+}
+async function saveGarageNote(){
+ const taskId=localStorage.getItem('garageTaskId'),task=state.tasks.find(x=>x.id===taskId),body=$('#garageNoteText')?.value.trim();
+ if(!taskId||!body){toast('Choose a package and enter a note.');return}
+ const {error}=await supabase.from('notes').insert({user_id:uid(),title:`Garage update — ${task.source_id||task.title}`,category:'Garage Progress',bike:task.bike||'Universal',body:`Work package: ${task.title}\n\n${body}`});
+ if(error){toast(error.message);return}
+ $('#garageNoteText').value='';toast('Garage note saved');await load()
+}
+function garageAskAI(){
+ const taskId=localStorage.getItem('garageTaskId');if(!taskId){toast('Choose a work package first.');return}
+ view='ai';shell();render();
+ setTimeout(()=>{let sel=$('#aiForm select[name="taskId"]'),msg=$('#aiForm textarea[name="message"]');if(sel)sel.value=taskId;if(msg)msg.value='Review this work package using its checklist, proof requirements, attachments, results, and dependencies. Tell me exactly what to do next and what evidence is still missing.';msg?.focus()},80)
+}
+function showTelemetryPanel(){
+ let z=$('#modal');z.innerHTML=`<div class="modalCard card telemetryPanel"><div class="rowtop"><div><span class="eyebrow">LIVE DEVICE STATUS</span><h2>Telemetry</h2></div><button id="telemetryClose" class="icon">✕</button></div>
+ <div class="telemetryStatus"><span class="telemetryDot offline"></span><div><b>No motorcycle data device connected</b><div class="sub">The cloud app is ready, but the ESP32 upload/live-stream endpoint has not been added yet.</div></div></div>
+ <div class="telemetryTiles"><div><span>RPM</span><b>—</b></div><div><span>Speed</span><b>—</b></div><div><span>Coolant</span><b>—</b></div><div><span>Suspension</span><b>—</b></div></div>
+ <p class="muted">This panel is intentionally honest: it will show real values only after the ESP32 telemetry backend is connected.</p>
+ <button id="telemetryTask" class="primary">Open telemetry development tasks</button></div>`;
+ z.classList.remove('hidden');$('#telemetryClose').onclick=()=>z.classList.add('hidden');$('#telemetryTask').onclick=()=>{z.classList.add('hidden');view='roadmap';shell();render()}
+}
 
 async function sendAI(e){
  e.preventDefault();let f=new FormData(e.target),message=String(f.get('message')||'').trim(),taskId=String(f.get('taskId')||'')||null;if(!message)return;

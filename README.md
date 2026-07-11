@@ -1,3 +1,11 @@
+# Moto Engineering Cloud v7.2 — PCB Starter Display Fix
+
+Fixes stale selected-board IDs, automatically selects the first valid PCB project, and reports any failed starter insert instead of displaying a false success message.
+
+## Deploy
+
+No new migration is required if migration_v7.sql was already run. Replace the repository files and redeploy.
+
 # Moto Engineering Cloud v7.1 — PCB Loading Fix
 
 Fixes the PCB Designer crash caused by rendering before the new Supabase tables finish loading. All PCB collections now default safely to empty arrays.

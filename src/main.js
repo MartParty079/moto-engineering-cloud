@@ -101,7 +101,7 @@ function render(){
  if(view==='roadmap'){let grouped=stageOrder.map(s=>[s,state.tasks.filter(x=>x.stage===s)]).filter(x=>x[1].length);m.innerHTML=`<div class="section"><div><span class="eyebrow">ENGINEERING WORK PACKAGES</span><h2>Roadmap</h2></div><div class="actions"><button class="secondary" data-order>Apply recommended order</button><button class="primary" data-add="tasks">New work package</button></div></div><div class="stack">${grouped.map(([s,rows],si)=>`<section class="stageLane"><div class="stageTitle"><span class="num">${si+1}</span><h3>${esc(s)}</h3><p class="sub">${rows.length} packages</p></div><div class="stack">${rows.map(workPackageCard).join('')}</div></section>`).join('')}</div>`;setTimeout(loadAttachmentThumbs,0)}
 
  if(view==='pcb'){
-  let projects=state.pcb_projects||[],projectId=localStorage.getItem('pcbProjectId')||projects[0]?.id||'',p=projects.find(x=>x.id===projectId),tab=localStorage.getItem('pcbTab')||'overview';
+  let projects=state.pcb_projects||[],storedId=localStorage.getItem('pcbProjectId')||'',p=projects.find(x=>x.id===storedId)||projects[0]||null,projectId=p?.id||'',tab=localStorage.getItem('pcbTab')||'overview';if(projectId&&storedId!==projectId)localStorage.setItem('pcbProjectId',projectId);
   m.innerHTML=`<div class="section"><div><span class="eyebrow">REV A HARDWARE DESIGN</span><h2>PCB Designer</h2></div><div class="actions"><button id="seedPCB" class="secondary">Load Rev A starter</button><button class="primary" data-pcb-add="pcb_projects">New board</button></div></div>
   <div class="pcbProjectBar">${projects.map(x=>`<button data-pcb-project="${x.id}" class="${x.id===projectId?'active':''}">${esc(x.name)} · ${esc(x.revision)}</button>`).join('')||'<div class="empty">Create or load the Rev A starter project.</div>'}</div>
   ${p?`<div class="card pcbHero"><div class="rowtop"><div><span class="eyebrow">${esc(p.revision)} · ${esc(p.status)}</span><h2>${esc(p.name)}</h2><p>${esc(p.description||'')}</p></div><button class="mini" data-pcb-edit="pcb_projects:${p.id}">Edit board</button></div><div class="pcbStats"><div><span>Size</span><b>${p.board_width_mm||'—'} × ${p.board_height_mm||'—'} mm</b></div><div><span>Layers</span><b>${p.layer_count||4}</b></div><div><span>Components</span><b>${(state.pcb_components||[]).filter(x=>x.pcb_project_id===p.id).length}</b></div><div><span>Pins assigned</span><b>${(state.pcb_pins||[]).filter(x=>x.pcb_project_id===p.id&&x.function).length}</b></div></div></div>
@@ -174,13 +174,18 @@ function renderPCBTab(p,tab){
  }
  return '';
 }
+async function pcbInsert(table,record){
+ const {data,error}=await supabase.from(table).insert(record).select().single();
+ if(error)throw new Error(`${table}: ${error.message}`);
+ return data
+}
 async function seedPCBRevA(){
+ try{
  if(!confirm('Create the Rev A starter PCB project, pin plan, connectors, and components?'))return;
  let existing=(state.pcb_projects||[]).find(x=>x.name==='Universal Motorcycle Data Board');
  let project=existing;
  if(!project){
-  let {data,error}=await supabase.from('pcb_projects').insert({user_id:uid(),name:'Universal Motorcycle Data Board',revision:'Rev A',status:'Planning',description:'Read-only universal motorcycle data acquisition PCB for the CRF450RL and 2009 F800GS.',board_width_mm:100,board_height_mm:75,layer_count:4,notes:'ESP32-S3 core with protected automotive input, Honda K-line, BMW CAN, suspension ADC, IMU, GNSS, microSD, Nextion/display, and expansion I/O.'}).select().single();
-  if(error){toast(error.message);return} project=data;
+  project=await pcbInsert('pcb_projects',{user_id:uid(),name:'Universal Motorcycle Data Board',revision:'Rev A',status:'Planning',description:'Read-only universal motorcycle data acquisition PCB for the CRF450RL and 2009 F800GS.',board_width_mm:100,board_height_mm:75,layer_count:4,notes:'ESP32-S3 core with protected automotive input, Honda K-line, BMW CAN, suspension ADC, IMU, GNSS, microSD, Nextion/display, and expansion I/O.'});
  }
  localStorage.setItem('pcbProjectId',project.id);
  if(!(state.pcb_pins||[]).some(x=>x.pcb_project_id===project.id)){
@@ -204,7 +209,7 @@ async function seedPCBRevA(){
    ['Battery sense','TBD','12 V measurement','ADC','0-3.3 V','J1','Input',17],
    ['Mode button','TBD','User input','GPIO','3.3 V','J8','Input',18]
   ];
-  for(let p of pins)await supabase.from('pcb_pins').insert({user_id:uid(),pcb_project_id:project.id,pin_name:p[0],gpio:p[1],function:p[2],peripheral:p[3],voltage:p[4],connector:p[5],direction:p[6],sort_order:p[7]});
+  for(let p of pins)await pcbInsert('pcb_pins',{user_id:uid(),pcb_project_id:project.id,pin_name:p[0],gpio:p[1],function:p[2],peripheral:p[3],voltage:p[4],connector:p[5],direction:p[6],sort_order:p[7]});
  }
  if(!(state.pcb_connectors||[]).some(x=>x.pcb_project_id===project.id)){
   let conns=[
@@ -217,7 +222,7 @@ async function seedPCBRevA(){
    ['J8 Expansion','Deutsch DTM 8','Buttons, clutch, shift sensor, spare I/O',8,'Universal'],
    ['J9 Display','JST-GH 4','Nextion UART and power',4,'Universal']
   ];
-  for(let c of conns)await supabase.from('pcb_connectors').insert({user_id:uid(),pcb_project_id:project.id,connector_name:c[0],connector_type:c[1],purpose:c[2],pin_count:c[3],bike:c[4],pinout:[]});
+  for(let c of conns)await pcbInsert('pcb_connectors',{user_id:uid(),pcb_project_id:project.id,connector_name:c[0],connector_type:c[1],purpose:c[2],pin_count:c[3],bike:c[4],pinout:[]});
  }
  if(!(state.pcb_components||[]).some(x=>x.pcb_project_id===project.id)){
   let comps=[
@@ -232,12 +237,13 @@ async function seedPCBRevA(){
    ['D1','Load-dump TVS','Protection','Automotive TVS','SMCJ',1],
    ['Q1','Reverse-polarity MOSFET','Protection','P-channel / ideal diode','Power package',1]
   ];
-  for(let c of comps)await supabase.from('pcb_components').insert({user_id:uid(),pcb_project_id:project.id,reference:c[0],value:c[1],category:c[2],manufacturer_part:c[3],footprint:c[4],quantity:c[5],status:'Planned'});
+  for(let c of comps)await pcbInsert('pcb_components',{user_id:uid(),pcb_project_id:project.id,reference:c[0],value:c[1],category:c[2],manufacturer_part:c[3],footprint:c[4],quantity:c[5],status:'Planned'});
  }
  if(!(state.pcb_revisions||[]).some(x=>x.pcb_project_id===project.id)){
-  await supabase.from('pcb_revisions').insert({user_id:uid(),pcb_project_id:project.id,revision:'Rev A0',status:'Planning',summary:'Initial architecture, connector plan, component list, and unresolved ESP32 pin assignments.'});
+  await pcbInsert('pcb_revisions',{user_id:uid(),pcb_project_id:project.id,revision:'Rev A0',status:'Planning',summary:'Initial architecture, connector plan, component list, and unresolved ESP32 pin assignments.'});
  }
- toast('Rev A starter loaded');await load()
+ toast('Rev A starter loaded');await load();view='pcb';render()
+ }catch(error){console.error(error);toast('PCB starter error: '+error.message);alert('PCB starter could not finish: '+error.message)}
 }
 function openPCBForm(table,obj){
  let pId=localStorage.getItem('pcbProjectId')||(state.pcb_projects||[])[0]?.id||'',h='';

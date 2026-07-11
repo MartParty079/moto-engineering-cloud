@@ -1,0 +1,5 @@
+[functions.ai-chat]
+verify_jwt = false
+
+[functions.ai-apply-proposal]
+verify_jwt = false

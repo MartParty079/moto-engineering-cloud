@@ -1,3 +1,38 @@
+# Moto Engineering Cloud v7 — Rev A PCB Designer
+
+## New PCB Designer module
+
+- Multiple PCB projects and revisions
+- Rev A starter architecture
+- Interactive ESP32-S3 pin map
+- Pin conflict status
+- Connector and harness planning
+- Component list linked to the main BOM
+- Board dimensions and layer count
+- Revision history
+- Architecture and safety checklist
+- Starter records for:
+  - ESP32-S3
+  - L9637D K-line
+  - MCP2562 CAN
+  - ICM-42688-P IMU
+  - External ADC
+  - Automotive power and protection
+  - microSD
+  - GNSS
+  - Nextion/display
+  - Suspension and wheel-speed connectors
+
+## Upgrade
+
+1. Run `supabase/migration_v7.sql`.
+2. Replace the repository files with this package.
+3. Commit and let Vercel redeploy.
+4. Open **PCB Designer**.
+5. Click **Load Rev A starter**.
+
+The starter intentionally leaves ESP32 GPIO assignments as TBD. Pin selection should be completed after confirming the exact ESP32-S3 module, flash/PSRAM configuration, USB usage, boot-strapping pins, ADC requirements, and peripheral timing.
+
 # Moto Engineering Cloud v6 — Garage Mode
 
 ## New Garage Mode

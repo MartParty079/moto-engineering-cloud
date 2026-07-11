@@ -21,7 +21,7 @@ const templates={
 async function load(){for(const t of tables){const{data,error}=await supabase.from(t).select('*').order('created_at',{ascending:false});if(error)console.error(t,error);state[t]=data||[]}normalizeTasks();render()}
 function normalizeTasks(){state.tasks.sort((a,b)=>(a.sort_order??9999)-(b.sort_order??9999)||stageOrder.indexOf(a.stage)-stageOrder.indexOf(b.stage)||(a.source_id||'').localeCompare(b.source_id||''))}
 function auth(){app.innerHTML=`<main><div class="card" style="max-width:480px;margin:8vh auto"><span class="eyebrow">MOTO ENGINEERING CLOUD</span><h2>Sign in to your garage</h2><form id="auth" class="stack"><input name="email" type="email" placeholder="Email" required><input name="password" type="password" placeholder="Password" required><button class="primary" value="signin">Sign in</button><button class="secondary" value="signup">Create account</button></form><p id="msg" class="muted"></p></div></main>`;$('#auth').onsubmit=async e=>{e.preventDefault();let f=new FormData(e.target),a=e.submitter.value,r=a==='signup'?await supabase.auth.signUp({email:f.get('email'),password:f.get('password')}):await supabase.auth.signInWithPassword({email:f.get('email'),password:f.get('password')});$('#msg').textContent=r.error?.message||'Success'}}
-function shell(){app.innerHTML=`<header class="top"><button id="menu" class="icon">☰</button><div><h1>Moto Engineering Cloud</h1><p>${esc(session.user.email)}</p></div><div class="spacer"></div><input id="globalSearch" style="max-width:320px" placeholder="Search everything…"><button id="logout" class="secondary">Sign out</button></header><div class="layout"><nav id="nav" class="nav">${[['dashboard','Dashboard'],['garageMode','Garage Mode'],['garage','Garage'],['roadmap','Work Packages'],['engineering','Engineering'],['parts','Parts'],['notes','Notebook'],['maintenance','Maintenance'],['rides','Rides'],['media','Files'],['firmware','Firmware'],['ai','AI Assistant']].map(([x,l])=>`<button data-v="${x}" class="${view===x?'active':''}">${l}</button>`).join('')}</nav><main id="main"></main></div><div id="searchResults" class="searchResults hidden"></div><div id="modal" class="modal hidden"></div><div id="toast" class="toast"></div>`;$('#menu').onclick=()=>$('#nav').classList.toggle('open');$('#logout').onclick=()=>supabase.auth.signOut();$$('[data-v]').forEach(b=>b.onclick=()=>{view=b.dataset.v;shell();render()});$('#globalSearch').oninput=globalSearch}
+function shell(){app.innerHTML=`<header class="top"><button id="menu" class="icon">☰</button><div><h1>Moto Engineering Cloud</h1><p>${esc(session.user.email)}</p></div><div class="spacer"></div><input id="globalSearch" style="max-width:320px" placeholder="Search everything…"><button id="logout" class="secondary">Sign out</button></header><div class="layout"><nav id="nav" class="nav">${[['dashboard','Dashboard'],['garageMode','Garage Mode'],['garage','Garage'],['roadmap','Work Packages'],['pcb','PCB Designer'],['engineering','Engineering'],['parts','Parts'],['notes','Notebook'],['maintenance','Maintenance'],['rides','Rides'],['media','Files'],['firmware','Firmware'],['ai','AI Assistant']].map(([x,l])=>`<button data-v="${x}" class="${view===x?'active':''}">${l}</button>`).join('')}</nav><main id="main"></main></div><div id="searchResults" class="searchResults hidden"></div><div id="modal" class="modal hidden"></div><div id="toast" class="toast"></div>`;$('#menu').onclick=()=>$('#nav').classList.toggle('open');$('#logout').onclick=()=>supabase.auth.signOut();$$('[data-v]').forEach(b=>b.onclick=()=>{view=b.dataset.v;shell();render()});$('#globalSearch').oninput=globalSearch}
 const metric=(a,b,c='')=>`<div class="metric"><span>${a}</span><strong>${b}</strong>${c?`<small>${c}</small>`:''}</div>`;
 function buttons(t,id){return `<div class="actions"><button class="mini" data-edit="${t}:${id}">Edit</button><button class="mini" data-del="${t}:${id}">Delete</button></div>`}
 function globalSearch(e){let q=e.target.value.trim().toLowerCase(),box=$('#searchResults');if(q.length<2){box.classList.add('hidden');return}let res=[];for(const t of ['tasks','parts','notes','maintenance','rides','firmware','engineering_items'])for(const x of state[t]||[])if(JSON.stringify(x).toLowerCase().includes(q))res.push({t,x});box.innerHTML=res.slice(0,40).map(({t,x})=>`<div class="item" style="margin-bottom:7px"><b>${esc(x.title||x.part||x.service||x.name||x.source_id||t)}</b><div class="sub">${esc(t)} · ${esc(x.stage||x.bike||x.category||'')}</div></div>`).join('')||'<div class="empty">No results</div>';box.classList.remove('hidden')}
@@ -35,7 +35,13 @@ if($('#garageNoteBtn'))$('#garageNoteBtn').onclick=startGarageDictation;
 if($('#garageSaveNote'))$('#garageSaveNote').onclick=saveGarageNote;
 if($('#garageAskAI'))$('#garageAskAI').onclick=garageAskAI;
 if($('#garageTelemetry'))$('#garageTelemetry').onclick=showTelemetryPanel;
-if($('#garageRefresh'))$('#garageRefresh').onclick=load
+if($('#garageRefresh'))$('#garageRefresh').onclick=load;
+$$('[data-pcb-tab]').forEach(b=>b.onclick=()=>{localStorage.setItem('pcbTab',b.dataset.pcbTab);render()});
+$$('[data-pcb-project]').forEach(b=>b.onclick=()=>{localStorage.setItem('pcbProjectId',b.dataset.pcbProject);render()});
+$$('[data-pcb-add]').forEach(b=>b.onclick=()=>openPCBForm(b.dataset.pcbAdd,{}));
+$$('[data-pcb-edit]').forEach(b=>b.onclick=()=>{let[t,id]=b.dataset.pcbEdit.split(':');openPCBForm(t,state[t].find(x=>x.id===id))});
+$$('[data-pcb-del]').forEach(b=>b.onclick=()=>deletePCBRecord(b.dataset.pcbDel));
+if($('#seedPCB'))$('#seedPCB').onclick=seedPCBRevA
 }
 function depsFor(taskId){return state.task_dependencies.filter(x=>x.task_id===taskId)}
 function dependenciesComplete(taskId){return depsFor(taskId).every(d=>state.tasks.find(t=>t.id===d.depends_on_task_id)?.status==='Complete')}
@@ -93,6 +99,16 @@ function render(){
 
  if(view==='garage')m.innerHTML=`<div class="section"><div><span class="eyebrow">GARAGE</span><h2>Motorcycles</h2></div><button class="primary" data-add="bikes">Add bike</button></div><div class="grid">${state.bikes.map(x=>`<div class="card bikeHero"><div style="width:100%"><div class="rowtop"><div><span class="eyebrow">${esc(x.year)} ${esc(x.make)}</span><h2 style="margin:4px 0">${esc(x.name)}</h2></div>${buttons('bikes',x.id)}</div><p>${esc(x.notes)}</p></div></div>`).join('')||'<div class="empty">No bikes yet.</div>'}</div>`;
  if(view==='roadmap'){let grouped=stageOrder.map(s=>[s,state.tasks.filter(x=>x.stage===s)]).filter(x=>x[1].length);m.innerHTML=`<div class="section"><div><span class="eyebrow">ENGINEERING WORK PACKAGES</span><h2>Roadmap</h2></div><div class="actions"><button class="secondary" data-order>Apply recommended order</button><button class="primary" data-add="tasks">New work package</button></div></div><div class="stack">${grouped.map(([s,rows],si)=>`<section class="stageLane"><div class="stageTitle"><span class="num">${si+1}</span><h3>${esc(s)}</h3><p class="sub">${rows.length} packages</p></div><div class="stack">${rows.map(workPackageCard).join('')}</div></section>`).join('')}</div>`;setTimeout(loadAttachmentThumbs,0)}
+
+ if(view==='pcb'){
+  let projects=state.pcb_projects||[],projectId=localStorage.getItem('pcbProjectId')||projects[0]?.id||'',p=projects.find(x=>x.id===projectId),tab=localStorage.getItem('pcbTab')||'overview';
+  m.innerHTML=`<div class="section"><div><span class="eyebrow">REV A HARDWARE DESIGN</span><h2>PCB Designer</h2></div><div class="actions"><button id="seedPCB" class="secondary">Load Rev A starter</button><button class="primary" data-pcb-add="pcb_projects">New board</button></div></div>
+  <div class="pcbProjectBar">${projects.map(x=>`<button data-pcb-project="${x.id}" class="${x.id===projectId?'active':''}">${esc(x.name)} · ${esc(x.revision)}</button>`).join('')||'<div class="empty">Create or load the Rev A starter project.</div>'}</div>
+  ${p?`<div class="card pcbHero"><div class="rowtop"><div><span class="eyebrow">${esc(p.revision)} · ${esc(p.status)}</span><h2>${esc(p.name)}</h2><p>${esc(p.description||'')}</p></div><button class="mini" data-pcb-edit="pcb_projects:${p.id}">Edit board</button></div><div class="pcbStats"><div><span>Size</span><b>${p.board_width_mm||'—'} × ${p.board_height_mm||'—'} mm</b></div><div><span>Layers</span><b>${p.layer_count||4}</b></div><div><span>Components</span><b>${state.pcb_components.filter(x=>x.pcb_project_id===p.id).length}</b></div><div><span>Pins assigned</span><b>${state.pcb_pins.filter(x=>x.pcb_project_id===p.id&&x.function).length}</b></div></div></div>
+  <div class="tabs pcbTabs">${[['overview','Overview'],['pins','Pin Map'],['connectors','Connectors'],['components','Components/BOM'],['revisions','Revisions']].map(([id,l])=>`<button data-pcb-tab="${id}" class="tab ${tab===id?'active':''}">${l}</button>`).join('')}</div>
+  ${renderPCBTab(p,tab)}`:''}`;
+ }
+
  if(view==='engineering'){let types=[['features','Features'],['interfaces','Interfaces'],['power_budget','Power'],['pin_plan','Pins'],['data_dictionary','Data'],['tests','Tests'],['calibrations','Calibration'],['risks','Risks'],['bike_profiles','Bike profiles'],['software','Software'],['decisions','Decisions']];let rows=state.engineering_items.filter(x=>x.item_type===engType);m.innerHTML=`<div class="section"><div><span class="eyebrow">WORKBOOK DATABASE</span><h2>Engineering</h2></div></div><div class="tabs">${types.map(([x,l])=>`<button class="tab ${engType===x?'active':''}" data-eng="${x}">${l}</button>`).join('')}</div><div class="stack">${rows.map(x=>`<article class="item"><h3>${esc(x.source_id||'')} ${esc(x.title)}</h3><p>${esc(x.notes||'')}</p></article>`).join('')||'<div class="empty">No records.</div>'}</div>`;setTimeout(()=>$$('[data-eng]').forEach(b=>b.onclick=()=>{engType=b.dataset.eng;render()}),0)}
  if(view==='parts'){let total=state.parts.reduce((s,x)=>s+(x.qty||0)*(x.unit_cost||0),0);m.innerHTML=`<div class="section"><div><span class="eyebrow">BOM & PROCUREMENT</span><h2>Parts</h2></div></div><div class="metrics">${metric('Planned',money(total))}${metric('Items',state.parts.length)}${metric('Owned',state.parts.filter(x=>x.owned).length)}${metric('Installed',state.parts.filter(x=>x.installed).length)}</div><div class="stack">${state.parts.map(x=>`<article class="item"><div class="rowtop"><div><h3>${esc(x.source_id||'')} ${esc(x.part)}</h3><div class="sub">${esc(x.system)} · ${esc(x.stage||'')}</div></div>${buttons('parts',x.id)}</div><p>${esc(x.specification||x.notes||'')}</p></article>`).join('')||'<div class="empty">No parts.</div>'}</div>`}
  if(view==='notes')m.innerHTML=`<div class="section"><div><span class="eyebrow">ENGINEERING NOTEBOOK</span><h2>Notes</h2></div></div><div class="timeline">${state.notes.map(x=>`<div class="timelineItem card"><h3>${esc(x.title)}</h3><p>${esc(x.body)}</p></div>`).join('')||'<div class="empty">No notes.</div>'}</div>`;
@@ -125,6 +141,113 @@ async function applyRecommendedOrder(){let ordered=[...state.tasks].sort((a,b)=>
 function inferTemplate(task){let s=(task.title+' '+task.stage+' '+task.notes).toLowerCase();if(/cad|bracket|mount|enclosure|mechanical|harness/.test(s))return /cad|design/.test(s)?'CAD':'Mechanical';if(/software|implement|app|firmware|decoder|parser|logger|algorithm|display/.test(s))return'Software';if(/suspension|string-pot|travel|motion-ratio/.test(s))return'Suspension';if(/research|define|requirements|architecture|survey/.test(s))return'Research';if(/power|esp32|imu|adc|can|k-line|gnss|interface|sensor/.test(s))return'Electronics';return'General'}
 async function seedStarter(){if(!confirm('Refresh workbook and apply structured work-package templates?'))return;let d=await fetch('/starter-project.json').then(r=>r.json());let roadmap=[...d.roadmap].sort((a,b)=>stageRank(String(a.Stage||''))-stageRank(String(b.Stage||''))||String(a.ID||'').localeCompare(String(b.ID||'')));for(let i=0;i<roadmap.length;i++){let x=roadmap[i],title=String(x['Task / Step']||''),type=inferTemplate({title,stage:String(x.Stage||''),notes:String(x.Notes||'')}),tpl=templates[type],rec={user_id:uid(),source_id:String(x.ID||''),title,stage:String(x.Stage||''),bike:'Universal',priority:String(x.Priority||''),status:String(x.Status||'Not Started'),notes:String(x.Notes||x['Deliverable / Exit Criteria']||''),sort_order:i+1,owner_name:'Matthew',progress:x.Status==='Complete'?100:0,work_type:type,objective:tpl.objective,background:tpl.background,prerequisites:tpl.prerequisites,safety_notes:tpl.safety_notes,procedure:tpl.procedure,acceptance_criteria:tpl.acceptance_criteria,deliverables:tpl.deliverables,test_procedure:tpl.test_procedure,proof_rules:tpl.proof_rules,gate_status:'Locked'};let old=state.tasks.find(z=>z.source_id===rec.source_id);old?await supabase.from('tasks').update({...rec,checklist:old.checklist||[],results:old.results,lessons_learned:old.lessons_learned,progress:old.progress||rec.progress}).eq('id',old.id):await supabase.from('tasks').insert(rec)}toast('Structured work packages applied');await load()}
 
+
+
+function renderPCBTab(p,tab){
+ if(tab==='overview'){
+  let pins=state.pcb_pins.filter(x=>x.pcb_project_id===p.id),conflicts=pins.filter(x=>x.conflict_status&&x.conflict_status!=='Open'&&x.conflict_status!=='Clear');
+  return `<div class="two"><div class="card"><div class="rowtop"><h3>Architecture</h3></div><div class="pcbBlockDiagram">
+   <div class="pcbNode main">ESP32-S3</div><div class="pcbNode">L9637D<br><small>Honda K-line</small></div><div class="pcbNode">MCP2562<br><small>BMW CAN</small></div>
+   <div class="pcbNode">External ADC<br><small>Suspension</small></div><div class="pcbNode">ICM-42688-P<br><small>IMU</small></div><div class="pcbNode">u-blox M10<br><small>GNSS</small></div>
+   <div class="pcbNode">microSD</div><div class="pcbNode">Nextion / RS-485</div><div class="pcbNode">Automotive Power</div>
+  </div></div>
+  <div class="card"><h3>Design checks</h3><div class="pcbCheck ${conflicts.length?'bad':'good'}"><b>Pin conflicts</b><span>${conflicts.length}</span></div><div class="pcbCheck good"><b>CAN termination</b><span>Do not populate on-bike</span></div><div class="pcbCheck good"><b>K-line TX disable</b><span>Required</span></div><div class="pcbCheck good"><b>Reverse polarity</b><span>Required</span></div><div class="pcbCheck good"><b>Load-dump TVS</b><span>Required</span></div></div></div>
+  <div class="card" style="margin-top:14px"><h3>Board goals</h3><p>${esc(p.notes||'Universal read-only logger with protected automotive power, K-line, CAN, analog suspension inputs, IMU, GNSS, SD storage, and display expansion.')}</p></div>`;
+ }
+ if(tab==='pins'){
+  let rows=state.pcb_pins.filter(x=>x.pcb_project_id===p.id).sort((a,b)=>(a.sort_order||999)-(b.sort_order||999));
+  return `<div class="section"><div><span class="eyebrow">ESP32-S3 ASSIGNMENTS</span><h3>Interactive Pin Map</h3></div><button class="primary" data-pcb-add="pcb_pins">Add pin</button></div>
+  <div class="pcbPinGrid">${rows.map(x=>`<div class="pcbPin ${x.conflict_status==='Conflict'?'conflict':''}"><div><span class="pinLabel">${esc(x.gpio||x.pin_name)}</span><b>${esc(x.function||'Unassigned')}</b><small>${esc(x.peripheral||'')} · ${esc(x.voltage||'')}</small></div><div class="actions"><button class="mini" data-pcb-edit="pcb_pins:${x.id}">Edit</button><button class="mini" data-pcb-del="pcb_pins:${x.id}">Delete</button></div></div>`).join('')||'<div class="empty">No pins assigned.</div>'}</div>`;
+ }
+ if(tab==='connectors'){
+  let rows=state.pcb_connectors.filter(x=>x.pcb_project_id===p.id);
+  return `<div class="section"><div><span class="eyebrow">HARNESS INTERFACES</span><h3>Connectors</h3></div><button class="primary" data-pcb-add="pcb_connectors">Add connector</button></div><div class="grid">${rows.map(x=>`<div class="card"><div class="rowtop"><div><span class="eyebrow">${esc(x.bike||'Universal')}</span><h3>${esc(x.connector_name)}</h3></div><button class="mini" data-pcb-edit="pcb_connectors:${x.id}">Edit</button></div><p>${esc(x.purpose||'')}</p><div class="badges"><span class="badge">${esc(x.connector_type||'')}</span><span class="badge">${x.pin_count||'?'} pins</span></div><details><summary>Pinout</summary><pre style="white-space:pre-wrap">${esc(JSON.stringify(x.pinout||[],null,2))}</pre></details></div>`).join('')||'<div class="empty">No connectors.</div>'}</div>`;
+ }
+ if(tab==='components'){
+  let rows=state.pcb_components.filter(x=>x.pcb_project_id===p.id);
+  let total=rows.reduce((s,x)=>s+(+x.quantity||0)*(state.parts.find(p=>p.id===x.bom_part_id)?.unit_cost||0),0);
+  return `<div class="section"><div><span class="eyebrow">BOARD BOM</span><h3>Components</h3></div><button class="primary" data-pcb-add="pcb_components">Add component</button></div><div class="metrics">${metric('Components',rows.length)}${metric('Linked BOM',rows.filter(x=>x.bom_part_id).length)}${metric('Estimated linked cost',money(total))}${metric('Ready',rows.filter(x=>x.status==='Ready').length)}</div><div class="stack">${rows.map(x=>`<div class="item"><div class="rowtop"><div><h3>${esc(x.reference||'')} ${esc(x.value||x.manufacturer_part||'')}</h3><div class="sub">${esc(x.category||'')} · ${esc(x.footprint||'')}</div></div><div class="actions"><button class="mini" data-pcb-edit="pcb_components:${x.id}">Edit</button><button class="mini" data-pcb-del="pcb_components:${x.id}">Delete</button></div></div><div class="badges"><span class="badge">Qty ${x.quantity||1}</span><span class="badge">${esc(x.status||'Planned')}</span>${x.bom_part_id?'<span class="badge ok">BOM linked</span>':''}</div><p>${esc(x.notes||'')}</p></div>`).join('')||'<div class="empty">No board components.</div>'}</div>`;
+ }
+ if(tab==='revisions'){
+  let rows=state.pcb_revisions.filter(x=>x.pcb_project_id===p.id);
+  return `<div class="section"><div><span class="eyebrow">REVISION CONTROL</span><h3>Board Revisions</h3></div><button class="primary" data-pcb-add="pcb_revisions">Add revision</button></div><div class="timeline">${rows.map(x=>`<div class="timelineItem card"><div class="rowtop"><div><span class="eyebrow">${esc(x.status)}</span><h3>${esc(x.revision)}</h3></div><button class="mini" data-pcb-edit="pcb_revisions:${x.id}">Edit</button></div><p>${esc(x.summary||'')}</p><div class="sub">${new Date(x.created_at).toLocaleString()}</div></div>`).join('')||'<div class="empty">No revisions.</div>'}</div>`;
+ }
+ return '';
+}
+async function seedPCBRevA(){
+ if(!confirm('Create the Rev A starter PCB project, pin plan, connectors, and components?'))return;
+ let existing=state.pcb_projects.find(x=>x.name==='Universal Motorcycle Data Board');
+ let project=existing;
+ if(!project){
+  let {data,error}=await supabase.from('pcb_projects').insert({user_id:uid(),name:'Universal Motorcycle Data Board',revision:'Rev A',status:'Planning',description:'Read-only universal motorcycle data acquisition PCB for the CRF450RL and 2009 F800GS.',board_width_mm:100,board_height_mm:75,layer_count:4,notes:'ESP32-S3 core with protected automotive input, Honda K-line, BMW CAN, suspension ADC, IMU, GNSS, microSD, Nextion/display, and expansion I/O.'}).select().single();
+  if(error){toast(error.message);return} project=data;
+ }
+ localStorage.setItem('pcbProjectId',project.id);
+ if(!state.pcb_pins.some(x=>x.pcb_project_id===project.id)){
+  let pins=[
+   ['K-line RX','TBD','Honda diagnostic receive','UART','3.3 V','J2','Input',1],
+   ['K-line TX','TBD','Honda diagnostic transmit','UART','3.3 V','J2','Output',2],
+   ['CAN RX','TBD','BMW CAN receive','TWAI','3.3 V','J3','Input',3],
+   ['CAN TX','TBD','BMW CAN transmit/listen control','TWAI','3.3 V','J3','Output',4],
+   ['GNSS RX/TX','TBD','u-blox M10','UART','3.3 V','J6','Bidirectional',5],
+   ['Nextion RX/TX','TBD','Display link','UART','Protected','J9','Bidirectional',6],
+   ['SPI SCLK','TBD','Shared SPI clock','SPI','3.3 V','Internal','Output',7],
+   ['SPI MOSI','TBD','Shared SPI MOSI','SPI','3.3 V','Internal','Output',8],
+   ['SPI MISO','TBD','Shared SPI MISO','SPI','3.3 V','Internal','Input',9],
+   ['microSD CS','TBD','Storage select','GPIO','3.3 V','Internal','Output',10],
+   ['IMU CS','TBD','IMU select','GPIO','3.3 V','Internal','Output',11],
+   ['ADC CS','TBD','External ADC select','GPIO','3.3 V','Internal','Output',12],
+   ['ADC DRDY','TBD','ADC data ready','GPIO','3.3 V','Internal','Input',13],
+   ['Front wheel','TBD','Front pulse input','PCNT','Protected','J5','Input',14],
+   ['Rear wheel','TBD','Rear pulse input','PCNT','Protected','J5','Input',15],
+   ['Ignition sense','TBD','Key-on detection','GPIO/ADC','Protected','J1','Input',16],
+   ['Battery sense','TBD','12 V measurement','ADC','0-3.3 V','J1','Input',17],
+   ['Mode button','TBD','User input','GPIO','3.3 V','J8','Input',18]
+  ];
+  for(let p of pins)await supabase.from('pcb_pins').insert({user_id:uid(),pcb_project_id:project.id,pin_name:p[0],gpio:p[1],function:p[2],peripheral:p[3],voltage:p[4],connector:p[5],direction:p[6],sort_order:p[7]});
+ }
+ if(!state.pcb_connectors.some(x=>x.pcb_project_id===project.id)){
+  let conns=[
+   ['J1 Power','Deutsch DTM 4','Protected 12 V power and ignition sense',4,'Universal'],
+   ['J2 Honda K-line','Honda 4-pin Y harness','CRF450RL diagnostic/PV3 pass-through',4,'CRF450RL'],
+   ['J3 BMW CAN','BMW DWA pass-through','F800GS receive-only CAN access',4,'F800GS'],
+   ['J4 Suspension','Deutsch DTM 6','Front/rear string-pot excitation and signals',6,'Universal'],
+   ['J5 Wheel Speed','Deutsch DTM 4','Front and rear Hall sensors',4,'Universal'],
+   ['J6 GNSS','JST-GH 4','u-blox M10 UART and power',4,'Universal'],
+   ['J8 Expansion','Deutsch DTM 8','Buttons, clutch, shift sensor, spare I/O',8,'Universal'],
+   ['J9 Display','JST-GH 4','Nextion UART and power',4,'Universal']
+  ];
+  for(let c of conns)await supabase.from('pcb_connectors').insert({user_id:uid(),pcb_project_id:project.id,connector_name:c[0],connector_type:c[1],purpose:c[2],pin_count:c[3],bike:c[4],pinout:[]});
+ }
+ if(!state.pcb_components.some(x=>x.pcb_project_id===project.id)){
+  let comps=[
+   ['U1','ESP32-S3-WROOM-1','Controller','ESP32-S3-WROOM-1-N8R8','Module',1],
+   ['U2','L9637D','K-line','L9637D','SO-8',1],
+   ['U3','MCP2562','CAN','MCP2562-E/SN','SOIC-8',1],
+   ['U4','ICM-42688-P','IMU','ICM-42688-P','LGA',1],
+   ['U5','External ADC','Analog','TBD 16-bit multi-channel','TBD',1],
+   ['U6','5 V Buck','Power','Automotive buck regulator','TBD',1],
+   ['U7','3.3 V LDO','Power','Low-noise regulator','TBD',1],
+   ['J10','microSD','Storage','Push-push microSD socket','MicroSD',1],
+   ['D1','Load-dump TVS','Protection','Automotive TVS','SMCJ',1],
+   ['Q1','Reverse-polarity MOSFET','Protection','P-channel / ideal diode','Power package',1]
+  ];
+  for(let c of comps)await supabase.from('pcb_components').insert({user_id:uid(),pcb_project_id:project.id,reference:c[0],value:c[1],category:c[2],manufacturer_part:c[3],footprint:c[4],quantity:c[5],status:'Planned'});
+ }
+ if(!state.pcb_revisions.some(x=>x.pcb_project_id===project.id)){
+  await supabase.from('pcb_revisions').insert({user_id:uid(),pcb_project_id:project.id,revision:'Rev A0',status:'Planning',summary:'Initial architecture, connector plan, component list, and unresolved ESP32 pin assignments.'});
+ }
+ toast('Rev A starter loaded');await load()
+}
+function openPCBForm(table,obj){
+ let pId=localStorage.getItem('pcbProjectId')||state.pcb_projects[0]?.id||'',h='';
+ if(table==='pcb_projects')h=field('name','Board name',obj.name,'text',true)+field('revision','Revision',obj.revision||'Rev A')+field('status','Status',obj.status||'Planning')+field('board_width_mm','Width mm',obj.board_width_mm||100,'number')+field('board_height_mm','Height mm',obj.board_height_mm||75,'number')+field('layer_count','Layers',obj.layer_count||4,'number')+field('description','Description',obj.description,'textarea')+field('notes','Design goals and notes',obj.notes,'textarea');
+ if(table==='pcb_pins')h=field('pin_name','Pin label',obj.pin_name,'text',true)+field('gpio','GPIO',obj.gpio||'TBD')+field('function','Function',obj.function,'text',true)+field('peripheral','Peripheral',obj.peripheral)+field('voltage','Voltage',obj.voltage)+field('connector','Connector',obj.connector)+field('direction','Direction',obj.direction)+field('conflict_status','Conflict status',obj.conflict_status||'Open')+field('notes','Notes',obj.notes,'textarea');
+ if(table==='pcb_connectors')h=field('connector_name','Connector name',obj.connector_name,'text',true)+field('connector_type','Type',obj.connector_type)+field('pin_count','Pin count',obj.pin_count||4,'number')+field('bike','Bike',obj.bike||'Universal')+field('purpose','Purpose',obj.purpose,'textarea')+field('pinout_text','Pinout JSON',JSON.stringify(obj.pinout||[],null,2),'textarea')+field('notes','Notes',obj.notes,'textarea');
+ if(table==='pcb_components'){let opts=state.parts.map(x=>`<option value="${x.id}" ${x.id===obj.bom_part_id?'selected':''}>${esc(x.source_id||'')} ${esc(x.part)}</option>`).join('');h=field('reference','Reference',obj.reference)+field('value','Value',obj.value,'text',true)+field('category','Category',obj.category)+field('manufacturer_part','Manufacturer part',obj.manufacturer_part,'text',true)+field('footprint','Footprint',obj.footprint)+field('quantity','Quantity',obj.quantity||1,'number')+field('status','Status',obj.status||'Planned')+`<div class="field full"><label>Linked BOM item</label><select name="bom_part_id"><option value="">None</option>${opts}</select></div>`+field('notes','Notes',obj.notes,'textarea')}
+ if(table==='pcb_revisions')h=field('revision','Revision',obj.revision||'Rev A1')+field('status','Status',obj.status||'Draft')+field('summary','Summary',obj.summary,'textarea');
+ let z=$('#modal');z.innerHTML=`<div class="modalCard card"><div class="rowtop"><h3>${obj.id?'Edit':'Add'} ${table.replace('pcb_','')}</h3><button id="pcbClose" class="icon">✕</button></div><form id="pcbForm"><div class="formgrid">${h}</div><div class="formactions"><button type="button" id="pcbCancel" class="secondary">Cancel</button><button class="primary">Save</button></div></form></div>`;z.classList.remove('hidden');$('#pcbClose').onclick=$('#pcbCancel').onclick=()=>z.classList.add('hidden');$('#pcbForm').onsubmit=async e=>{e.preventDefault();let f=new FormData(e.target),r=Object.fromEntries(f.entries());r.user_id=uid();if(table!=='pcb_projects')r.pcb_project_id=obj.pcb_project_id||pId;if(table==='pcb_projects'){r.board_width_mm=+r.board_width_mm||null;r.board_height_mm=+r.board_height_mm||null;r.layer_count=+r.layer_count||4}if(table==='pcb_pins')r.required=true;if(table==='pcb_connectors'){r.pin_count=+r.pin_count||0;try{r.pinout=JSON.parse(r.pinout_text||'[]')}catch{toast('Pinout JSON is invalid');return}delete r.pinout_text}if(table==='pcb_components'){r.quantity=+r.quantity||1;r.bom_part_id=r.bom_part_id||null}let q=obj.id?supabase.from(table).update(r).eq('id',obj.id):supabase.from(table).insert(r);let{error}=await q;if(error)toast(error.message);else{z.classList.add('hidden');await load()}}}
+async function deletePCBRecord(v){let[t,id]=v.split(':');if(!confirm('Delete this PCB record?'))return;let{error}=await supabase.from(t).delete().eq('id',id);if(error)toast(error.message);else await load()}
 
 async function garageUpload(files,proofCategory){
  const taskId=localStorage.getItem('garageTaskId');if(!taskId){toast('Choose an active work package first.');return}

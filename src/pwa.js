@@ -1,7 +1,26 @@
 const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
 const isStandalone=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
 
-if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(console.error))}
+if('serviceWorker' in navigator){
+  window.addEventListener('load',async()=>{
+    try{
+      const registration=await navigator.serviceWorker.register('/sw.js?v=3',{updateViaCache:'none'});
+      await registration.update();
+
+      registration.addEventListener('updatefound',()=>{
+        const worker=registration.installing;
+        if(!worker)return;
+        worker.addEventListener('statechange',()=>{
+          if(worker.state==='activated'&&navigator.serviceWorker.controller){
+            window.location.reload();
+          }
+        });
+      });
+    }catch(error){
+      console.error(error);
+    }
+  });
+}
 
 function installGuide(){
   document.querySelector('#iosInstallOverlay')?.remove();

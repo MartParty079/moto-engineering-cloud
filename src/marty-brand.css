@@ -1,0 +1,22 @@
+:root{
+ --blue:#5b21b6 !important;
+ --orange:#7c3aed !important;
+ --purple:#8b5cf6 !important;
+}
+body{background:radial-gradient(circle at 68% -20%,rgba(91,33,182,.20),transparent 34%),linear-gradient(180deg,#0d0914 0,#08070d 100%) !important}
+.brandMark{background:linear-gradient(145deg,#7c3aed,#3b0764) !important;box-shadow:0 8px 24px rgba(91,33,182,.34) !important}
+.topSearch input:focus,input:focus,select:focus,textarea:focus{border-color:#6d28d9 !important;box-shadow:0 0 0 3px rgba(91,33,182,.16) !important}
+.nav button.active{background:linear-gradient(90deg,rgba(91,33,182,.28),rgba(91,33,182,.04)) !important;border-color:rgba(139,92,246,.30) !important}
+.nav button.active::before,.nav button.active .navIcon,.nav button em,.tab.active{background:#5b21b6 !important}
+.nav button.active .navIcon{box-shadow:0 5px 16px rgba(91,33,182,.36) !important}
+.primary{background:linear-gradient(135deg,#7c3aed,#4c1d95) !important;box-shadow:0 7px 20px rgba(91,33,182,.28) !important}
+.metric::after,.progress i{background:linear-gradient(90deg,#5b21b6,#a78bfa) !important}
+.eyebrow,.brandMark span,.userButton span,.navFooterIcon{color:#a78bfa !important}
+.hero::after{border-color:rgba(124,58,237,.08) !important}
+.stageTitle .num{background:linear-gradient(135deg,#7c3aed,#4c1d95) !important}
+.rideOverviewCard{position:relative;overflow:hidden;border-color:rgba(139,92,246,.35) !important;background:linear-gradient(135deg,rgba(44,25,75,.96),rgba(17,13,25,.98)) !important}
+.rideOverviewCard::after{content:"";position:absolute;right:-45px;top:-65px;width:190px;height:190px;border-radius:50%;border:34px solid rgba(139,92,246,.10);pointer-events:none}
+.rideOverviewCard .rideOverviewGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:18px 0}
+.rideOverviewCard .rideOverviewMetric{padding:13px;border:1px solid rgba(139,92,246,.22);border-radius:12px;background:rgba(8,7,13,.38)}
+.rideOverviewCard .rideOverviewMetric span,.rideOverviewCard .rideOverviewMetric strong{display:block}.rideOverviewCard .rideOverviewMetric span{font-size:10px;color:#9d8eb5;text-transform:uppercase;letter-spacing:.08em}.rideOverviewCard .rideOverviewMetric strong{font-size:22px;margin-top:4px}
+@media(max-width:650px){.rideOverviewCard .rideOverviewGrid{grid-template-columns:1fr}}

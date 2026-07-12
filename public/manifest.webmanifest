@@ -1,9 +1,22 @@
 {
+  "id": "/",
   "name": "Moto Engineering Cloud",
   "short_name": "MotoCloud",
-  "start_url": "/",
+  "description": "Motorcycle engineering, maintenance, ride, firmware, and project mission control.",
+  "start_url": "/?source=homescreen",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait-primary",
   "background_color": "#07111d",
   "theme_color": "#07111d",
-  "icons": []
+  "categories": ["productivity", "utilities", "automotive"],
+  "icons": [
+    {
+      "src": "/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
 }

@@ -1,12 +1,17 @@
 const APP_NAME='Marty Moto Party';
 
+function setText(el,value){
+ if(el&&el.textContent!==value)el.textContent=value;
+}
+
 function applyBranding(){
- document.title=APP_NAME;
- const brand=document.querySelector('.brandCopy h1');if(brand)brand.textContent=APP_NAME;
- const brandSub=document.querySelector('.brandCopy p');if(brandSub)brandSub.textContent='Moto mission control';
- const intro=document.querySelector('.navIntro strong');if(intro)intro.textContent=APP_NAME;
- const footer=document.querySelector('.navFooter b');if(footer)footer.textContent=APP_NAME;
- const authEyebrow=document.querySelector('main .eyebrow');if(authEyebrow&&authEyebrow.textContent.includes('MOTO ENGINEERING'))authEyebrow.textContent=APP_NAME.toUpperCase();
+ if(document.title!==APP_NAME)document.title=APP_NAME;
+ setText(document.querySelector('.brandCopy h1'),APP_NAME);
+ setText(document.querySelector('.brandCopy p'),'Moto mission control');
+ setText(document.querySelector('.navIntro strong'),APP_NAME);
+ setText(document.querySelector('.navFooter b'),APP_NAME);
+ const authEyebrow=document.querySelector('main .eyebrow');
+ if(authEyebrow&&authEyebrow.textContent.includes('MOTO ENGINEERING'))setText(authEyebrow,APP_NAME.toUpperCase());
 }
 
 function addRideCenterOverview(){
@@ -26,6 +31,16 @@ function addRideCenterOverview(){
 }
 
 let queued=false;
-function refresh(){if(queued)return;queued=true;queueMicrotask(()=>{queued=false;applyBranding();addRideCenterOverview()})}
-new MutationObserver(refresh).observe(document.documentElement,{childList:true,subtree:true});
+function refresh(){
+ if(queued)return;
+ queued=true;
+ requestAnimationFrame(()=>{
+  queued=false;
+  applyBranding();
+  addRideCenterOverview();
+ });
+}
+
+const appRoot=document.querySelector('#app');
+if(appRoot)new MutationObserver(refresh).observe(appRoot,{childList:true,subtree:true});
 refresh();

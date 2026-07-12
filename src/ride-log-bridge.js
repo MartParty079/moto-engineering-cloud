@@ -4,7 +4,7 @@ const $=q=>document.querySelector(q);
 const esc=(s='')=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
 const fmt=s=>`${String(Math.floor((s||0)/3600)).padStart(2,'0')}:${String(Math.floor((s||0)%3600/60)).padStart(2,'0')}:${String(Math.floor((s||0)%60)).padStart(2,'0')}`;
 const fmtTotal=s=>{s=Number(s||0);const h=Math.floor(s/3600),m=Math.floor((s%3600)/60);return h?`${h}h ${m}m`:`${m}m`};
-let session=null,sessions=[],sampleCache=new Map();
+let session=null,sessions=[],sampleCache=new Map(),enhancing=false;
 
 async function loadSessions(){
  const {data:{session:s}}=await supabase.auth.getSession();session=s;if(!s)return[];
@@ -50,16 +50,21 @@ async function bikeSummaries(){
   if(!groups.has(key))groups.set(key,{name:r.bike_name||'Motorcycle',time:0,miles:0,wheelies:0,lean:0,rides:0,ids:[]});
   const g=groups.get(key);g.time+=Number(r.duration_seconds||0);g.miles+=Number(r.distance_miles||0);g.lean=Math.max(g.lean,Number(r.max_lean_deg||0));g.rides++;g.ids.push(r.id)
  }
- await Promise.all([...groups.values()].map(async g=>{const rows=(await Promise.all(g.ids.map(loadSamples))).flat();g.wheelies=countWheelies(rows)}));
+ await Promise.all([...groups.values()].map(async g=>{g.wheelies=(await Promise.all(g.ids.map(async id=>countWheelies(await loadSamples(id))))).reduce((a,b)=>a+b,0)}));
  return [...groups.values()].sort((a,b)=>b.time-a.time)
 }
 
 async function enhanceRideCenter(){
- const h=$('.rideHistory');if(!h||h.dataset.logsEnhanced)return;
- await loadSessions();h.dataset.logsEnhanced='1';
- const summaries=await bikeSummaries();
- h.innerHTML=`<h3>Recent rides</h3>${sessions.length?sessions.slice(0,25).map(r=>`<article class="rideHistoryRow" data-ride-session="${r.id}"><div><strong>${esc(r.bike_name)}</strong><small>${new Date(r.started_at).toLocaleString()}</small></div><div><b>${Number(r.distance_miles||0).toFixed(1)} mi</b><small>${fmt(r.duration_seconds)}</small></div><span>›</span></article>`).join(''):'<div class="rideEmpty">No recorded rides yet.</div>'}<div class="bikeRideSummary"><h3>Bike totals</h3>${summaries.length?summaries.map(g=>`<article class="bikeRideSummaryCard"><div><strong>${esc(g.name)}</strong><small>${g.rides} ride${g.rides===1?'':'s'}</small></div><div class="bikeRideStats"><span><b>${fmtTotal(g.time)}</b><small>time rode</small></span><span><b>${g.miles.toFixed(1)} mi</b><small>mileage</small></span><span><b>${g.wheelies}</b><small>wheelies</small></span><span><b>${g.lean.toFixed(1)}°</b><small>max lean</small></span></div></article>`).join(''):'<div class="rideEmpty">Ride totals will appear after your first saved ride.</div>'}</div>`;
- h.querySelectorAll('[data-ride-session]').forEach(x=>x.onclick=()=>showRideDetails(x.dataset.rideSession))
+ const h=$('.rideHistory');if(!h||enhancing)return;
+ enhancing=true;
+ try{
+  await loadSessions();
+  if(!document.body.contains(h))return;
+  const summaries=await bikeSummaries();
+  h.innerHTML=`<h3>Recent rides</h3>${sessions.length?sessions.slice(0,25).map(r=>`<article class="rideHistoryRow" data-ride-session="${r.id}"><div><strong>${esc(r.bike_name)}</strong><small>${new Date(r.started_at).toLocaleString()}</small></div><div><b>${Number(r.distance_miles||0).toFixed(1)} mi</b><small>${fmt(r.duration_seconds)}</small></div><span>›</span></article>`).join(''):'<div class="rideEmpty">No recorded rides yet.</div>'}<section id="bikeTotalsSection" class="bikeRideSummary"><div class="rowtop"><div><small>ALL-TIME TOTALS</small><h3>Totals by motorcycle</h3></div><span class="badge">${summaries.length} BIKES</span></div>${summaries.length?summaries.map(g=>`<article class="bikeRideSummaryCard"><div><strong>${esc(g.name)}</strong><small>${g.rides} saved ride${g.rides===1?'':'s'}</small></div><div class="bikeRideStats"><span><b>${fmtTotal(g.time)}</b><small>time ridden</small></span><span><b>${g.miles.toFixed(1)} mi</b><small>mileage</small></span><span><b>${g.wheelies}</b><small>wheelies</small></span><span><b>${g.lean.toFixed(1)}°</b><small>max lean</small></span></div></article>`).join(''):'<div class="rideEmpty">Per-bike totals will appear after your first completed ride.</div>'}</section>`;
+  h.querySelectorAll('[data-ride-session]').forEach(x=>x.onclick=()=>showRideDetails(x.dataset.rideSession));
+  h.dataset.logsEnhanced='1';
+ }finally{enhancing=false}
 }
 
 async function renderUnifiedRideLog(){
@@ -71,7 +76,9 @@ async function renderUnifiedRideLog(){
 }
 
 function bindRideLogNav(){document.querySelectorAll('[data-v="rides"]').forEach(b=>{if(b.dataset.unifiedRideBound)return;b.dataset.unifiedRideBound='1';b.addEventListener('click',()=>setTimeout(renderUnifiedRideLog,40))})}
-function refresh(){bindRideLogNav();enhanceRideCenter();if(document.querySelector('[data-v="rides"].active'))setTimeout(renderUnifiedRideLog,20)}
-const observer=new MutationObserver(refresh);observer.observe(document.querySelector('#app')||document.body,{childList:true,subtree:false});
+function scheduleRideCenterEnhance(){for(const delay of [0,50,150,350])setTimeout(enhanceRideCenter,delay)}
+function bindRideCenterNav(){document.querySelectorAll('#rideCenterNav,[data-open-ride-center]').forEach(b=>{if(b.dataset.totalsBound)return;b.dataset.totalsBound='1';b.addEventListener('click',scheduleRideCenterEnhance)})}
+function refresh(){bindRideLogNav();bindRideCenterNav();if($('.rideHistory')&&!$('#bikeTotalsSection'))scheduleRideCenterEnhance();if(document.querySelector('[data-v="rides"].active'))setTimeout(renderUnifiedRideLog,20)}
+const observer=new MutationObserver(refresh);observer.observe(document.body,{childList:true,subtree:true});
 supabase.auth.onAuthStateChange(()=>{sessions=[];sampleCache.clear();setTimeout(refresh,50)});
-bindRideLogNav();loadSessions();
+bindRideLogNav();bindRideCenterNav();loadSessions();refresh();

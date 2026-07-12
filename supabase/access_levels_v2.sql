@@ -1,0 +1,5 @@
+-- Applied to Supabase on 2026-07-12.
+-- Access roles: rider, technician, engineer, admin, owner.
+-- Feature rollout stages: development, testing, beta, production, deprecated, hidden.
+-- Tables: user_profiles, feature_flags, user_feature_access.
+-- New auth users are automatically inserted into user_profiles as riders.

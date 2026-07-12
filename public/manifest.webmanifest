@@ -1,15 +1,15 @@
 {
   "id": "/",
-  "name": "Moto Engineering Cloud",
-  "short_name": "MotoCloud",
+  "name": "Marty Moto Party",
+  "short_name": "Marty Moto Party",
   "description": "Motorcycle engineering, maintenance, ride, firmware, and project mission control.",
   "start_url": "/?source=homescreen",
   "scope": "/",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait-primary",
-  "background_color": "#07111d",
-  "theme_color": "#07111d",
+  "background_color": "#0d0914",
+  "theme_color": "#3b0764",
   "categories": ["productivity", "utilities", "automotive"],
   "icons": [
     {

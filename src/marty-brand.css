@@ -19,4 +19,9 @@ body{background:radial-gradient(circle at 68% -20%,rgba(91,33,182,.20),transpare
 .rideOverviewCard .rideOverviewGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:18px 0}
 .rideOverviewCard .rideOverviewMetric{padding:13px;border:1px solid rgba(139,92,246,.22);border-radius:12px;background:rgba(8,7,13,.38)}
 .rideOverviewCard .rideOverviewMetric span,.rideOverviewCard .rideOverviewMetric strong{display:block}.rideOverviewCard .rideOverviewMetric span{font-size:10px;color:#9d8eb5;text-transform:uppercase;letter-spacing:.08em}.rideOverviewCard .rideOverviewMetric strong{font-size:22px;margin-top:4px}
-@media(max-width:650px){.rideOverviewCard .rideOverviewGrid{grid-template-columns:1fr}}
+.bikeRideSummary{margin-top:24px;padding-top:18px;border-top:1px solid rgba(139,92,246,.22)}
+.bikeRideSummaryCard{margin-top:10px;padding:14px;border:1px solid rgba(139,92,246,.24);border-radius:14px;background:linear-gradient(135deg,rgba(55,33,88,.72),rgba(15,11,23,.88))}
+.bikeRideSummaryCard>div:first-child{display:flex;justify-content:space-between;gap:12px;align-items:center}.bikeRideSummaryCard>div:first-child small{color:#a99abb}
+.bikeRideStats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}.bikeRideStats span{padding:10px;border-radius:10px;background:rgba(7,5,12,.42);border:1px solid rgba(139,92,246,.14)}.bikeRideStats b,.bikeRideStats small{display:block}.bikeRideStats b{font-size:16px;color:#ede9fe}.bikeRideStats small{margin-top:3px;font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:#9586a8}
+.rideLogSummary{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}.rideLogSummary span{color:#a99abb}
+@media(max-width:650px){.rideOverviewCard .rideOverviewGrid{grid-template-columns:1fr}.bikeRideStats{grid-template-columns:1fr 1fr}}

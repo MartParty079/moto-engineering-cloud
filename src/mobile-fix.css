@@ -1,0 +1,42 @@
+/* Mobile layout hardening for iPhone/Safari */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;overflow-x:hidden}
+body{overflow-x:hidden}
+.taskCard,.wpSection,.proofGrid,.proofBox,.attachmentList,.attachment{min-width:0;max-width:100%}
+.uploadLabel{display:inline-flex;align-items:center;justify-content:center;width:auto;max-width:100%;white-space:normal;line-height:1.2;text-align:center;overflow-wrap:anywhere}
+.wpSection .attachmentList+*,.wpSection>label.uploadLabel{max-width:100%}
+.attachment>div{min-width:0;overflow-wrap:anywhere}
+
+@media(max-width:580px){
+  .top{gap:10px;padding:0 12px}
+  .menuButton{flex:0 0 58px;height:58px}
+  .topSearch{min-width:0}
+  .topSearch input{font-size:16px;min-width:0;text-overflow:ellipsis}
+  .topActions{flex:0 0 auto}
+  .userButton{padding:4px}
+  main{padding:14px 12px 42px;overflow:hidden}
+  .stack{gap:12px}
+  .taskCard{padding:16px 14px 18px;border-radius:16px;overflow:hidden}
+  .taskCard::before{width:4px}
+  .taskCard h3{font-size:20px;line-height:1.18;overflow-wrap:anywhere}
+  .taskCard p,.wpSection p{font-size:15px;line-height:1.48;overflow-wrap:anywhere}
+  .wpSection{margin-top:14px;padding-top:13px;overflow:hidden}
+  .wpSection h4{font-size:18px;line-height:1.2}
+  .proofGrid{display:flex;flex-direction:column;gap:10px;width:100%}
+  .proofBox{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:'title count' 'button button';align-items:center;gap:6px 10px;width:100%;padding:13px 12px;overflow:hidden}
+  .proofBox>b{grid-area:title;font-size:16px;line-height:1.2;overflow-wrap:anywhere}
+  .proofBox>.sub{grid-area:count;margin:0;text-align:right;font-size:13px;white-space:nowrap}
+  .proofBox>.uploadLabel{grid-area:button;justify-self:start;margin-top:4px!important;padding:9px 14px;font-size:14px}
+  .wpSection>label.uploadLabel{display:flex;width:100%;justify-content:center;padding:11px 12px;font-size:14px}
+  .attachment{grid-template-columns:minmax(0,1fr) auto;padding:10px 9px}
+  .attachment b{font-size:14px;overflow-wrap:anywhere}
+  .actions{flex-wrap:wrap;max-width:100%}
+  .actions>.primary[data-complete]{width:100%;min-height:48px;font-size:16px;white-space:normal}
+}
+
+@media(max-width:380px){
+  .menuButton{flex-basis:52px;height:52px}
+  .topSearch>span{left:10px}
+  .topSearch input{padding-left:34px;font-size:15px}
+  .proofBox{grid-template-columns:1fr;grid-template-areas:'title' 'count' 'button'}
+  .proofBox>.sub{text-align:left;white-space:normal}
+}

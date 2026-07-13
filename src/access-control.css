@@ -9,4 +9,12 @@
 .featureGrantGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin-top:12px}
 .featureGrantGrid label{display:flex;gap:8px;align-items:center;padding:9px;border:1px solid rgba(255,255,255,.08);border-radius:10px}
 .featureGrantGrid small{margin-left:auto;color:#94a3b8;text-transform:uppercase;font-size:9px}
-@media(max-width:720px){.accessRoleBadge{display:inline-flex;padding:5px 7px;font-size:9px;letter-spacing:.08em}.releaseControls{grid-template-columns:1fr}.featureGrantGrid{grid-template-columns:1fr}}
+.rolePreviewGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:18px}
+.rolePreviewCard{display:flex;min-height:105px;flex-direction:column;align-items:flex-start;justify-content:center;gap:7px;padding:18px;border:1px solid rgba(255,255,255,.1);border-radius:14px;background:rgba(255,255,255,.035);color:inherit;text-align:left;cursor:pointer;text-transform:capitalize}
+.rolePreviewCard:hover,.rolePreviewCard.selected{border-color:rgba(59,130,246,.75);background:rgba(59,130,246,.12)}
+.rolePreviewCard strong{font-size:16px}.rolePreviewCard span{font-size:11px;color:var(--muted,#94a3b8)}
+.userMetricCard{border-left:3px solid rgba(16,185,129,.7)}
+.userMetricGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:14px}
+.userMetricGrid span{display:flex;flex-direction:column;gap:3px;padding:10px;border:1px solid rgba(255,255,255,.07);border-radius:10px;color:var(--muted,#94a3b8);font-size:10px;text-transform:uppercase;letter-spacing:.06em}
+.userMetricGrid b{color:var(--text,#e5edf7);font-size:16px;letter-spacing:0}
+@media(max-width:720px){.accessRoleBadge{display:inline-flex;padding:5px 7px;font-size:9px;letter-spacing:.08em}.releaseControls{grid-template-columns:1fr}.featureGrantGrid{grid-template-columns:1fr}.rolePreviewGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.userMetricGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}

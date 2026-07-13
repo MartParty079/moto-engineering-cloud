@@ -1,5 +1,5 @@
 const $=q=>document.querySelector(q);
-let lastCoords=null,lastWeatherAt=0,loading=false;
+let lastCoords=null,lastWeatherAt=0,lastSpeedLimitAt=0,lastSpeedLimitCoords=null,loading=false,speedLimitLoading=false;
 
 function cardinal(deg){
   if(!Number.isFinite(deg))return '—';
@@ -11,6 +11,25 @@ function localTime(value){
   return Number.isNaN(d.getTime())?'—':d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
 }
 function setText(id,value){const el=$(id);if(el)el.textContent=value}
+function haversineMiles(a,b){
+  if(!a||!b)return Infinity;
+  const R=3958.7613,toRad=x=>x*Math.PI/180,dLat=toRad(b.latitude-a.latitude),dLon=toRad(b.longitude-a.longitude);
+  const q=Math.sin(dLat/2)**2+Math.cos(toRad(a.latitude))*Math.cos(toRad(b.latitude))*Math.sin(dLon/2)**2;
+  return 2*R*Math.asin(Math.sqrt(q));
+}
+function parseSpeedLimit(value){
+  if(!value)return null;
+  const raw=String(value).trim();
+  const number=Number.parseFloat(raw);
+  if(!Number.isFinite(number))return {display:raw,mph:null,raw};
+  const mph=/km\/?h|kph/i.test(raw)?number*0.621371:number;
+  return {display:`${Math.round(mph)} mph`,mph:Math.round(mph),raw};
+}
+function speedLimitMarkup(){return `<section class="rideSpeedLimitCard" id="rideSpeedLimitCard">
+  <div class="rideSpeedLimitSign"><small>SPEED<br>LIMIT</small><strong id="rideSpeedLimitValue">--</strong></div>
+  <div class="rideSpeedLimitCopy"><small>MAPPED ROAD LIMIT</small><h3 id="rideSpeedLimitRoad">Locating road…</h3><p id="rideSpeedLimitDelta">Waiting for GPS position</p></div>
+  <button id="refreshSpeedLimit" type="button" title="Refresh speed limit">↻</button>
+</section><p class="rideSpeedLimitNote">Advisory only. Road signs and local law take priority. Road data © OpenStreetMap contributors.</p>`}
 function showPage(index){
   const viewport=$('#rideSwipeViewport'),track=$('#rideSwipeTrack');
   if(!viewport||!track)return;
@@ -47,14 +66,18 @@ function enhanceRideLive(){
   const track=document.createElement('div');track.id='rideSwipeTrack';track.className='rideSwipeTrack';
   const ride=document.createElement('section');ride.className='rideSwipePage rideDataPage';
   current.forEach(node=>ride.appendChild(node));
+  const speedCard=document.createElement('div');speedCard.innerHTML=speedLimitMarkup();
+  const status=ride.querySelector('#rideStatus');
+  if(status)ride.insertBefore(speedCard,status);else ride.appendChild(speedCard);
   const weather=document.createElement('section');weather.className='rideSwipePage';weather.innerHTML=weatherMarkup();
   track.append(ride,weather);viewport.appendChild(track);body.append(tabs,viewport);
   tabs.querySelectorAll('[data-ride-page]').forEach(b=>b.onclick=()=>showPage(Number(b.dataset.ridePage)));
   $('#refreshRideWeather').onclick=()=>refreshWeather(true);
+  $('#refreshSpeedLimit').onclick=()=>refreshSpeedLimit(true);
   let startX=null;
   viewport.addEventListener('touchstart',e=>{startX=e.touches[0]?.clientX??null},{passive:true});
   viewport.addEventListener('touchend',e=>{if(startX===null)return;const dx=(e.changedTouches[0]?.clientX??startX)-startX;startX=null;if(Math.abs(dx)<45)return;showPage(dx<0?1:0)},{passive:true});
-  refreshWeather(false);
+  refreshWeather(false);refreshSpeedLimit(false);startSpeedMonitor();
 }
 async function fetchForecast(lat,lon){
   const params=new URLSearchParams({latitude:String(lat),longitude:String(lon),current:'temperature_2m,relative_humidity_2m,precipitation_probability,wind_speed_10m,wind_direction_10m',daily:'sunrise,sunset,precipitation_probability_max',temperature_unit:'fahrenheit',wind_speed_unit:'mph',timezone:'auto',forecast_days:'1'});
@@ -62,12 +85,54 @@ async function fetchForecast(lat,lon){
   if(!response.ok)throw new Error(`Weather service returned ${response.status}`);
   return response.json();
 }
+async function fetchRoadSpeedLimit(lat,lon){
+  const query=`[out:json][timeout:12];way(around:35,${lat},${lon})[highway];out tags center;`;
+  const response=await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
+  if(!response.ok)throw new Error(`Road service returned ${response.status}`);
+  const data=await response.json(),ways=(data.elements||[]).filter(x=>x.type==='way');
+  const withLimit=ways.filter(x=>x.tags?.maxspeed);
+  const selected=(withLimit.length?withLimit:ways).sort((a,b)=>{
+    const da=haversineMiles({latitude:lat,longitude:lon},{latitude:a.center?.lat??lat,longitude:a.center?.lon??lon});
+    const db=haversineMiles({latitude:lat,longitude:lon},{latitude:b.center?.lat??lat,longitude:b.center?.lon??lon});
+    return da-db;
+  })[0];
+  if(!selected)return null;
+  return {road:selected.tags?.name||selected.tags?.ref||'Unnamed road',limit:parseSpeedLimit(selected.tags?.maxspeed),highway:selected.tags?.highway||''};
+}
 function getPosition(force=false){
   return new Promise((resolve,reject)=>{
     if(!navigator.geolocation)return reject(new Error('Location is not available.'));
     if(lastCoords&&!force)return resolve(lastCoords);
     navigator.geolocation.getCurrentPosition(p=>{lastCoords={latitude:p.coords.latitude,longitude:p.coords.longitude};resolve(lastCoords)},reject,{enableHighAccuracy:true,maximumAge:force?0:300000,timeout:15000});
   });
+}
+function updateSpeedDifference(limitMph){
+  const current=Number.parseFloat($('#rideSpeed')?.textContent||'');
+  const card=$('#rideSpeedLimitCard');
+  if(!Number.isFinite(limitMph)){setText('#rideSpeedLimitDelta','No posted limit mapped here');card?.classList.remove('over');return}
+  if(!Number.isFinite(current)){setText('#rideSpeedLimitDelta','Waiting for current speed');card?.classList.remove('over');return}
+  const delta=Math.round(current-limitMph);
+  setText('#rideSpeedLimitDelta',delta>0?`${delta} mph over mapped limit`:delta<0?`${Math.abs(delta)} mph below mapped limit`:'At mapped limit');
+  card?.classList.toggle('over',delta>0);
+}
+async function refreshSpeedLimit(force=false){
+  if(speedLimitLoading)return;
+  if(!force&&Date.now()-lastSpeedLimitAt<45*1000)return;
+  speedLimitLoading=true;setText('#rideSpeedLimitRoad','Locating road…');setText('#rideSpeedLimitDelta','Updating mapped speed limit');
+  try{
+    const c=await getPosition(force),moved=haversineMiles(lastSpeedLimitCoords,c);
+    if(!force&&lastSpeedLimitCoords&&moved<0.03&&Date.now()-lastSpeedLimitAt<2*60*1000)return;
+    const road=await fetchRoadSpeedLimit(c.latitude,c.longitude);
+    lastSpeedLimitCoords={...c};lastSpeedLimitAt=Date.now();
+    if(!road){setText('#rideSpeedLimitValue','--');setText('#rideSpeedLimitRoad','Road not identified');updateSpeedDifference(null);return}
+    setText('#rideSpeedLimitRoad',road.road);
+    setText('#rideSpeedLimitValue',road.limit?.mph??road.limit?.display??'--');
+    updateSpeedDifference(road.limit?.mph??null);
+  }catch(error){setText('#rideSpeedLimitValue','--');setText('#rideSpeedLimitRoad','Speed limit unavailable');setText('#rideSpeedLimitDelta',error.message||String(error))}finally{speedLimitLoading=false}
+}
+function startSpeedMonitor(){
+  if(window.__motoSpeedLimitTimer)clearInterval(window.__motoSpeedLimitTimer);
+  window.__motoSpeedLimitTimer=setInterval(()=>{if(!$('#rideStop')){clearInterval(window.__motoSpeedLimitTimer);window.__motoSpeedLimitTimer=null;return}refreshSpeedLimit(false);const displayed=Number.parseFloat($('#rideSpeedLimitValue')?.textContent||'');updateSpeedDifference(Number.isFinite(displayed)?displayed:null)},5000);
 }
 async function refreshWeather(force=false){
   if(loading)return;

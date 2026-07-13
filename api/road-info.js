@@ -19,7 +19,7 @@ export default async function handler(req,res){
   res.setHeader('Cache-Control','s-maxage=30, stale-while-revalidate=120');
   const lat=Number(req.query.lat),lon=Number(req.query.lon),heading=Number(req.query.heading),speed=Number(req.query.speed);
   if(!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180)return res.status(400).json({error:'Invalid coordinates'});
-  const query=`[out:json][timeout:10];way(around:100,${lat},${lon})[highway]->.roads;(.roads;rel(bw.roads)[route=road];);out tags center geom;`;
+  const query=`[out:json][timeout:10];way(around:100,${lat},${lon})[highway]->.roads;.roads out tags center geom;rel(bw.roads)[route=road];out tags;`;
   const errors=[];
   for(const endpoint of ENDPOINTS){
     const source=new URL(endpoint).hostname;
@@ -28,7 +28,7 @@ export default async function handler(req,res){
       if(!ways.length)return res.status(200).json({status:'no-road',source,confidence:'Unknown',diagnostic:'No mapped highway was returned within 100 meters.'});
       const p={lat,lon};
       const ranked=ways.map(way=>{const segment=bestSegment(way,p),diff=angleDifference(heading,segment.bearing),headingPenalty=Number.isFinite(diff)&&Number.isFinite(speed)&&speed>4?Math.min(diff,90)/90*0.035:0,classPenalty=['service','track','path','footway','cycleway'].includes(way.tags.highway)?0.012:0;return {way,segment,score:segment.distance+headingPenalty+classPenalty,diff}}).sort((a,b)=>a.score-b.score);
-      const picked=ranked[0],tags=picked.way.tags||{},routeRelations=relations.filter(r=>r.members?.some?.(m=>m.ref===picked.way.id));
+      const picked=ranked[0],tags=picked.way.tags||{},routeRelations=relations.filter(r=>{const rt=r.tags||{};return (tags.ref&&rt.ref===tags.ref)||(tags.name&&rt.name===tags.name)||(tags.ref&&rt.name?.includes?.(tags.ref))});
       const resolved=selectLimit(tags,picked.segment.bearing,Number.isFinite(heading)?heading:null,routeRelations);
       const road=tags.name||tags.ref||tags.destination||'Unnamed road',feet=Math.round(picked.segment.distance*5280),bearingText=Number.isFinite(picked.segment.bearing)?`${Math.round(picked.segment.bearing)}°`:'unknown';
       const diagnostic=[`Matched ${tags.highway} about ${feet} ft away`,Number.isFinite(picked.diff)?`heading difference ${Math.round(picked.diff)}°`:'heading unavailable',`segment bearing ${bearingText}`,resolved.kind==='mapped'?`${resolved.direction} speed tag ${resolved.limit.raw}`:resolved.kind==='relation'?`route relation speed ${resolved.limit.raw}`:resolved.kind==='estimated'?`estimated from ${tags.highway} classification`:'no mapped or estimated limit'].join(' · ')+'.';

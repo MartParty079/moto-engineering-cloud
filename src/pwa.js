@@ -1,18 +1,34 @@
 const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
 const isStandalone=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+const PWA_BUILD='ios-ride-recovery-v4';
+
+async function clearLegacyMotoCaches(){
+  if(!('caches' in window))return;
+  try{
+    const keys=await caches.keys();
+    await Promise.all(keys.filter(key=>key.startsWith('motocloud-shell-')&&key!=='motocloud-shell-v4').map(key=>caches.delete(key)));
+  }catch(error){
+    console.warn('Legacy cache cleanup skipped',error);
+  }
+}
+
+if(localStorage.getItem('motoPwaBuild')!==PWA_BUILD){
+  localStorage.setItem('motoPwaBuild',PWA_BUILD);
+  void clearLegacyMotoCaches();
+}
 
 if('serviceWorker' in navigator){
   window.addEventListener('load',async()=>{
     try{
-      const registration=await navigator.serviceWorker.register('/sw.js?v=3',{updateViaCache:'none'});
+      const registration=await navigator.serviceWorker.register('/sw.js?v=4',{updateViaCache:'none'});
       await registration.update();
 
       registration.addEventListener('updatefound',()=>{
         const worker=registration.installing;
         if(!worker)return;
         worker.addEventListener('statechange',()=>{
-          if(worker.state==='activated'&&navigator.serviceWorker.controller){
-            window.location.reload();
+          if(worker.state==='activated'){
+            console.info('MotoCloud update installed. It will be used without forcing a reload.');
           }
         });
       });

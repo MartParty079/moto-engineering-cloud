@@ -1,5 +1,18 @@
 {
-  "name":"moto-engineering-cloud-v2","private":true,"version":"2.0.0","type":"module",
-  "scripts":{"dev":"vite","build":"node scripts/provider-check.mjs && vite build","preview":"vite preview"},
-  "dependencies":{"@supabase/supabase-js":"^2.57.4","vite":"^7.1.7"}
+  "name": "moto-engineering-cloud-v2",
+  "private": true,
+  "version": "2.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check:syntax": "node scripts/check-syntax.mjs",
+    "check:providers": "node scripts/provider-check.mjs",
+    "audit": "npm run check:syntax && npm run build"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.57.4",
+    "vite": "^7.1.7"
+  }
 }

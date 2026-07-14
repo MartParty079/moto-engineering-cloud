@@ -48,8 +48,13 @@ final class RideActivityController: NSObject, ObservableObject, CLLocationManage
             Task { await refreshActivity(force: false) }
         case "settings":
             if let values = message["preferences"] as? [String: Any] {
-                state.preferences = parsePreferences(values)
-                Task { await refreshActivity(force: true) }
+                let preferences = parsePreferences(values)
+                state.preferences = preferences
+                if preferences.enabled {
+                    Task { await refreshActivity(force: true) }
+                } else {
+                    Task { await endRide() }
+                }
             }
         case "end":
             applyWebSnapshot(message["snapshot"] as? [String: Any])
@@ -277,8 +282,8 @@ final class RideActivityController: NSObject, ObservableObject, CLLocationManage
             let (data, response) = try await URLSession.shared.data(for: request)
             guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else { return }
             let road = try JSONDecoder().decode(RoadInfoResponse.self, from: data)
-            if let mph = road.limit?.mph { state.speedLimitMph = Int(mph.rounded()) }
-            if let name = road.road, !name.isEmpty { state.roadName = name }
+            state.speedLimitMph = road.limit?.mph.map { Int($0.rounded()) }
+            state.roadName = road.road?.isEmpty == false ? road.road : nil
             lastRoadLookupLocation = location
             lastRoadLookupHeading = heading
             lastRoadLookupAt = Date()

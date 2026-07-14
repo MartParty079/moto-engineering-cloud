@@ -72,7 +72,7 @@ function renderHome(){
   const body=$('#rideCenterBody');
   if(!body) return;
   if(active){ renderLive(); return; }
-  body.innerHTML=`<div class="rideHero"><span class="rideDot"></span><div><small>SAFE MODE</small><h3>Start a GPS ride</h3><p>The dashboard opens immediately while cloud logging initializes behind it.</p></div></div><button id="rideStart" class="rideStart">START RIDE</button><div class="rideHistory"><h3>Recent rides</h3>${rides.length?rides.map(r=>`<article><div><strong>${esc(r.bike_name)}</strong><small>${new Date(r.started_at).toLocaleString()}</small></div><div><b>${Number(r.distance_miles||0).toFixed(1)} mi</b><small>${fmtTime(r.duration_seconds||0)}</small></div></article>`).join(''):'<div class="rideEmpty">No rides yet.</div>'}</div>`;
+  body.innerHTML=`<div class="rideHero"><span class="rideDot"></span><div><small>SAFE MODE</small><h3>Start a GPS ride</h3><p>Core GPS logging only. Optional integrations are disabled during startup.</p></div></div><button id="rideStart" class="rideStart">START RIDE</button><div class="rideHistory"><h3>Recent rides</h3>${rides.length?rides.map(r=>`<article><div><strong>${esc(r.bike_name)}</strong><small>${new Date(r.started_at).toLocaleString()}</small></div><div><b>${Number(r.distance_miles||0).toFixed(1)} mi</b><small>${fmtTime(r.duration_seconds||0)}</small></div></article>`).join(''):'<div class="rideEmpty">No rides yet.</div>'}</div>`;
   $('#rideStart').onclick=showBikePicker;
 }
 
@@ -88,6 +88,12 @@ function showBikePicker(){
   modal.querySelectorAll('[data-bike-id]').forEach(card=>card.onclick=()=>beginRide(card.dataset.bikeId));
 }
 
+function showStarting(bike,stage='Creating ride session…'){
+  document.querySelector('#rideBikePicker')?.remove();
+  const body=$('#rideCenterBody');
+  if(body) body.innerHTML=`<div class="rideHero"><span class="recordPulse"></span><div><small>STARTING LOGGER</small><h3>${esc(bikeName(bike))}</h3><p id="rideStartStage">${esc(stage)}</p></div></div><button class="rideStart" disabled>PLEASE WAIT</button>`;
+}
+
 function cleanupRuntime(){
   if(watchId!==null){ navigator.geolocation.clearWatch(watchId); watchId=null; }
   clearInterval(timerId); timerId=null;
@@ -99,33 +105,9 @@ async function beginRide(bikeId){
   const bike=bikes.find(b=>b.id===bikeId);
   if(!bike) return;
   if(!navigator.geolocation) return alert('GPS is unavailable.');
-
   starting=true;
-  document.querySelector('#rideBikePicker')?.remove();
+  showStarting(bike);
   cleanupRuntime();
-  distanceMi=maxSpeed=speedSum=speedCount=0;
-  lastPos=null;
-  samples=[];
-
-  active={
-    id:null,
-    bike_id:bike.id,
-    bike_name:bikeName(bike),
-    bike,
-    startMs:Date.now(),
-    latest:null,
-    sessionReady:false,
-    startError:null
-  };
-
-  localStorage.setItem('motoActiveRide',JSON.stringify({id:null,bikeId:bike.id,startedAt:active.startMs,status:'starting'}));
-  renderLive();
-  await new Promise(resolve=>requestAnimationFrame(resolve));
-
-  watchId=navigator.geolocation.watchPosition(onPosition,onGpsError,{enableHighAccuracy:true,maximumAge:2000,timeout:20000});
-  timerId=setInterval(updateDash,1000);
-  flushTimerId=setInterval(()=>void flushSamples(),10000);
-
   try{
     const result=await timeout(
       supabase.from('ride_sessions').insert({user_id:session.user.id,bike_id:bike.id,bike_name:bikeName(bike),status:'recording'}).select().single(),
@@ -133,24 +115,24 @@ async function beginRide(bikeId){
       'Ride session'
     );
     if(result.error) throw result.error;
-    if(!active || active.bike_id!==bike.id) return;
-
-    Object.assign(active,result.data,{bike,startMs:active.startMs,latest:active.latest,sessionReady:true,startError:null});
-    localStorage.setItem('motoActiveRide',JSON.stringify({id:active.id,bikeId:bike.id,startedAt:active.startMs,status:'recording'}));
-    const stop=$('#rideStop');
-    if(stop){ stop.disabled=false; stop.textContent='STOP & SAVE RIDE'; }
-    updateDash();
-    void flushSamples();
+    active={...result.data,bike,startMs:Date.now(),latest:null};
+    localStorage.setItem('motoActiveRide',JSON.stringify({id:active.id,bikeId:bike.id,startedAt:active.startMs}));
+    distanceMi=maxSpeed=speedSum=speedCount=0;
+    lastPos=null;
+    samples=[];
+    renderLive();
+    await new Promise(resolve=>requestAnimationFrame(resolve));
+    watchId=navigator.geolocation.watchPosition(onPosition,onGpsError,{enableHighAccuracy:true,maximumAge:2000,timeout:20000});
+    timerId=setInterval(updateDash,1000);
+    flushTimerId=setInterval(()=>void flushSamples(),10000);
   }catch(error){
-    console.error('Ride session initialization failed',error);
-    if(active){
-      active.startError=error?.message||String(error);
-      active.sessionReady=false;
-    }
-    const status=$('#rideStatus');
-    if(status) status.textContent=`Cloud session failed: ${active?.startError||'Unknown error'}`;
-    const stop=$('#rideStop');
-    if(stop){ stop.disabled=false; stop.textContent='CANCEL RIDE'; }
+    console.error('Ride start failed',error);
+    cleanupRuntime();
+    active=null;
+    localStorage.removeItem('motoActiveRide');
+    const body=$('#rideCenterBody');
+    if(body) body.innerHTML=`<div class="rideHero"><span class="rideDot"></span><div><small>START FAILED</small><h3>Ride Center recovered</h3><p>${esc(error?.message||String(error))}</p></div></div><button id="rideRetry" class="rideStart">RETURN TO START</button>`;
+    $('#rideRetry').onclick=renderHome;
   }finally{
     starting=false;
   }
@@ -159,8 +141,7 @@ async function beginRide(bikeId){
 function renderLive(){
   const body=$('#rideCenterBody');
   if(!body || !active) return;
-  const ready=Boolean(active.sessionReady);
-  body.innerHTML=`<div class="liveBikeHero"><div><span class="recordPulse"></span><small>${ready?'RECORDING · CLOUD ACTIVE':'RIDE PAGE · INITIALIZING'}</small><h3>${esc(active.bike_name)}</h3></div><strong id="rideClock">00:00:00</strong></div><div class="speedDial"><strong id="rideSpeed">--</strong><span>MPH</span></div><div class="rideMetrics"><article><small>DISTANCE</small><strong id="rideDistance">0.00 mi</strong></article><article><small>HEADING</small><strong id="rideHeading">--°</strong></article><article><small>ALTITUDE</small><strong id="rideAltitude">-- ft</strong></article><article><small>GPS ACCURACY</small><strong id="rideAccuracy">-- ft</strong></article><article><small>AVERAGE SPEED</small><strong id="rideAverage">0 mph</strong></article><article><small>MAX SPEED</small><strong id="rideMaxSpeed">0 mph</strong></article></div><div id="rideStatus" class="rideStatus">${ready?'Waiting for GPS fix…':'Opening ride · creating cloud session…'}</div><button id="rideStop" class="rideStop" ${ready?'':'disabled'}>${ready?'STOP & SAVE RIDE':'STARTING LOGGER…'}</button>`;
+  body.innerHTML=`<div class="liveBikeHero"><div><span class="recordPulse"></span><small>RECORDING · SAFE MODE</small><h3>${esc(active.bike_name)}</h3></div><strong id="rideClock">00:00:00</strong></div><div class="speedDial"><strong id="rideSpeed">--</strong><span>MPH</span></div><div class="rideMetrics"><article><small>DISTANCE</small><strong id="rideDistance">0.00 mi</strong></article><article><small>HEADING</small><strong id="rideHeading">--°</strong></article><article><small>ALTITUDE</small><strong id="rideAltitude">-- ft</strong></article><article><small>GPS ACCURACY</small><strong id="rideAccuracy">-- ft</strong></article><article><small>AVERAGE SPEED</small><strong id="rideAverage">0 mph</strong></article><article><small>MAX SPEED</small><strong id="rideMaxSpeed">0 mph</strong></article></div><div id="rideStatus" class="rideStatus">Waiting for GPS fix…</div><button id="rideStop" class="rideStop">STOP & SAVE RIDE</button>`;
   $('#rideStop').onclick=stopRide;
   updateDash();
 }
@@ -182,8 +163,8 @@ function onPosition(position){
   const speed=mph(c.speed);
   if(speed>=0 && speed<250){ maxSpeed=Math.max(maxSpeed,speed); speedSum+=speed; speedCount++; }
   active.latest={...pos,altitude:c.altitude,accuracy:c.accuracy,speed,heading:c.heading,timestamp:position.timestamp};
-  samples.push({recorded_at:new Date().toISOString(),latitude:c.latitude,longitude:c.longitude,altitude_m:c.altitude??null,accuracy_m:c.accuracy??null,speed_mps:Number.isFinite(c.speed)?c.speed:null,heading_deg:c.heading??null});
-  if(samples.length>=10 && active.id) void flushSamples();
+  samples.push({session_id:active.id,user_id:session.user.id,recorded_at:new Date().toISOString(),latitude:c.latitude,longitude:c.longitude,altitude_m:c.altitude??null,accuracy_m:c.accuracy??null,speed_mps:Number.isFinite(c.speed)?c.speed:null,heading_deg:c.heading??null});
+  if(samples.length>=10) void flushSamples();
   updateDash();
 }
 
@@ -195,39 +176,26 @@ function updateDash(){
   const values={rideClock:fmtTime(elapsed),rideSpeed:Number.isFinite(p.speed)?Math.round(p.speed):'--',rideDistance:`${distanceMi.toFixed(2)} mi`,rideHeading:Number.isFinite(p.heading)?`${Math.round(p.heading)}°`:'--°',rideAltitude:Number.isFinite(p.altitude)?`${Math.round(ft(p.altitude))} ft`:'-- ft',rideAccuracy:Number.isFinite(p.accuracy)?`±${Math.round(ft(p.accuracy))} ft`:'-- ft',rideAverage:`${Math.round(avg)} mph`,rideMaxSpeed:`${Math.round(maxSpeed)} mph`};
   for(const [id,value] of Object.entries(values)){ const el=$(`#${id}`); if(el) el.textContent=value; }
   const status=$('#rideStatus');
-  if(status && !active.startError){
-    if(!active.sessionReady) status.textContent=active.latest?'GPS locked · cloud session initializing…':'Opening ride · waiting for GPS and cloud session…';
-    else status.textContent=active.latest?'GPS locked · cloud logging active':'Cloud session ready · waiting for GPS fix…';
-  }
+  if(status) status.textContent=active.latest?'GPS locked · core logging active':'Waiting for GPS fix…';
 }
 
 async function flushSamples(){
-  if(flushing || !samples.length || !active?.id || !session?.user?.id) return;
+  if(flushing || !samples.length) return;
   flushing=true;
-  const rows=samples.splice(0).map(row=>({...row,session_id:active.id,user_id:session.user.id}));
+  const rows=samples.splice(0);
   try{
     const {error}=await supabase.from('ride_samples').insert(rows);
     if(error) throw error;
   }catch(error){
     console.error('Sample save failed',error);
-    samples.unshift(...rows.slice(-100).map(({session_id,user_id,...row})=>row));
+    samples.unshift(...rows.slice(-100));
   }finally{
     flushing=false;
   }
 }
 
 async function stopRide(){
-  if(!active) return;
-  if(!active.id){
-    if(!confirm('Cancel this ride before cloud logging finishes?')) return;
-    cleanupRuntime();
-    localStorage.removeItem('motoActiveRide');
-    active=null;
-    starting=false;
-    renderHome();
-    return;
-  }
-  if(!confirm('Stop and save this ride?')) return;
+  if(!active || !confirm('Stop and save this ride?')) return;
   cleanupRuntime();
   await flushSamples();
   const duration=Math.floor((Date.now()-active.startMs)/1000);

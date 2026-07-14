@@ -1,21 +1,17 @@
-// Keep unrelated feature failures from being mistaken for Ride Center startup failures.
-// Ride Center already handles its own startup errors inside beginRide().
-function belongsToRideCenter(event) {
-  const filename = String(event?.filename || '');
-  const stack = String(event?.error?.stack || event?.reason?.stack || '');
-  return filename.includes('/ride-center.js') || stack.includes('/ride-center.js');
+// Safe-mode compatibility layer for older cached HTML shells.
+// It runs before Weather and Ride Tools and removes the legacy #rideStop hook
+// so those optional modules cannot attach to the minimal GPS logger.
+
+function isolateSafeRideCenter(){
+  const overlay=document.querySelector('#rideCenterOverlay');
+  const stop=document.querySelector('#rideStop');
+  if(!overlay||!stop) return;
+  const safeMode=overlay.textContent.includes('SAFE MODE')||overlay.textContent.includes('GPS RIDE LOGGER');
+  if(!safeMode) return;
+  stop.id='coreRideStop';
+  overlay.dataset.rideSafeMode='true';
 }
 
-window.addEventListener('error', event => {
-  if (!belongsToRideCenter(event)) {
-    event.stopImmediatePropagation();
-    console.error('Isolated non-Ride Center error:', event.error || event.message);
-  }
-}, true);
-
-window.addEventListener('unhandledrejection', event => {
-  if (!belongsToRideCenter(event)) {
-    event.stopImmediatePropagation();
-    console.error('Isolated non-Ride Center rejection:', event.reason);
-  }
-}, true);
+const observer=new MutationObserver(isolateSafeRideCenter);
+observer.observe(document.body,{childList:true,subtree:true});
+isolateSafeRideCenter();

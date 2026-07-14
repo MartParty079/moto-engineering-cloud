@@ -61,6 +61,8 @@ function savePreferences(preferences) {
   }
   localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
   postNative({ command: 'settings', preferences: normalized });
+  if (!normalized.enabled) endNativeRide();
+  else if (rideVisible) void startNativeRide();
   return normalized;
 }
 

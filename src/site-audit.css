@@ -1,0 +1,78 @@
+/* Consolidated mobile and layout safety layer. Loaded last so it can correct older module styles. */
+:root{--safe-top:env(safe-area-inset-top,0px);--safe-right:env(safe-area-inset-right,0px);--safe-bottom:env(safe-area-inset-bottom,0px);--safe-left:env(safe-area-inset-left,0px)}
+*,*::before,*::after{box-sizing:border-box}
+html,body{max-width:100%;min-height:100%;overflow-x:hidden}
+button,input,select,textarea{font:inherit}
+button,[role="button"],select{min-height:44px;touch-action:manipulation}
+img,svg,canvas{max-width:100%}
+[id]{scroll-margin-top:90px}
+
+/* Prevent text and badges from forcing cards wider than the viewport. */
+main,section,article,aside,header,footer,div{min-width:0}
+h1,h2,h3,h4,p,strong,small,span,b,em,label{overflow-wrap:anywhere}
+.navGroup button,.navGroup a,#nav button,#nav a{width:100%;min-height:56px;display:flex;align-items:center;gap:14px;white-space:normal}
+.navGroup button>span:nth-child(2),.navGroup a>span:nth-child(2),#nav button>span:nth-child(2),#nav a>span:nth-child(2){min-width:0;flex:1;text-align:left}
+.navGroup em,#nav em{flex:0 0 auto;max-width:42%;white-space:nowrap}
+
+/* Reliable iOS menu scrolling. */
+#sidebar,#nav,.sidebar,.appSidebar,.menuDrawer{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+#sidebar,.sidebar,.appSidebar,.menuDrawer{height:100dvh;max-height:100dvh;overflow:hidden}
+#nav{height:100%;overflow-y:auto;overflow-x:hidden;padding-bottom:calc(130px + var(--safe-bottom))}
+body.menu-open{overflow:hidden}
+
+/* Dialogs and overlays remain usable on short screens and landscape phones. */
+.rideModal,.modalOverlay,#providerDashboardOverlay{padding:max(12px,var(--safe-top)) max(12px,var(--safe-right)) max(12px,var(--safe-bottom)) max(12px,var(--safe-left));overflow:auto;-webkit-overflow-scrolling:touch}
+.rideModal>section,.modalOverlay>section,.providerDashboardShell{width:min(720px,100%);max-height:calc(100dvh - var(--safe-top) - var(--safe-bottom) - 24px);overflow:auto;-webkit-overflow-scrolling:touch}
+
+/* Ride page tab and swipe safety. */
+.ridePageTabs{display:flex!important;gap:8px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.ridePageTabs::-webkit-scrollbar{display:none}
+.ridePageTabs button{flex:1 0 88px;min-width:88px;white-space:nowrap}
+.rideSwipeViewport{width:100%;max-width:100%;overflow:hidden}
+.rideSwipeTrack{max-width:none}
+
+/* Adventure controls remain compact without clipping. */
+.adventureToolbar{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+.adventureToolbar::-webkit-scrollbar{display:none}
+.adventureToolbar>*{flex:0 0 auto;min-width:max-content}
+#adventureMap{isolation:isolate}
+.adventureMapButtons,.adventureDrawerToggle,#adventureNavPanel{z-index:600}
+
+/* Uniform cards. */
+.rideMetrics article,.rideWeatherGrid article,.rideIntelCard,.garageHealthCard,.vehicleMetric,.providerCard{padding:20px;border-radius:22px}
+.rideMetrics article small,.rideWeatherGrid article small,.rideIntelCard small,.garageHealthCard small,.vehicleMetric small,.providerCard small{line-height:1.2;letter-spacing:.12em}
+
+/* Provider dashboard. */
+#providerDashboardOverlay{position:fixed;inset:0;z-index:10050;background:rgba(2,8,18,.88);display:grid;place-items:center}
+.providerDashboardShell{background:#0c1726;color:#eef5ff;border:1px solid #2b3b50;border-radius:28px;padding:22px;box-shadow:0 28px 90px rgba(0,0,0,.45)}
+.providerDashboardShell>header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:12px}
+.providerDashboardShell>header small{color:#9db1c9;letter-spacing:.16em}
+.providerDashboardShell>header h2{margin:.25rem 0 0;font-size:clamp(1.7rem,5vw,2.5rem)}
+.providerDashboardShell>header button{width:52px;border-radius:18px;border:1px solid #40516a;background:#152235;color:white;font-size:2rem}
+#providerDashboardStatus{color:#aebdd1;margin:8px 0 18px;line-height:1.45}
+#providerDashboardGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.providerCard{background:#121f30;border:1px solid #304158}
+.providerCard>header{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.providerCard h3{margin:.3rem 0 1rem;font-size:1.25rem}
+.providerCard header span{font-size:.72rem;letter-spacing:.08em;border-radius:999px;padding:7px 9px;background:#173a2c;color:#74e3aa;white-space:nowrap}
+.providerCard.missing header span{background:#42251f;color:#ff9d88}
+.providerCard>strong{font-size:1.5rem}
+.providerCard p,.providerCard footer{color:#aebdd1;line-height:1.4}
+.providerCard footer{margin-top:14px;padding-top:12px;border-top:1px solid #29384c;font-size:.88rem}
+.providerMeter{height:9px;background:#223147;border-radius:999px;overflow:hidden;margin:12px 0 8px}
+.providerMeter i{display:block;height:100%;background:linear-gradient(90deg,#6f4bff,#39b9ff);border-radius:inherit}
+.providerRefresh{width:100%;margin-top:18px;border:0;border-radius:17px;background:#6d35e8;color:white;font-weight:800;letter-spacing:.08em}
+
+@media(max-width:680px){
+  #providerDashboardGrid{grid-template-columns:1fr}
+  .providerDashboardShell{border-radius:22px;padding:18px}
+  .rideMetrics,.rideWeatherGrid{gap:12px}
+  .rideMetrics article,.rideWeatherGrid article,.rideIntelCard,.garageHealthCard,.vehicleMetric{padding:16px;border-radius:18px}
+}
+
+@media(orientation:landscape) and (max-height:540px){
+  .rideCenter>header,.adventureShell>header{padding-top:8px;padding-bottom:8px}
+  .rideCenter>header h2,.adventureShell>header h2{font-size:1.45rem}
+}
+
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}

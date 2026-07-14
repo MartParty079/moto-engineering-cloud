@@ -1,0 +1,57 @@
+name: MotoMission
+options:
+  bundleIdPrefix: com.martparty079
+  deploymentTarget:
+    iOS: "26.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    TARGETED_DEVICE_FAMILY: "1"
+    CODE_SIGN_STYLE: Automatic
+
+targets:
+  MotoMission:
+    type: application
+    platform: iOS
+    sources:
+      - path: MotoMissionApp
+      - path: Shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.martparty079.motomission
+        PRODUCT_NAME: MotoMission
+    info:
+      path: MotoMissionApp/Info.plist
+      properties:
+        CFBundleDisplayName: Moto Mission
+        UILaunchScreen: {}
+        NSLocationWhenInUseUsageDescription: Moto Mission uses GPS to show speed, direction, mileage, and ride progress.
+        NSLocationAlwaysAndWhenInUseUsageDescription: Moto Mission continues GPS tracking during an active ride so the Live Activity stays current in CarPlay.
+        UIBackgroundModes:
+          - location
+        NSSupportsLiveActivities: true
+        NSSupportsLiveActivitiesFrequentUpdates: true
+        UIApplicationSupportsIndirectInputEvents: true
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+    dependencies:
+      - target: MotoMissionLiveActivity
+
+  MotoMissionLiveActivity:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: MotoMissionLiveActivity
+      - path: Shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.martparty079.motomission.liveactivity
+        PRODUCT_NAME: MotoMissionLiveActivity
+        APPLICATION_EXTENSION_API_ONLY: true
+        SKIP_INSTALL: true
+    info:
+      path: MotoMissionLiveActivity/Info.plist
+      properties:
+        CFBundleDisplayName: Moto Mission Ride
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension

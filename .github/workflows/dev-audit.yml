@@ -23,5 +23,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm install --no-audit --no-fund
-      - run: npm run audit
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Check JavaScript syntax and common mistakes
+        run: npm run check:syntax
+      - name: Build production bundle
+        run: npm run build

@@ -1,0 +1,1 @@
+Force preview deployment for GPS coordinates, fix age, and calculated heading diagnostics.

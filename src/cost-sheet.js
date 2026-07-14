@@ -1,11 +1,103 @@
-import{supabase}from'./supabase.js';
-const P=[{"source_id":"DL-001","part":"hiBCTR ESP32-S3 DevKitC-compatible N16R8, 6-pack","system":"Controller","stage":"1 - Standalone Bench Logger","bike":"CRF450RL","qty":1,"unit_cost":34.97,"source_url":"https://www.amazon.com/dp/B0GVF97WTY","specification":"Runs the logger firmware, timestamps and merges all sensor data, writes records to microSD, and later provides Bluetooth/Wi-Fi connectivity to the iPhone app.","notes":"The listing is a six-pack. One board is required for the logger; the remaining boards are spares or future prototypes."},{"source_id":"DL-002","part":"Teyleten GY-BNO085 9-DOF AHRS IMU","system":"Motion sensing","stage":"1 - Standalone Bench Logger","bike":"CRF450RL","qty":1,"unit_cost":20.99,"source_url":"https://www.amazon.com/dp/B0CL26J81F","specification":"Measures acceleration, angular rate, magnetic field, and fused vehicle attitude for pitch, roll, yaw, lean, braking, and wheelie analysis.","notes":"Mount it rigidly to the motorcycle chassis. Do not rely on ESP32 I2C for this sensor."},{"source_id":"DL-003","part":"SEQURE M10-25Q GNSS module with QMC5883L compass","system":"Position and time","stage":"1 - Standalone Bench Logger","bike":"CRF450RL","qty":1,"unit_cost":24.59,"source_url":"https://www.amazon.com/dp/B0D7Q27CT1","specification":"Provides location, GPS speed, altitude, course and absolute UTC time for synchronized ride logs.","notes":"The integrated ceramic antenna eliminates the separate dual-band antenna and expensive SparkFun GNSS board."},{"source_id":"DL-004","part":"Stemedu SPI microSD breakout, 2-pack","system":"Storage","stage":"1 - Standalone Bench Logger","bike":"CRF450RL","qty":1,"unit_cost":5.99,"source_url":"https://www.amazon.com/dp/B08C4WY2WR","specification":"Stores standalone CSV or binary ride logs when the phone is absent or disconnected.","notes":"Use a reliable 16-32 GB microSD card. Keep wiring short to reduce write errors."},{"source_id":"DL-005","part":"DROK waterproof 8-35 V to 5 V, 3 A buck converter","system":"Power","stage":"1 - Standalone Bench Logger","bike":"CRF450RL","qty":1,"unit_cost":9.99,"source_url":"https://www.amazon.com/dp/B07P663XJV","specification":"Converts motorcycle switched 12-15 V power into regulated 5 V for the ESP32 and 5 V peripherals.","notes":"Add the TVS diode across its fused input before permanent motorcycle installation."},{"source_id":"DL-006","part":"OBD-II development board - K-Line, 3.3 V variant","system":"Honda ECU interface","stage":"1 - Standalone Bench Logger","bike":"CRF450RL","qty":1,"unit_cost":0,"source_url":"https://www.amazon.com/dp/B0G5K2J36X","specification":"Converts the Honda ECU's battery-level ISO 9141/ISO 14230 K-line into safe 3.3 V UART signals for the ESP32.","notes":"This replaces the MikroE ISO 9141 Click and avoids its international shipping charge."},{"source_id":"DL-007","part":"Honda/Sumitomo-style 4-pin male and female connector kit","system":"Motorcycle harness","stage":"1 - Standalone Bench Logger","bike":"CRF450RL","qty":1,"unit_cost":0,"source_url":"https://www.amazon.com/dp/B0FH1M2PPS","specification":"Creates an inline Y-harness that preserves the OEM Honda connector while tapping K-line, switched 12 V and ground.","notes":"Test the empty housings against the 2022 CRF450RL connector keying before final crimping."},{"source_id":"DL-008","part":"BOJACK 5x20 mm inline fuse holders and fuse assortment","system":"Circuit protection","stage":"1 - Standalone Bench Logger","bike":"CRF450RL","qty":1,"unit_cost":0,"source_url":"https://www.amazon.com/dp/B0813Q4S6P","specification":"Protects the logger tap and wiring from a short circuit. Use a 1 A fuse during bench and early motorcycle testing.","notes":"For the final weatherproof installation, a sealed mini-blade fuse holder is preferable."},{"source_id":"DL-009","part":"1.5KE22A / 1N6279A unidirectional axial TVS diode","system":"Transient protection","stage":"1 - Standalone Bench Logger","bike":"CRF450RL","qty":1,"unit_cost":0,"source_url":"https://www.amazon.com/dp/B07GQQKJLB","specification":"Clamps brief motorcycle electrical spikes before they reach the buck converter.","notes":"Select 1.5KE22A, not the bidirectional 1.5KE22CA."},{"source_id":"TOOL-001","part":"HiLetgo 24 MHz 8-channel USB logic analyzer","system":"Bench diagnostic tool","stage":"0 - Scope & Plan","bike":"Universal","qty":1,"unit_cost":12.69,"source_url":"https://www.amazon.com/dp/B077LSG5P2","specification":"Captures and decodes SPI and UART traffic while developing the IMU, SD, GPS and K-line interfaces.","notes":"Never connect it directly to raw K-line or motorcycle 12 V."}],M=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(+n||0),E=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
-function blob(n,b,t){let u=URL.createObjectURL(new Blob([b],{type:t})),a=document.createElement('a');a.href=u;a.download=n;a.click();setTimeout(()=>URL.revokeObjectURL(u),1e3)}
-function guide(){let total=P.reduce((s,x)=>s+(+x.unit_cost||0)*(+x.qty||0),0),rows=P.map((x,i)=>`<h2>${i+1}. ${E(x.part)}</h2><table><tr><td class=i>■</td><td><p><b>Role:</b> ${E(x.specification)}</p><p><b>Note:</b> ${E(x.notes)}</p><p><b>Price:</b> ${x.unit_cost?M(x.unit_cost):'Enter live price'}</p><p><b>Link:</b> <a href="${x.source_url}">${x.source_url}</a></p></td></tr></table>`).join('');blob('CRF450RL_Data_Logger_Component_Guide.doc','\ufeff'+`<html><head><meta charset=utf-8><style>body{font:10pt Arial;color:#17303d;margin:.55in}h1{text-align:center;color:#0b5068}h2{color:#175d72}table{width:100%;border-collapse:collapse;page-break-inside:avoid}td{border:1px solid #ccd8de;padding:10px}.i{width:75px;text-align:center;font-size:40pt;color:#175d72;background:#f3f7f8}.s{background:#eaf4f7;padding:12px}</style></head><body><h1>CRF450RL Standalone Data Logger<br><small>Component Guide and Cost Baseline</small></h1><div class=s><b>Known subtotal:</b> ${M(total)}<br>Honda K-line, BNO085, M10 GNSS and microSD are merged by the ESP32-S3.</div>${rows}<h2>Power order</h2><p><b>Switched 12 V → 1 A fuse → TVS across input → 5 V buck → ESP32-S3.</b></p></body></html>`,'application/msword')}
-function csv(r){let q=v=>/[",\n]/.test(String(v??''))?'"'+String(v).replaceAll('"','""')+'"':v??'',h=['ID','Component','System','Qty','Unit Cost','Extended','Owned','Installed','Status','URL'],d=r.map(x=>[x.source_id,x.part,x.system,x.qty,x.unit_cost,(+x.qty||0)*(+x.unit_cost||0),x.owned?'Yes':'No',x.installed?'Yes':'No',x.status,x.source_url]);blob('CRF450RL_Running_Cost_Sheet.csv',[h,...d].map(x=>x.map(q).join(',')).join('\n'),'text/csv')}
-function css(){if(document.querySelector('#cs'))return;let s=document.createElement('style');s.id='cs';s.textContent=`.costSheet{margin:0 0 16px}.ctop,.docCard{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}.ca{display:flex;gap:8px;flex-wrap:wrap}.cm{display:grid;grid-template-columns:repeat(4,minmax(130px,1fr));gap:10px;margin:14px 0}.cm div{background:rgba(9,44,64,.55);border:1px solid rgba(126,153,170,.24);border-radius:12px;padding:11px}.cm span{display:block;color:#8fa9b9;font-size:11px;text-transform:uppercase}.cm b{font-size:20px}.cw{overflow:auto;border:1px solid rgba(126,153,170,.22);border-radius:12px}.costT{border-collapse:collapse;width:100%;min-width:930px}.costT th,.costT td{padding:8px;border-bottom:1px solid rgba(126,153,170,.16);text-align:left}.costT th{background:#102a3a;color:#a9c0ce}.costT input[type=number]{width:80px}.docCard{margin-bottom:14px}.docIcon{width:54px;height:54px;border-radius:12px;display:grid;place-items:center;background:#164d69;font-weight:800}.docCopy{flex:1}.msg{min-height:18px;color:#69d5a4}@media(max-width:800px){.cm{grid-template-columns:repeat(2,1fr)}}`;document.head.appendChild(s)}
-async function parts(){let{data,error}=await supabase.from('parts').select('*').order('source_id');if(error)throw error;return data||[]}
-async function seed(){let{data:{user}}=await supabase.auth.getUser(),r=await parts(),ids=new Set(r.map(x=>x.source_id)),m=P.filter(x=>!ids.has(x.source_id)).map(x=>({...x,user_id:user.id,status:'Researching',owned:false,installed:false,tested:false}));if(m.length){let{error}=await supabase.from('parts').insert(m);if(error)throw error}await render(document.querySelector('#runningCostSheet'))}
-async function render(h){if(!h)return;try{let r=await parts(),plan=r.reduce((s,x)=>s+(+x.qty||0)*(+x.unit_cost||0),0),buy=r.filter(x=>x.owned).reduce((s,x)=>s+(+x.qty||0)*(+x.unit_cost||0),0),ins=r.filter(x=>x.installed).reduce((s,x)=>s+(+x.qty||0)*(+x.unit_cost||0),0);h.innerHTML=`<div class=ctop><div><span class=eyebrow>LIVE PROCUREMENT CONTROL</span><h3>Running cost sheet</h3><p class=sub>Cloud-synced price, purchase and installation tracking.</p></div><div class=ca><button class=secondary id=seed>Load CRF cart</button><button class=secondary id=guide>Word guide</button><button class=primary id=csv>Export CSV</button></div></div><div class=cm><div><span>Planned</span><b>${M(plan)}</b></div><div><span>Purchased</span><b>${M(buy)}</b></div><div><span>Remaining</span><b>${M(Math.max(0,plan-buy))}</b></div><div><span>Installed</span><b>${M(ins)}</b></div></div><div class=cw><table class=costT><thead><tr><th>Item</th><th>System</th><th>Qty</th><th>Unit</th><th>Total</th><th>Owned</th><th>Installed</th><th>Link</th></tr></thead><tbody>${r.map(x=>`<tr><td><b>${E(x.source_id||'')} ${E(x.part)}</b></td><td>${E(x.system)}</td><td><input type=number min=0 step=1 value="${+x.qty||0}" data-f=qty data-i=${x.id}></td><td><input type=number min=0 step=.01 value="${+x.unit_cost||0}" data-f=unit_cost data-i=${x.id}></td><td><b>${M((+x.qty||0)*(+x.unit_cost||0))}</b></td><td><input type=checkbox ${x.owned?'checked':''} data-f=owned data-i=${x.id}></td><td><input type=checkbox ${x.installed?'checked':''} data-f=installed data-i=${x.id}></td><td>${x.source_url?`<a class=mini target=_blank href="${E(x.source_url)}">Open</a>`:'—'}</td></tr>`).join('')||'<tr><td colspan=8>No parts yet.</td></tr>'}</tbody></table></div><div class=msg></div>`;h.querySelector('#seed').onclick=seed;h.querySelector('#guide').onclick=guide;h.querySelector('#csv').onclick=()=>csv(r);h.querySelectorAll('[data-f]').forEach(e=>e.onchange=async()=>{let v=e.type==='checkbox'?e.checked:+e.value||0,{error}=await supabase.from('parts').update({[e.dataset.f]:v}).eq('id',e.dataset.i);if(error)h.querySelector('.msg').textContent=error.message;else render(h)})}catch(e){h.innerHTML='<div class=empty>'+E(e.message)+'</div>'}}
-function enhance(){css();let m=document.querySelector('#main');if(!m)return,e=m.querySelector('.section .eyebrow')?.textContent.trim();if(e==='BOM & PROCUREMENT'&&!m.querySelector('#runningCostSheet')){let h=document.createElement('section');h.id='runningCostSheet';h.className='card costSheet';m.querySelector('.metrics')?.after(h);render(h)}if(e==='DOCUMENT CONTROL'&&!m.querySelector('#guideCard')){let h=document.createElement('section');h.id='guideCard';h.className='card docCard';h.innerHTML='<div class=docIcon>DOC</div><div class=docCopy><h3>CRF450RL Component Guide</h3><p class=sub>Component roles, cost baseline and purchase links.</p></div><div class=ca><button class=secondary>Download Word guide</button></div>';h.querySelector('button').onclick=guide;m.querySelector('.section')?.after(h)}}
-new MutationObserver(()=>queueMicrotask(enhance)).observe(document.documentElement,{subtree:true,childList:true});addEventListener('DOMContentLoaded',enhance);setTimeout(enhance,500);
+import { supabase } from './supabase.js';
+
+const $ = selector => document.querySelector(selector);
+const money = value => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(value) || 0);
+const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
+
+function download(name, body, type) {
+  const url = URL.createObjectURL(new Blob([body], { type }));
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = name;
+  anchor.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+async function loadParts() {
+  const { data, error } = await supabase.from('parts').select('*').order('source_id');
+  if (error) throw error;
+  return data || [];
+}
+
+function exportCsv(rows) {
+  const quote = value => /[",\n]/.test(String(value ?? '')) ? `"${String(value).replaceAll('"', '""')}"` : value ?? '';
+  const header = ['ID', 'Component', 'System', 'Qty', 'Unit Cost', 'Extended', 'Owned', 'Installed', 'Status', 'URL'];
+  const body = rows.map(row => [
+    row.source_id,
+    row.part,
+    row.system,
+    row.qty,
+    row.unit_cost,
+    (Number(row.qty) || 0) * (Number(row.unit_cost) || 0),
+    row.owned ? 'Yes' : 'No',
+    row.installed ? 'Yes' : 'No',
+    row.status,
+    row.source_url
+  ]);
+  download('CRF450RL_Running_Cost_Sheet.csv', [header, ...body].map(row => row.map(quote).join(',')).join('\n'), 'text/csv');
+}
+
+function exportGuide(rows) {
+  const total = rows.reduce((sum, row) => sum + (Number(row.unit_cost) || 0) * (Number(row.qty) || 0), 0);
+  const items = rows.map((row, index) => `<h2>${index + 1}. ${esc(row.part)}</h2><table><tr><td class="icon">■</td><td><p><b>Role:</b> ${esc(row.specification || 'Not documented')}</p><p><b>Note:</b> ${esc(row.notes || '—')}</p><p><b>Price:</b> ${row.unit_cost ? money(row.unit_cost) : 'Enter live price'}</p>${row.source_url ? `<p><b>Link:</b> <a href="${esc(row.source_url)}">${esc(row.source_url)}</a></p>` : ''}</td></tr></table>`).join('');
+  const html = `<!doctype html><html><head><meta charset="utf-8"><style>body{font:10pt Arial;color:#17303d;margin:.55in}h1{text-align:center;color:#0b5068}h2{color:#175d72}table{width:100%;border-collapse:collapse;page-break-inside:avoid}td{border:1px solid #ccd8de;padding:10px}.icon{width:75px;text-align:center;font-size:40pt;color:#175d72;background:#f3f7f8}.summary{background:#eaf4f7;padding:12px}</style></head><body><h1>CRF450RL Data Logger<br><small>Component Guide and Cost Baseline</small></h1><div class="summary"><b>Known subtotal:</b> ${money(total)}</div>${items}</body></html>`;
+  download('CRF450RL_Data_Logger_Component_Guide.doc', `\ufeff${html}`, 'application/msword');
+}
+
+function installStyles() {
+  if ($('#costSheetStyles')) return;
+  const style = document.createElement('style');
+  style.id = 'costSheetStyles';
+  style.textContent = `.costSheet{margin:0 0 16px}.costTop,.costActions,.docCard{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}.costActions{justify-content:flex-end}.costMetrics{display:grid;grid-template-columns:repeat(4,minmax(130px,1fr));gap:10px;margin:14px 0}.costMetrics div{background:rgba(9,44,64,.55);border:1px solid rgba(126,153,170,.24);border-radius:12px;padding:11px}.costMetrics span{display:block;color:#8fa9b9;font-size:11px;text-transform:uppercase}.costMetrics b{font-size:20px}.costTableWrap{overflow:auto;border:1px solid rgba(126,153,170,.22);border-radius:12px}.costTable{border-collapse:collapse;width:100%;min-width:930px}.costTable th,.costTable td{padding:8px;border-bottom:1px solid rgba(126,153,170,.16);text-align:left}.costTable th{background:#102a3a;color:#a9c0ce}.costTable input[type=number]{width:80px}.costMessage{min-height:18px;color:#69d5a4}@media(max-width:800px){.costMetrics{grid-template-columns:repeat(2,1fr)}}`;
+  document.head.appendChild(style);
+}
+
+async function renderCostSheet(host) {
+  if (!host) return;
+  try {
+    const rows = await loadParts();
+    const planned = rows.reduce((sum, row) => sum + (Number(row.qty) || 0) * (Number(row.unit_cost) || 0), 0);
+    const purchased = rows.filter(row => row.owned).reduce((sum, row) => sum + (Number(row.qty) || 0) * (Number(row.unit_cost) || 0), 0);
+    const installed = rows.filter(row => row.installed).reduce((sum, row) => sum + (Number(row.qty) || 0) * (Number(row.unit_cost) || 0), 0);
+    host.innerHTML = `<div class="costTop"><div><span class="eyebrow">LIVE PROCUREMENT CONTROL</span><h3>Running cost sheet</h3><p class="sub">Cloud-synced price, purchase, and installation tracking.</p></div><div class="costActions"><button class="secondary" id="costGuide">Word guide</button><button class="primary" id="costCsv">Export CSV</button></div></div><div class="costMetrics"><div><span>Planned</span><b>${money(planned)}</b></div><div><span>Purchased</span><b>${money(purchased)}</b></div><div><span>Remaining</span><b>${money(Math.max(0, planned - purchased))}</b></div><div><span>Installed</span><b>${money(installed)}</b></div></div><div class="costTableWrap"><table class="costTable"><thead><tr><th>Item</th><th>System</th><th>Qty</th><th>Unit</th><th>Total</th><th>Owned</th><th>Installed</th><th>Link</th></tr></thead><tbody>${rows.map(row => `<tr><td><b>${esc(row.source_id || '')} ${esc(row.part)}</b></td><td>${esc(row.system)}</td><td><input type="number" min="0" step="1" value="${Number(row.qty) || 0}" data-field="qty" data-id="${row.id}"></td><td><input type="number" min="0" step=".01" value="${Number(row.unit_cost) || 0}" data-field="unit_cost" data-id="${row.id}"></td><td><b>${money((Number(row.qty) || 0) * (Number(row.unit_cost) || 0))}</b></td><td><input type="checkbox" ${row.owned ? 'checked' : ''} data-field="owned" data-id="${row.id}"></td><td><input type="checkbox" ${row.installed ? 'checked' : ''} data-field="installed" data-id="${row.id}"></td><td>${row.source_url ? `<a class="mini" target="_blank" rel="noopener" href="${esc(row.source_url)}">Open</a>` : '—'}</td></tr>`).join('') || '<tr><td colspan="8">No parts yet.</td></tr>'}</tbody></table></div><div class="costMessage"></div>`;
+    $('#costGuide').onclick = () => exportGuide(rows);
+    $('#costCsv').onclick = () => exportCsv(rows);
+    host.querySelectorAll('[data-field]').forEach(input => {
+      input.onchange = async () => {
+        const value = input.type === 'checkbox' ? input.checked : Number(input.value) || 0;
+        const { error } = await supabase.from('parts').update({ [input.dataset.field]: value }).eq('id', input.dataset.id);
+        if (error) host.querySelector('.costMessage').textContent = error.message;
+        else renderCostSheet(host);
+      };
+    });
+  } catch (error) {
+    host.innerHTML = `<div class="empty">${esc(error.message || error)}</div>`;
+  }
+}
+
+function enhance() {
+  installStyles();
+  const main = $('#main');
+  if (!main) return;
+  const eyebrow = main.querySelector('.section .eyebrow')?.textContent.trim();
+  if (eyebrow === 'BOM & PROCUREMENT' && !main.querySelector('#runningCostSheet')) {
+    const host = document.createElement('section');
+    host.id = 'runningCostSheet';
+    host.className = 'card costSheet';
+    main.querySelector('.metrics')?.after(host);
+    renderCostSheet(host);
+  }
+  if (eyebrow === 'DOCUMENT CONTROL' && !main.querySelector('#guideCard')) {
+    const card = document.createElement('section');
+    card.id = 'guideCard';
+    card.className = 'card docCard';
+    card.innerHTML = '<div><h3>CRF450RL Component Guide</h3><p class="sub">Generate the guide from the current cloud parts list.</p></div><button class="secondary">Download Word guide</button>';
+    card.querySelector('button').onclick = async () => exportGuide(await loadParts());
+    main.querySelector('.section')?.after(card);
+  }
+}
+
+const observer = new MutationObserver(() => queueMicrotask(enhance));
+observer.observe(document.documentElement, { subtree: true, childList: true });
+addEventListener('DOMContentLoaded', enhance, { once: true });
+setTimeout(enhance, 500);

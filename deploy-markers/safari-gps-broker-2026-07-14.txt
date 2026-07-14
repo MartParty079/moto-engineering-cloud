@@ -1,0 +1,1 @@
+Safari GPS broker deployment marker. Commit includes Object.defineProperty geolocation wrappers and explicit shared-fix APIs.

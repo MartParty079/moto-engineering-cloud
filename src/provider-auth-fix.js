@@ -15,7 +15,27 @@ window.fetch = async function motoProviderFetch(input, init = {}) {
   if (session?.access_token) headers.set('Authorization', `Bearer ${session.access_token}`);
 
   const rewrittenUrl = originalUrl.replace('/api/road-info', '/api/road-info-live');
-  return nativeFetch(rewrittenUrl, { ...init, headers, cache: 'no-store' });
+  const response = await nativeFetch(rewrittenUrl, { ...init, headers, cache: 'no-store' });
+  if (!response.ok) return response;
+
+  try {
+    const data = await response.clone().json();
+    if (data?.providerUsed && !data?.usage && session?.user) {
+      const { data: usage, error } = await supabase.rpc('consume_road_api_request', { p_provider: data.providerUsed });
+      if (!error) {
+        data.usage = Array.isArray(usage) ? usage[0] : usage;
+        return new Response(JSON.stringify(data), {
+          status: response.status,
+          statusText: response.statusText,
+          headers: { 'content-type': 'application/json', 'cache-control': 'no-store' }
+        });
+      }
+    }
+  } catch (error) {
+    console.warn('Provider usage counter fallback skipped', error);
+  }
+
+  return response;
 };
 
 if (!localStorage.getItem(providerKey) || localStorage.getItem(providerKey) === 'osm') {

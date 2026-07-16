@@ -1,3 +1,4 @@
+import './overview-last-updated.js';
 import { supabase } from './supabase.js';
 
 const nativeFetch = window.fetch.bind(window);

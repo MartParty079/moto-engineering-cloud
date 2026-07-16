@@ -68,12 +68,13 @@ async function tomtom(lat, lon, prevLat, prevLon, heading) {
   };
 }
 
-async function google(lat, lon, prevLat, prevLon) {
+async function google(lat, lon, prevLat, prevLon, heading) {
   const key = process.env.GOOGLE_ROADS_API_KEY;
   if (!key) throw new Error('Google key not configured');
-  const path = Number.isFinite(prevLat) && Number.isFinite(prevLon) ? `${prevLat},${prevLon}|${lat},${lon}` : `${lat},${lon}`;
+  const previous = Number.isFinite(prevLat) && Number.isFinite(prevLon) ? { lat: prevLat, lon: prevLon } : syntheticPrevious(lat, lon, heading);
+  const path = `${previous.lat},${previous.lon}|${lat},${lon}`;
   const snapResponse = await timedFetch(`https://roads.googleapis.com/v1/snapToRoads?path=${encodeURIComponent(path)}&interpolate=false&key=${encodeURIComponent(key)}`);
-  const snapData = await snapResponse.json();
+  const snapData = await snapResponse.json().catch(() => ({}));
   if (!snapResponse.ok || snapData.error) throw new Error(snapData.error?.message || `Google HTTP ${snapResponse.status}`);
   const point = snapData.snappedPoints?.at(-1);
   if (!point?.placeId) throw new Error('Google returned no matched road');
@@ -83,7 +84,7 @@ async function google(lat, lon, prevLat, prevLon) {
     const data = await response.json();
     if (response.ok && data.speedLimits?.[0]) limit = parseLimit(data.speedLimits[0].speedLimit, 'mph');
   } catch {}
-  return { status: 'road', source: 'Google Roads', road: 'Google matched road', limit, confidence: 'High', type: 'Road', lanes: '—', diagnostic: `Google snapped the GPS trail to place ID ${point.placeId}.` };
+  return { status: 'road', source: 'Google Roads', road: 'Google matched road', limit, confidence: 'High', type: 'Road', lanes: '—', diagnostic: `Google snapped a two-point GPS trail to place ID ${point.placeId}.` };
 }
 
 export default async function handler(req, res) {
@@ -95,7 +96,7 @@ export default async function handler(req, res) {
   const attempts = [];
   for (const provider of order) {
     try {
-      const result = provider === 'tomtom' ? await tomtom(lat, lon, prevLat, prevLon, heading) : await google(lat, lon, prevLat, prevLon);
+      const result = provider === 'tomtom' ? await tomtom(lat, lon, prevLat, prevLon, heading) : await google(lat, lon, prevLat, prevLon, heading);
       const usage = await countUsage(provider, req.headers.authorization);
       return res.status(200).json({ ...result, requestedProvider: requested, providerUsed: provider, usage, attempts });
     } catch (error) { attempts.push(`${provider}: ${error.name === 'AbortError' ? 'timeout' : error.message}`); }

@@ -32,8 +32,8 @@ Codex must not independently approve safety-critical assumptions or represent un
 3. Create a Codex cloud environment for the repository.
 4. Use the repository root as the working directory.
 5. Use restrictive permission and sandbox settings by default.
-6. Until `package-lock.json` is committed, use `npm install` when dependencies must be installed.
-7. After the lockfile is committed, clean environments should use `npm ci`.
+6. Use `npm ci` in clean environments for reproducible installs from `package-lock.json`.
+7. Use `npm install` only when intentionally changing dependencies or refreshing the lockfile.
 8. Use `npm run audit` as the validation command for normal software changes.
 9. Production secrets and production access are prohibited by default.
 10. Production credentials require explicit human authorization for the specific task, least privilege, environment scoping, and an approved secret store.

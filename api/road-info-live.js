@@ -1,5 +1,18 @@
-const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const RAW_SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+
+function normalizeSupabaseUrl(value) {
+  if (!value) return null;
+  try {
+    const url = new URL(String(value).trim());
+    if (url.protocol !== 'https:' || !url.hostname.endsWith('.supabase.co')) return null;
+    return url.origin;
+  } catch {
+    return null;
+  }
+}
+
+const SUPABASE_URL = normalizeSupabaseUrl(RAW_SUPABASE_URL);
 
 const timedFetch = async (url, options = {}, timeout = 10000) => {
   const controller = new AbortController();
@@ -25,7 +38,13 @@ function bearerToken(value) {
 
 async function consumeUsage(provider, authorization) {
   if (!SUPABASE_URL || !SUPABASE_KEY) {
-    return { allowed: false, status: 503, reason: 'Usage counter is not configured' };
+    return {
+      allowed: false,
+      status: 503,
+      reason: RAW_SUPABASE_URL && !SUPABASE_URL
+        ? 'Supabase URL is invalid; use the project URL only'
+        : 'Usage counter is not configured'
+    };
   }
   if (!bearerToken(authorization)) {
     return { allowed: false, status: 401, reason: 'Sign in required for paid providers' };
@@ -42,7 +61,17 @@ async function consumeUsage(provider, authorization) {
       body: JSON.stringify({ p_provider: provider })
     }, 6000);
     const data = await response.json().catch(() => null);
-    if (!response.ok) return { allowed: false, status: response.status, reason: `Usage counter rejected request (${response.status})` };
+    if (!response.ok) {
+      const code = typeof data?.code === 'string' ? ` · ${data.code}` : '';
+      const hint = response.status === 404
+        ? ' · verify the Supabase URL and that the key belongs to the same project'
+        : '';
+      return {
+        allowed: false,
+        status: response.status,
+        reason: `Usage counter rejected request (${response.status}${code})${hint}`
+      };
+    }
     const row = Array.isArray(data) ? data[0] : data;
     if (!row || row.allowed !== true) {
       return {

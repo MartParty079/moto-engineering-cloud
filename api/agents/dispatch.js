@@ -14,27 +14,86 @@ function getBearerToken(request) {
   return match ? match[1].trim() : '';
 }
 
-async function authenticateSupabaseUser(accessToken) {
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+function getIdempotencyKey(request) {
+  const value = request.headers['idempotency-key'];
+  return typeof value === 'string' ? value.trim() : '';
+}
 
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error('dispatcher authentication is not configured');
-  }
+function getSupabaseConfig() {
+  const url = process.env.SUPABASE_URL?.replace(/\/$/, '');
+  const anonKey = process.env.SUPABASE_ANON_KEY;
+  if (!url || !anonKey) throw new Error('dispatcher authentication is not configured');
+  return { url, anonKey };
+}
 
-  const authResponse = await fetch(`${supabaseUrl.replace(/\/$/, '')}/auth/v1/user`, {
+async function supabaseRequest(path, accessToken, options = {}) {
+  const { url, anonKey } = getSupabaseConfig();
+  return fetch(`${url}${path}`, {
+    ...options,
     headers: {
-      apikey: supabaseAnonKey,
-      Authorization: `Bearer ${accessToken}`
+      apikey: anonKey,
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+      ...options.headers
     },
     signal: AbortSignal.timeout(8000)
   });
+}
 
+async function authenticateSupabaseUser(accessToken) {
+  const authResponse = await supabaseRequest('/auth/v1/user', accessToken);
   if (!authResponse.ok) return null;
   return authResponse.json();
 }
 
-async function createGitHubTask(workPackage, requestedBy) {
+async function reserveTask(accessToken, idempotencyKey, workPackage) {
+  const reserveResponse = await supabaseRequest(
+    '/rest/v1/rpc/reserve_agent_dispatch_task',
+    accessToken,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        requested_idempotency_key: idempotencyKey,
+        requested_worker: workPackage.worker,
+        requested_risk: workPackage.risk,
+        requested_title: workPackage.title,
+        requested_work_package: workPackage
+      })
+    }
+  );
+
+  const payload = await reserveResponse.json().catch(() => ({}));
+  if (!reserveResponse.ok) {
+    const error = new Error('task reservation failed');
+    error.status = String(payload.message || '').includes('rate limit') ? 429 : 503;
+    error.details = payload.message || 'task state is unavailable';
+    throw error;
+  }
+
+  const reservation = Array.isArray(payload) ? payload[0] : payload;
+  if (!reservation?.task_id) throw new Error('task reservation returned no task id');
+  return reservation;
+}
+
+async function updateTask(accessToken, taskId, changes) {
+  const updateResponse = await supabaseRequest(
+    `/rest/v1/agent_dispatch_tasks?id=eq.${encodeURIComponent(taskId)}&status=eq.reserved`,
+    accessToken,
+    {
+      method: 'PATCH',
+      headers: { Prefer: 'return=representation' },
+      body: JSON.stringify({ ...changes, updated_at: new Date().toISOString() })
+    }
+  );
+
+  const payload = await updateResponse.json().catch(() => []);
+  if (!updateResponse.ok || !Array.isArray(payload) || payload.length !== 1) {
+    throw new Error('task state update failed');
+  }
+  return payload[0];
+}
+
+async function createGitHubTask(workPackage, requestedBy, taskId) {
   const githubToken = process.env.GITHUB_AGENT_TOKEN;
   if (!githubToken) throw new Error('GitHub agent dispatch is not configured');
 
@@ -51,7 +110,7 @@ async function createGitHubTask(workPackage, requestedBy) {
       },
       body: JSON.stringify({
         title: `[agent:${workPackage.worker}][risk:${workPackage.risk}] ${workPackage.title}`,
-        body: formatGitHubIssueBody(workPackage, requestedBy)
+        body: `<!-- agent-dispatch-task:${taskId} -->\n${formatGitHubIssueBody(workPackage, requestedBy)}`
       }),
       signal: AbortSignal.timeout(10000)
     }
@@ -72,6 +131,28 @@ async function createGitHubTask(workPackage, requestedBy) {
   };
 }
 
+function duplicateResponse(response, reservation) {
+  if (reservation.task_status === 'dispatched') {
+    return json(response, 200, {
+      dispatched: true,
+      duplicate: true,
+      task: {
+        id: reservation.task_id,
+        provider: reservation.provider,
+        externalId: reservation.external_id,
+        issueUrl: reservation.external_url
+      }
+    });
+  }
+
+  return json(response, 409, {
+    error: reservation.task_status === 'failed' ? 'previous_dispatch_failed' : 'dispatch_in_progress',
+    duplicate: true,
+    taskId: reservation.task_id,
+    status: reservation.task_status
+  });
+}
+
 export default async function handler(request, response) {
   if (request.method !== 'POST') {
     response.setHeader('Allow', 'POST');
@@ -80,6 +161,11 @@ export default async function handler(request, response) {
 
   const accessToken = getBearerToken(request);
   if (!accessToken) return json(response, 401, { error: 'authentication_required' });
+
+  const idempotencyKey = getIdempotencyKey(request);
+  if (idempotencyKey.length < 8 || idempotencyKey.length > 128) {
+    return json(response, 400, { error: 'valid_idempotency_key_required' });
+  }
 
   let user;
   try {
@@ -99,24 +185,68 @@ export default async function handler(request, response) {
     });
   }
 
+  let reservation;
   try {
-    const task = await createGitHubTask(
-      validation.workPackage,
-      user.email || user.id
-    );
-
-    return json(response, 201, {
-      dispatched: true,
-      provider: 'github-issue',
-      worker: validation.workPackage.worker,
-      risk: validation.workPackage.risk,
-      task
+    reservation = await reserveTask(accessToken, idempotencyKey, validation.workPackage);
+  } catch (error) {
+    console.error('Agent task reservation failure:', error.message);
+    return json(response, error.status || 503, {
+      error: error.status === 429 ? 'rate_limit_exceeded' : 'task_state_unavailable',
+      details: error.details || 'task reservation failed'
     });
+  }
+
+  if (reservation.is_duplicate) return duplicateResponse(response, reservation);
+
+  let task;
+  try {
+    task = await createGitHubTask(
+      validation.workPackage,
+      user.email || user.id,
+      reservation.task_id
+    );
   } catch (error) {
     console.error('Agent task dispatch failure:', error.message);
+    await updateTask(accessToken, reservation.task_id, {
+      status: 'failed',
+      provider: 'github-issue',
+      error_message: error.details || error.message
+    }).catch((stateError) => {
+      console.error('Agent task failure-state update failed:', stateError.message);
+    });
+
     return json(response, error.status === 422 ? 422 : 502, {
       error: 'dispatch_failed',
+      taskId: reservation.task_id,
       details: error.details || 'provider request failed'
     });
   }
+
+  try {
+    await updateTask(accessToken, reservation.task_id, {
+      status: 'dispatched',
+      provider: 'github-issue',
+      external_id: String(task.issueNumber),
+      external_url: task.issueUrl,
+      error_message: null
+    });
+  } catch (error) {
+    console.error('Agent task finalization failure:', error.message);
+    return json(response, 202, {
+      dispatched: true,
+      statePending: true,
+      taskId: reservation.task_id,
+      provider: 'github-issue',
+      task
+    });
+  }
+
+  return json(response, 201, {
+    dispatched: true,
+    duplicate: false,
+    provider: 'github-issue',
+    worker: validation.workPackage.worker,
+    risk: validation.workPackage.risk,
+    task: { id: reservation.task_id, ...task }
+  });
 }

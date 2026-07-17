@@ -25,6 +25,7 @@ Build and stabilize Moto Engineering Cloud as a safe, honest motorcycle engineer
 
 - Start by restating the requested outcome, affected files, risks, and validation plan.
 - Inspect the current implementation before proposing replacements.
+- Run `git status --short` before editing. Stop if unrelated changes would overlap the task or cannot be preserved safely.
 - Make the smallest coherent change that satisfies the requirement.
 - Prefer fixing the owning module over adding another global patch or DOM observer.
 - Preserve compatibility unless the task explicitly authorizes a breaking change.
@@ -34,7 +35,10 @@ Build and stabilize Moto Engineering Cloud as a safe, honest motorcycle engineer
 
 ## Safety and truthfulness rules
 
-- Never expose or commit service-role keys, paid-provider secrets, tokens, or private credentials.
+- Production secrets and production access are prohibited by default.
+- Production credentials require explicit human authorization for the specific task, least privilege, environment scoping, and an approved secret store.
+- Secrets must never enter source files, browser bundles, prompts, logs, screenshots, command output, commits, pull requests, or documentation.
+- Supabase service-role credentials are prohibited unless explicitly authorized for a narrowly defined server-side operation.
 - Browser code may use only publishable client credentials intended for public use.
 - Authentication, authorization, malformed telemetry, invalid coordinates, and provider failures must fail closed.
 - Experimental or disconnected hardware must remain visibly experimental or disconnected.
@@ -54,7 +58,19 @@ npm run build
 npm run audit
 ```
 
-Use `npm run audit` as the default local completion check. If dependencies are already installed, do not reinstall them unnecessarily.
+Until `package-lock.json` is committed, use `npm install` when dependencies must be installed. After the lockfile is committed, use `npm ci` in clean environments. If dependencies are already installed, do not reinstall them unnecessarily.
+
+Use `npm run audit` as the default local completion check.
+
+## Task authorization boundaries
+
+- Audits, investigations, reviews, and status checks are read-only unless edits are explicitly authorized.
+- Read-only tasks must not create branches, edit files, commit, push, open pull requests, merge, deploy, or alter external resources.
+- Read-only work does not require a task branch. Editing work requires a task branch.
+- External writes require explicit human approval for the specific task.
+- Use least-privilege, repository-scoped access. Do not grant broader product, organization, or account access when repository-scoped access is sufficient.
+- Production access is prohibited by default, and development and production credentials must remain separate.
+- Never merge or deploy without explicit human authorization.
 
 ## Validation by change type
 
@@ -88,24 +104,40 @@ Use `npm run audit` as the default local completion check. If dependencies are a
 - Verify `/api/*` remains outside SPA rewrites.
 - Include explicit hard-refresh, update, and rollback validation steps.
 
-## Definition of done
+## Definition of done for implementation work
 
-A task is complete only when:
+Implementation work is complete only when:
 
 - The requested behavior is implemented without unrelated scope expansion.
 - Relevant validation commands pass, or failures are reported with exact evidence.
 - The diff is reviewed for regressions, duplicate logic, stale compatibility patches, and secret exposure.
+- `git status --short` is reviewed before edits and before preparing a commit or pull request.
+- No unrelated or pre-existing change is included in a commit or pull request.
 - High-risk changes include explicit post-deployment checks.
 - Material architecture or risk changes update `docs/ENGINEERING_BASELINE.md` or another appropriate document.
 - The final summary lists changed files, validation performed, remaining risk, and any manual follow-up.
+- No merge or deployment occurs without explicit human authorization.
+
+## Definition of done for read-only work
+
+Read-only work is complete only when:
+
+- The requested evidence was inspected without changing repository or external state.
+- Findings distinguish verified facts, unresolved questions, and recommendations.
+- Relevant checks were run only when they were non-mutating and authorized.
+- No branch, edit, commit, push, pull request, merge, deployment, or external-resource change occurred.
+- The final summary lists evidence inspected, findings, validation limits, and remaining risk.
 
 ## Git and pull requests
 
-- Work on a task branch; do not push unreviewed work directly to `main`.
+- Read-only work does not require a task branch. Editing work must use a task branch; do not push unreviewed work directly to `main`.
+- Check `git status --short` before edits and before preparing any commit.
+- Never commit unrelated or pre-existing changes.
 - Use focused commits with imperative messages.
 - Keep pull requests small enough to review.
 - PR descriptions must include: requirement, implementation, validation, risk level, deployment checks, and rollback notes when applicable.
 - Do not merge a high-risk change solely because automated checks pass.
+- Never merge or deploy without explicit human authorization.
 
 ## Chief-engineer escalation
 

@@ -1,163 +1,64 @@
-# Moto Engineering Cloud v7.4 — Parts Editing and PCB Deletion Fix
+# Moto Engineering Cloud
 
-## Fixes
+Moto Engineering Cloud is the software platform for the Moto Mission motorcycle data-logging and engineering program. It combines project management, motorcycle records, ride logging, telemetry, PCB planning, maintenance, parts, and field-work workflows in one installable web application.
 
-- Restores the complete Parts edit form
-- Saves part quantity, cost, status, ownership, installation, testing, links, specification, and notes
-- Adds a visible **Delete PCB** button beside **Edit board**
-- Deleting a PCB project also deletes its related pins, connectors, components, and revisions through database cascade rules
-- Clears the saved PCB selector after project deletion
+## Current system
 
-## Upgrade
+- **Frontend:** static ES modules deployed on Vercel
+- **Backend:** Vercel serverless API routes
+- **Database, authentication, and storage:** Supabase
+- **Primary device target:** ESP32-S3 motorcycle logger
+- **Primary motorcycle:** 2022 Honda CRF450RL
 
-No new Supabase migration is required.
+## Engineering priorities
 
-1. Replace the repository files with this package.
-2. Commit to main.
-3. Let Vercel redeploy.
-4. Hard-refresh the app.
+1. Reliable GPS and IMU ride recording
+2. Safe vehicle power and communications interfaces
+3. Durable local storage and recovery from interrupted rides
+4. Authenticated cloud synchronization
+5. Traceable engineering work packages and test evidence
+6. K-Line integration without blocking the core logger
 
-# Moto Engineering Cloud v7.3 — PCB Data Load Fix
+## Repository structure
 
-This patch adds the five PCB tables to the application data-loading list. Previous builds saved the Rev A starter records successfully but did not reload them into the page state.
+- `index.html` — application shell and module loading
+- `src/` — browser modules and styles
+- `api/` — server-side provider and utility endpoints
+- `supabase/` — database migrations
+- `docs/` — architecture, operations, decisions, and test guidance
+- `manifest.webmanifest` / service worker — installable PWA support
+- `vercel.json` — deployment routing, caching, and security headers
 
-## Upgrade
+## Release rules
 
-1. Replace the GitHub repository files with this package.
-2. Commit and allow Vercel to redeploy.
-3. Hard-refresh the app.
-4. Open PCB Designer. Existing Rev A records should appear immediately.
+A release is acceptable only when:
 
-No new Supabase migration is required if migration_v7.sql already ran.
+- The latest Vercel deployment is `READY`.
+- API routes are not intercepted by the SPA fallback.
+- Supabase security advisors have no unreviewed high-risk findings.
+- Authentication-dependent features fail closed.
+- The app shell and service worker are not served with stale immutable caching.
+- Removed or unfinished features are not represented as operational.
+- The engineering baseline and risk register are updated for material changes.
 
-# Moto Engineering Cloud v7.2 — PCB Starter Display Fix
+## Development workflow
 
-Fixes stale selected-board IDs, automatically selects the first valid PCB project, and reports any failed starter insert instead of displaying a false success message.
+1. Define or update the requirement.
+2. Make the smallest coherent change.
+3. Validate browser and API behavior.
+4. Validate Supabase policies and function permissions.
+5. Deploy through the GitHub-to-Vercel integration.
+6. Inspect deployment state and runtime errors.
+7. Record the decision and remaining risk.
 
-## Deploy
+## Production services
 
-No new migration is required if migration_v7.sql was already run. Replace the repository files and redeploy.
+- GitHub repository: `MartParty079/moto-engineering-cloud`
+- Vercel project: `moto-engineering-cloud`
+- Supabase project: `bxqexjvwxtnlflznyqyq`
 
-# Moto Engineering Cloud v7.1 — PCB Loading Fix
+Secrets belong in Vercel or Supabase environment configuration. Never commit service-role keys, paid-provider secrets, or private tokens.
 
-Fixes the PCB Designer crash caused by rendering before the new Supabase tables finish loading. All PCB collections now default safely to empty arrays.
+## Status
 
-Deployment:
-1. Confirm `supabase/migration_v7.sql` has been run.
-2. Replace the GitHub files with this package.
-3. Commit and wait for Vercel to redeploy.
-4. Hard-refresh the website.
-
-# Moto Engineering Cloud v7 — Rev A PCB Designer
-
-## New PCB Designer module
-
-- Multiple PCB projects and revisions
-- Rev A starter architecture
-- Interactive ESP32-S3 pin map
-- Pin conflict status
-- Connector and harness planning
-- Component list linked to the main BOM
-- Board dimensions and layer count
-- Revision history
-- Architecture and safety checklist
-- Starter records for:
-  - ESP32-S3
-  - L9637D K-line
-  - MCP2562 CAN
-  - ICM-42688-P IMU
-  - External ADC
-  - Automotive power and protection
-  - microSD
-  - GNSS
-  - Nextion/display
-  - Suspension and wheel-speed connectors
-
-## Upgrade
-
-1. Run `supabase/migration_v7.sql`.
-2. Replace the repository files with this package.
-3. Commit and let Vercel redeploy.
-4. Open **PCB Designer**.
-5. Click **Load Rev A starter**.
-
-The starter intentionally leaves ESP32 GPIO assignments as TBD. Pin selection should be completed after confirming the exact ESP32-S3 module, flash/PSRAM configuration, USB usage, boot-strapping pins, ADC requirements, and peripheral timing.
-
-# Moto Engineering Cloud v6 — Garage Mode
-
-## New Garage Mode
-
-A mobile-first, glove-friendly workspace for use beside the motorcycle:
-
-- Select one active work package
-- Take progress photos directly from the iPhone camera
-- Record test videos
-- Dictate or type an engineering note
-- Complete checklist items with large controls
-- See required proof and recent files
-- Ask the AI about the active task with one button
-- Open a live telemetry connection panel
-- Refresh project state without leaving Garage Mode
-
-Notes are stored in the Engineering Notebook and linked in their text to the active work package.
-Photos and videos are stored as proof attachments on the active package.
-
-The telemetry panel currently reports an honest disconnected state until the ESP32 live-upload backend is built.
-
-## Upgrade
-
-No new database migration is required if v5 is already installed.
-
-1. Replace the existing GitHub repository files with this package.
-2. Commit to main.
-3. Let Vercel redeploy.
-4. Sign in and open **Garage Mode**.
-5. Choose an active work package before capturing media or notes.
-
-# Moto Engineering Cloud v4 — Gated Work Packages
-
-## Main change
-
-Roadmap tasks are now Engineering Work Packages with mandatory proof gates.
-
-A work package cannot be marked complete until:
-
-1. Every prerequisite work package is complete.
-2. Every checklist item is complete.
-3. Acceptance criteria are documented.
-4. Results are documented.
-5. Every required proof category has enough uploaded files.
-
-## Proof rules
-
-Templates automatically require appropriate evidence:
-
-- Software: source code, design/readme, test evidence
-- Electronics: code, physical build photos, test evidence
-- Mechanical: CAD, installed photos, validation evidence
-- CAD: CAD file, drawing/document, screenshot or physical proof
-- Suspension: mount CAD, installed photos, calibration file, dynamic test evidence
-- Research: written summary and source material
-- Maintenance: before/after photos and service record
-- General: at least one completion document
-
-## File support
-
-Task attachments can include:
-
-- Word: DOC/DOCX
-- Excel: XLS/XLSX/CSV
-- PDF, Markdown, text
-- CAD: STEP, SLDPRT, SLDASM, STL, DXF, DWG, IGES, F3D
-- Code: INO, CPP, C, H, PY, JS, TS, JSON
-- Photos: JPG, PNG, HEIC, WEBP, TIFF
-- Video: MP4, MOV, WEBM
-- ZIP and other project files
-
-## Upgrade
-
-1. Run `supabase/migration_v4.sql`.
-2. Replace the GitHub repository files with this package.
-3. Commit to main and let Vercel redeploy.
-4. Sign in and click **Refresh workbook**.
-5. Existing roadmap items receive structured templates and proof rules.
+The application is under active stabilization. The authoritative system definition is maintained in `docs/ENGINEERING_BASELINE.md`, and deployment procedures are in `docs/OPERATIONS.md`.

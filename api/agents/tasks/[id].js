@@ -4,7 +4,7 @@ const TARGET_REPOSITORY = 'MartParty079/moto-engineering-cloud';
 
 async function getTask(accessToken, taskId) {
   const query = new URLSearchParams({
-    select: 'id,worker,risk,title,work_package,status,provider,external_id,external_url,error_message,reconciliation_note,reconciled_at,created_at,updated_at',
+    select: 'id,worker,risk,title,work_package,status,provider,external_id,external_url,error_message,reconciliation_note,reconciled_at,claimed_by,lease_expires_at,started_at,finished_at,created_at,updated_at',
     id: `eq.${taskId}`,
     limit: '1'
   });
@@ -14,6 +14,20 @@ async function getTask(accessToken, taskId) {
   );
   if (!taskResponse.ok) throw new Error(`Supabase task detail failed with ${taskResponse.status}`);
   return (await taskResponse.json())[0] || null;
+}
+
+async function getTaskResult(accessToken, taskId) {
+  const query = new URLSearchParams({
+    select: 'result_status,summary,files_changed,checks_performed,evidence,decisions,remaining_risks,approval_needed,rollback,created_at,updated_at',
+    task_id: `eq.${taskId}`,
+    limit: '1'
+  });
+  const resultResponse = await supabaseRequest(
+    accessToken,
+    `/rest/v1/agent_task_results?${query.toString()}`
+  );
+  if (!resultResponse.ok) throw new Error(`Supabase task result failed with ${resultResponse.status}`);
+  return (await resultResponse.json())[0] || null;
 }
 
 function githubHeaders() {
@@ -141,13 +155,16 @@ export default async function handler(request, response) {
     const task = await getTask(session.accessToken, taskId);
     if (!task) return json(response, 404, { error: 'task_not_found' });
 
-    if (request.method === 'GET') return json(response, 200, { task });
+    if (request.method === 'GET') {
+      const result = await getTaskResult(session.accessToken, taskId);
+      return json(response, 200, { task, result });
+    }
 
     const action = request.body?.action;
     if (!['cancel', 'reconcile'].includes(action)) {
       return json(response, 400, { error: 'unsupported_action' });
     }
-    if (!['reserved', 'dispatched'].includes(task.status)) {
+    if (!['reserved', 'dispatched', 'claimed', 'running'].includes(task.status)) {
       return json(response, 409, { error: 'task_not_active', status: task.status });
     }
 

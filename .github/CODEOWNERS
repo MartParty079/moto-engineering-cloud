@@ -1,0 +1,9 @@
+# Default project owner
+* @MartParty079
+
+# Safety- and interface-sensitive areas
+/docs/SAFETY_BOUNDARIES.md @MartParty079
+/docs/HARDWARE_INTERFACE.md @MartParty079
+/docs/DATA_CONTRACTS.md @MartParty079
+/supabase/ @MartParty079
+/.github/workflows/ @MartParty079

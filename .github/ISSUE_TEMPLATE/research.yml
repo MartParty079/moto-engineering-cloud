@@ -1,0 +1,42 @@
+name: Research
+about: Resolve an engineering decision before implementation
+title: "[Research] "
+labels: ["type:research"]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Decision question
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context and constraints
+    validations:
+      required: true
+  - type: textarea
+    id: options
+    attributes:
+      label: Options to compare
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Required evidence and authoritative sources
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Required decision output
+      description: State the recommendation, tradeoffs, assumptions, and follow-on issue needed.
+    validations:
+      required: true
+  - type: textarea
+    id: safety
+    attributes:
+      label: Safety or physical-validation boundary
+    validations:
+      required: true

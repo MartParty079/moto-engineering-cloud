@@ -1,0 +1,57 @@
+name: Feature
+about: Define a bounded, testable software or platform feature
+title: "[Feature] "
+labels: ["type:feature"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user or engineering problem must be solved?
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: State what is in scope and explicitly out of scope.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Use measurable, verifiable criteria.
+      placeholder: "- [ ] ..."
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies and blockers
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation plan
+      description: Include automated checks and required human testing.
+    validations:
+      required: true
+  - type: textarea
+    id: risk
+    attributes:
+      label: Safety, security, data, and deployment constraints
+    validations:
+      required: true
+  - type: checkboxes
+    id: readiness
+    attributes:
+      label: Agent readiness
+      options:
+        - label: Product decisions are resolved.
+          required: true
+        - label: Acceptance criteria are complete.
+          required: true
+        - label: Production access is not required, or is explicitly scoped.
+          required: true

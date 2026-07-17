@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { formatGitHubIssueBody, validateWorkPackage } from '../lib/agent-dispatch.js';
+import { isUuid } from '../lib/agent-api.js';
 
 const valid = validateWorkPackage({
   worker: 'software',
@@ -17,6 +18,8 @@ const valid = validateWorkPackage({
 
 assert.equal(valid.ok, true, valid.errors.join('; '));
 assert.equal(valid.workPackage.worker, 'software');
+assert.equal(isUuid('939b205a-d289-4e03-a42e-6e7c753cb73f'), true);
+assert.equal(isUuid('not-a-task-id'), false);
 
 const protectedAction = validateWorkPackage({
   ...valid.workPackage,
@@ -25,10 +28,7 @@ const protectedAction = validateWorkPackage({
 assert.equal(protectedAction.ok, false);
 assert.match(protectedAction.errors.join(' '), /protected action/i);
 
-const highRisk = validateWorkPackage({
-  ...valid.workPackage,
-  risk: 'high'
-});
+const highRisk = validateWorkPackage({ ...valid.workPackage, risk: 'high' });
 assert.equal(highRisk.ok, false);
 assert.match(highRisk.errors.join(' '), /high-risk/i);
 
@@ -49,6 +49,15 @@ assert.match(dispatchSource, /finalize_agent_dispatch_task/);
 assert.match(dispatchSource, /rate_limit_exceeded/);
 assert.doesNotMatch(dispatchSource, /SUPABASE_SERVICE_ROLE/i);
 
+const listSource = await readFile(new URL('../api/agents/tasks/index.js', import.meta.url), 'utf8');
+assert.match(listSource, /reconcile_stale_agent_dispatch_tasks/);
+assert.match(listSource, /Math\.min\(Math\.max\(requestedLimit, 1\), 50\)/);
+
+const detailSource = await readFile(new URL('../api/agents/tasks/[id].js', import.meta.url), 'utf8');
+assert.match(detailSource, /cancel_agent_dispatch_task/);
+assert.match(detailSource, /state_reason: 'not_planned'/);
+assert.match(detailSource, /\['reserved', 'dispatched'\]/);
+
 const migrationSource = await readFile(
   new URL('../supabase/migrations/20260717144500_agent_dispatch_tasks.sql', import.meta.url),
   'utf8'
@@ -61,4 +70,13 @@ assert.match(migrationSource, /revoke insert, update, delete/i);
 assert.match(migrationSource, /security definer/i);
 assert.match(migrationSource, /status = 'reserved'/i);
 
-console.log('Agent dispatch validation checks passed.');
+const controlMigration = await readFile(
+  new URL('../supabase/migrations/20260717152000_agent_task_control.sql', import.meta.url),
+  'utf8'
+);
+assert.match(controlMigration, /status in \('reserved', 'dispatched'\)/i);
+assert.match(controlMigration, /interval '15 minutes'/i);
+assert.match(controlMigration, /user_id = caller_id/i);
+assert.match(controlMigration, /revoke all on function/i);
+
+console.log('Agent dispatch and task-control validation checks passed.');

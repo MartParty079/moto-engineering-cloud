@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { formatGitHubIssueBody, validateWorkPackage } from '../lib/agent-dispatch.js';
 import { isUuid } from '../lib/agent-api.js';
+import { hashLeaseToken, validateResultPayload } from '../lib/agent-worker-api.js';
 
 const valid = validateWorkPackage({
   worker: 'software',
@@ -20,6 +21,23 @@ assert.equal(valid.ok, true, valid.errors.join('; '));
 assert.equal(valid.workPackage.worker, 'software');
 assert.equal(isUuid('939b205a-d289-4e03-a42e-6e7c753cb73f'), true);
 assert.equal(isUuid('not-a-task-id'), false);
+assert.equal(hashLeaseToken('lease-token').length, 64);
+
+const validResult = validateResultPayload({
+  status: 'awaiting_review',
+  result: {
+    summary: 'Prepared documentation changes.',
+    filesChanged: ['docs/example.md'],
+    checksPerformed: ['npm run audit'],
+    evidence: [],
+    decisions: [],
+    remainingRisks: [],
+    approvalNeeded: ['merge'],
+    rollback: 'Close the draft pull request.'
+  }
+});
+assert.equal(validResult.ok, true, validResult.errors.join('; '));
+assert.equal(validateResultPayload({ status: 'completed', result: {} }).ok, false);
 
 const protectedAction = validateWorkPackage({ ...valid.workPackage, goal: 'Merge and deploy the change to production.' });
 assert.equal(protectedAction.ok, false);
@@ -40,32 +58,34 @@ assert.match(dispatchSource, /idempotency-key/i);
 assert.match(dispatchSource, /reserve_agent_dispatch_task/);
 assert.doesNotMatch(dispatchSource, /SUPABASE_SERVICE_ROLE/i);
 
-const listSource = await readFile(new URL('../api/agents/tasks/index.js', import.meta.url), 'utf8');
-assert.match(listSource, /reconcile_stale_agent_dispatch_tasks/);
-assert.match(listSource, /Math\.min\(Math\.max\(requestedLimit, 1\), 50\)/);
-
 const detailSource = await readFile(new URL('../api/agents/tasks/[id].js', import.meta.url), 'utf8');
-assert.match(detailSource, /reconcile_cancelled_agent_task/);
-assert.match(detailSource, /stateReason !== 'not_planned'/);
-assert.match(detailSource, /task_reconciliation_failed/);
-assert.match(detailSource, /\['cancel', 'reconcile'\]/);
+assert.match(detailSource, /agent_task_results/);
+assert.match(detailSource, /\['reserved', 'dispatched', 'claimed', 'running'\]/);
 
-const migrationSource = await readFile(new URL('../supabase/migrations/20260717144500_agent_dispatch_tasks.sql', import.meta.url), 'utf8');
-assert.match(migrationSource, /enable row level security/i);
-assert.match(migrationSource, /unique \(user_id, idempotency_key\)/i);
-assert.match(migrationSource, /pg_advisory_xact_lock/i);
-assert.match(migrationSource, />= 10/);
-assert.match(migrationSource, /revoke insert, update, delete/i);
+const workerGateway = await readFile(new URL('../api/agents/workers/[worker].js', import.meta.url), 'utf8');
+assert.match(workerGateway, /claim_agent_dispatch_task/);
+assert.match(workerGateway, /heartbeat_agent_dispatch_task/);
+assert.match(workerGateway, /submit_agent_task_result/);
+assert.match(workerGateway, /x-agent-worker-token/i);
 
-const controlMigration = await readFile(new URL('../supabase/migrations/20260717152000_agent_task_control.sql', import.meta.url), 'utf8');
-assert.match(controlMigration, /interval '15 minutes'/i);
-assert.match(controlMigration, /user_id = caller_id/i);
+const workerHelpers = await readFile(new URL('../lib/agent-worker-api.js', import.meta.url), 'utf8');
+assert.match(workerHelpers, /AGENT_WORKER_TOKENS_JSON/);
+assert.match(workerHelpers, /SUPABASE_AGENT_WORKER_JWT/);
+assert.doesNotMatch(workerHelpers, /SUPABASE_SERVICE_ROLE/i);
 
-const reconciliationMigration = await readFile(new URL('../supabase/migrations/20260717161000_agent_task_reconciliation.sql', import.meta.url), 'utf8');
-assert.match(reconciliationMigration, /requested_provider_state <> 'closed'/i);
-assert.match(reconciliationMigration, /requested_provider_reason <> 'not_planned'/i);
-assert.match(reconciliationMigration, /reconciliation_note/i);
-assert.match(reconciliationMigration, /status in \('reserved', 'dispatched'\)/i);
-assert.match(reconciliationMigration, /user_id = caller_id/i);
+const executionMigration = await readFile(new URL('../supabase/migrations/20260717161000_agent_worker_execution.sql', import.meta.url), 'utf8');
+assert.match(executionMigration, /lease_expires_at/);
+assert.match(executionMigration, /interval '10 minutes'/i);
+assert.match(executionMigration, /agent_task_results/);
+assert.match(executionMigration, /status in \('claimed', 'running'\)/i);
 
-console.log('Agent dispatch, task control, and reconciliation validation checks passed.');
+const roleMigration = await readFile(new URL('../supabase/migrations/20260717162000_agent_worker_role.sql', import.meta.url), 'utf8');
+assert.match(roleMigration, /create role agent_worker nologin/i);
+assert.match(roleMigration, /grant execute on function public\.claim_agent_dispatch_task/i);
+assert.match(roleMigration, /revoke all on public\.agent_dispatch_tasks from agent_worker/i);
+
+const cancellationMigration = await readFile(new URL('../supabase/migrations/20260717163000_agent_active_cancellation.sql', import.meta.url), 'utf8');
+assert.match(cancellationMigration, /status in \('reserved', 'dispatched', 'claimed', 'running'\)/i);
+assert.match(cancellationMigration, /lease_token_hash = null/i);
+
+console.log('Agent dispatch, task control, reconciliation, and worker lifecycle checks passed.');

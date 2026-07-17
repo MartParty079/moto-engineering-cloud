@@ -24,15 +24,8 @@ for select
 to authenticated
 using (auth.uid() = user_id);
 
-create policy "Users can update their own reserved agent tasks"
-on public.agent_dispatch_tasks
-for update
-to authenticated
-using (auth.uid() = user_id)
-with check (auth.uid() = user_id);
-
-revoke insert, delete on public.agent_dispatch_tasks from anon, authenticated;
-grant select, update on public.agent_dispatch_tasks to authenticated;
+revoke insert, update, delete on public.agent_dispatch_tasks from anon, authenticated;
+grant select on public.agent_dispatch_tasks to authenticated;
 
 create or replace function public.reserve_agent_dispatch_task(
   requested_idempotency_key text,
@@ -50,7 +43,7 @@ returns table (
   is_duplicate boolean
 )
 language plpgsql
-security invoker
+security definer
 set search_path = public
 as $$
 declare
@@ -60,6 +53,11 @@ declare
 begin
   if caller_id is null then
     raise exception 'authentication required' using errcode = '28000';
+  end if;
+
+  if requested_worker not in ('software', 'firmware', 'test', 'research', 'documentation', 'security')
+    or requested_risk not in ('low', 'medium') then
+    raise exception 'invalid worker or risk' using errcode = '22023';
   end if;
 
   if requested_idempotency_key is null
@@ -73,7 +71,7 @@ begin
   select * into existing_task
   from public.agent_dispatch_tasks
   where user_id = caller_id
-    and idempotency_key = requested_idempotency_key;
+    and idempotency_key = trim(requested_idempotency_key);
 
   if found then
     return query select
@@ -122,11 +120,63 @@ begin
 end;
 $$;
 
+create or replace function public.finalize_agent_dispatch_task(
+  requested_task_id uuid,
+  requested_status text,
+  requested_provider text,
+  requested_external_id text default null,
+  requested_external_url text default null,
+  requested_error_message text default null
+)
+returns public.agent_dispatch_tasks
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  caller_id uuid := auth.uid();
+  updated_task public.agent_dispatch_tasks%rowtype;
+begin
+  if caller_id is null then
+    raise exception 'authentication required' using errcode = '28000';
+  end if;
+
+  if requested_status not in ('dispatched', 'failed', 'cancelled') then
+    raise exception 'invalid task transition' using errcode = '22023';
+  end if;
+
+  update public.agent_dispatch_tasks
+  set
+    status = requested_status,
+    provider = nullif(trim(requested_provider), ''),
+    external_id = nullif(trim(requested_external_id), ''),
+    external_url = nullif(trim(requested_external_url), ''),
+    error_message = nullif(left(requested_error_message, 1000), ''),
+    updated_at = now()
+  where id = requested_task_id
+    and user_id = caller_id
+    and status = 'reserved'
+  returning * into updated_task;
+
+  if not found then
+    raise exception 'task is not reserved by the caller' using errcode = 'P0002';
+  end if;
+
+  return updated_task;
+end;
+$$;
+
 revoke all on function public.reserve_agent_dispatch_task(text, text, text, text, jsonb) from public, anon;
 grant execute on function public.reserve_agent_dispatch_task(text, text, text, text, jsonb) to authenticated;
+
+revoke all on function public.finalize_agent_dispatch_task(uuid, text, text, text, text, text) from public, anon;
+grant execute on function public.finalize_agent_dispatch_task(uuid, text, text, text, text, text) to authenticated;
 
 comment on table public.agent_dispatch_tasks is
   'Auditable, user-owned reservations and provider results for bounded engineering-agent work packages.';
 
 comment on function public.reserve_agent_dispatch_task(text, text, text, text, jsonb) is
   'Atomically applies per-user idempotency and a limit of ten dispatch reservations per hour.';
+
+comment on function public.finalize_agent_dispatch_task(uuid, text, text, text, text, text) is
+  'Allows only the owning authenticated user to move a reserved task into a terminal dispatch state.';

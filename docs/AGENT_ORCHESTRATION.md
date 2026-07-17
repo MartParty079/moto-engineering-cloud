@@ -1,6 +1,6 @@
 # Moto Mission Agent Orchestration
 
-**Status:** Phase 1 foundation plus minimal Phase 2 dispatcher  
+**Status:** Phase 1 foundation plus persistent Phase 2 dispatcher  
 **Owner:** Project owner with chief-engineer review  
 **Scope:** Repository work, research, validation, and documentation
 
@@ -41,19 +41,25 @@ The first implementation uses GitHub as the task bus and audit trail:
 5. The chief-engineer review checks architecture, safety, tests, and scope.
 6. The project owner explicitly authorizes merge or deployment.
 
-The authenticated endpoint `POST /api/agents/dispatch` now creates these bounded GitHub work packages. It does not execute arbitrary prompts, run shell commands, create branches, merge pull requests, deploy, access production secrets, change production data, or actuate motorcycle hardware.
+The authenticated endpoint `POST /api/agents/dispatch` creates these bounded GitHub work packages. It does not execute arbitrary prompts, run shell commands, create branches, merge pull requests, deploy, access production secrets, change production data, or actuate motorcycle hardware.
+
+Each request is first reserved in Supabase. The reservation supplies a durable audit record, per-user duplicate suppression, and a rate limit before the GitHub provider is called.
 
 ## Dispatcher configuration
 
 The Vercel runtime requires:
 
-- `SUPABASE_URL`: Supabase project URL used to verify the caller session.
-- `SUPABASE_ANON_KEY`: publishable Supabase key used only for the Auth user lookup.
+- `SUPABASE_URL`: Supabase project URL used to verify the caller session and access guarded task RPCs.
+- `SUPABASE_ANON_KEY`: publishable Supabase key used with the caller's bearer session.
 - `GITHUB_AGENT_TOKEN`: repository-scoped server-side token permitted to create issues in `MartParty079/moto-engineering-cloud`.
 
 `GITHUB_AGENT_TOKEN` must remain server-side and should have only the minimum issue permission needed. It must not have deployment, administration, secret-management, or broad organization access.
 
-The request must include the current Supabase access token as `Authorization: Bearer <token>` and a JSON work package containing:
+The request must include:
+
+- The current Supabase access token as `Authorization: Bearer <token>`.
+- A unique `Idempotency-Key` header between 8 and 128 characters.
+- A JSON work package:
 
 ```json
 {
@@ -70,7 +76,9 @@ The request must include the current Supabase access token as `Authorization: Be
 }
 ```
 
-The dispatcher rejects unknown worker types, high-risk packages, missing required fields, oversized input, and packages that request protected actions.
+The dispatcher rejects unknown worker types, high-risk packages, missing required fields, oversized input, protected actions, missing idempotency keys, and requests above ten reservations per user per hour.
+
+Repeated requests with the same user and idempotency key return the existing task instead of creating a second GitHub issue. A reserved task may transition only to `dispatched`, `failed`, or `cancelled` through the guarded finalization function.
 
 ## Worker types
 
@@ -93,7 +101,7 @@ Every dispatched task must include:
 - `acceptanceCriteria`: objective completion checks
 - `constraints`: compatibility, safety, and architecture rules
 - `exclusions`: actions the worker must not perform
-- `risk`: low, medium, or high
+- `risk`: low or medium
 - `evidence`: commands, screenshots, logs, citations, or measurements
 - `rollback`: how to abandon or reverse the task safely
 
@@ -172,14 +180,18 @@ Implemented now:
 - Server-side Supabase session verification
 - Strict worker, risk, size, and protected-action validation
 - GitHub issue provider with bounded repository target
+- Persistent user-owned task records
+- Per-user idempotency and duplicate suppression
+- Atomic limit of ten reservations per user per hour
+- Guarded task transitions from `reserved` to terminal dispatch states
 - Validation checks included in `npm run audit`
 
 Still required before broader use:
 
-- Supabase task-status and evidence tables
-- Idempotency keys and duplicate suppression
-- Per-user rate limits
-- Cancellation and task-state transitions
+- Task-list and task-detail API endpoints
+- Cancellation endpoint and cancellation policy
+- Automatic reconciliation for a GitHub issue created before task finalization succeeds
+- Evidence and worker-result records
 - GitHub App authentication instead of a manually managed token
 - A worker adapter that can claim a task and return the result contract
 
@@ -192,4 +204,4 @@ Still required before broader use:
 
 ## First operational boundary
 
-The first version may create a GitHub issue only after an authenticated user submits a valid low- or medium-risk package. It must not automatically execute code, create branches, open pull requests, merge, deploy, modify production data, expose secrets, or actuate motorcycle hardware.
+The first version may persist a task reservation and create a GitHub issue only after an authenticated user submits a valid low- or medium-risk package. It must not automatically execute code, create branches, open pull requests, merge, deploy, modify production data, expose secrets, or actuate motorcycle hardware.

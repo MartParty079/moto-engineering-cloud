@@ -50,9 +50,8 @@ async function createGitHubTask(workPackage, requestedBy) {
         'X-GitHub-Api-Version': '2022-11-28'
       },
       body: JSON.stringify({
-        title: `[agent:${workPackage.worker}] ${workPackage.title}`,
-        body: formatGitHubIssueBody(workPackage, requestedBy),
-        labels: [`agent:${workPackage.worker}`, `risk:${workPackage.risk}`, 'agent-task']
+        title: `[agent:${workPackage.worker}][risk:${workPackage.risk}] ${workPackage.title}`,
+        body: formatGitHubIssueBody(workPackage, requestedBy)
       }),
       signal: AbortSignal.timeout(10000)
     }

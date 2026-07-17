@@ -1,6 +1,6 @@
 # Moto Mission Agent Orchestration
 
-**Status:** Foundation design  
+**Status:** Phase 1 foundation plus minimal Phase 2 dispatcher  
 **Owner:** Project owner with chief-engineer review  
 **Scope:** Repository work, research, validation, and documentation
 
@@ -35,13 +35,42 @@ Human approval for merge, deployment, migrations, or vehicle outputs
 The first implementation uses GitHub as the task bus and audit trail:
 
 1. A structured GitHub issue defines the work package.
-2. Labels identify the requested worker and risk class.
+2. The issue title identifies the requested worker and risk class.
 3. The worker performs only the authorized scope on a task branch.
 4. The worker opens a pull request containing implementation and evidence.
 5. The chief-engineer review checks architecture, safety, tests, and scope.
 6. The project owner explicitly authorizes merge or deployment.
 
-This foundation works with GitHub coding agents today and can later be connected to an MCP or API-based dispatcher without changing the task contract.
+The authenticated endpoint `POST /api/agents/dispatch` now creates these bounded GitHub work packages. It does not execute arbitrary prompts, run shell commands, create branches, merge pull requests, deploy, access production secrets, change production data, or actuate motorcycle hardware.
+
+## Dispatcher configuration
+
+The Vercel runtime requires:
+
+- `SUPABASE_URL`: Supabase project URL used to verify the caller session.
+- `SUPABASE_ANON_KEY`: publishable Supabase key used only for the Auth user lookup.
+- `GITHUB_AGENT_TOKEN`: repository-scoped server-side token permitted to create issues in `MartParty079/moto-engineering-cloud`.
+
+`GITHUB_AGENT_TOKEN` must remain server-side and should have only the minimum issue permission needed. It must not have deployment, administration, secret-management, or broad organization access.
+
+The request must include the current Supabase access token as `Authorization: Bearer <token>` and a JSON work package containing:
+
+```json
+{
+  "worker": "software",
+  "risk": "medium",
+  "title": "Add telemetry schema tests",
+  "goal": "Add deterministic tests for the telemetry parser.",
+  "scope": "Inspect the parser and add isolated tests on a task branch.",
+  "acceptanceCriteria": "Tests cover valid, malformed, and partial packets.",
+  "constraints": "Follow AGENTS.md and do not change deployment configuration.",
+  "exclusions": "No dependency upgrade.",
+  "evidence": "Report exact commands and results.",
+  "rollback": "Revert the task branch."
+}
+```
+
+The dispatcher rejects unknown worker types, high-risk packages, missing required fields, oversized input, and packages that request protected actions.
 
 ## Worker types
 
@@ -63,10 +92,10 @@ Every dispatched task must include:
 - `scope`: files, subsystem, or research boundary
 - `acceptanceCriteria`: objective completion checks
 - `constraints`: compatibility, safety, and architecture rules
-- `excludedActions`: actions the worker must not perform
-- `riskClass`: low, medium, high, or vehicle-safety
-- `requiredEvidence`: commands, screenshots, logs, citations, or measurements
-- `approvalRequired`: merge, deployment, migration, secrets, hardware actuation
+- `exclusions`: actions the worker must not perform
+- `risk`: low, medium, or high
+- `evidence`: commands, screenshots, logs, citations, or measurements
+- `rollback`: how to abandon or reverse the task safely
 
 ## Dispatch policy
 
@@ -131,16 +160,28 @@ Every worker returns:
 ### Phase 1 — GitHub-native control
 
 - Structured agent-task issue template
-- Worker and risk labels
+- Worker and risk encoded in each issue
 - Branch and PR workflow
 - Chief-engineer review checklist
 
 ### Phase 2 — Dispatcher service
 
+Implemented now:
+
 - Authenticated Vercel API endpoint for creating work packages
-- Supabase tables for task status and evidence
-- GitHub App or Actions integration for issue and PR updates
-- Idempotency, audit logging, rate limits, and cancellation
+- Server-side Supabase session verification
+- Strict worker, risk, size, and protected-action validation
+- GitHub issue provider with bounded repository target
+- Validation checks included in `npm run audit`
+
+Still required before broader use:
+
+- Supabase task-status and evidence tables
+- Idempotency keys and duplicate suppression
+- Per-user rate limits
+- Cancellation and task-state transitions
+- GitHub App authentication instead of a manually managed token
+- A worker adapter that can claim a task and return the result contract
 
 ### Phase 3 — Tool orchestration
 
@@ -151,4 +192,4 @@ Every worker returns:
 
 ## First operational boundary
 
-The first version may create issues, branches, files, and pull requests only when the project owner has explicitly requested implementation. It must not automatically merge, deploy, modify production data, expose secrets, or actuate motorcycle hardware.
+The first version may create a GitHub issue only after an authenticated user submits a valid low- or medium-risk package. It must not automatically execute code, create branches, open pull requests, merge, deploy, modify production data, expose secrets, or actuate motorcycle hardware.

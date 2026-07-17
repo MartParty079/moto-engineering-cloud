@@ -58,7 +58,7 @@ npm run build
 npm run audit
 ```
 
-Until `package-lock.json` is committed, use `npm install` when dependencies must be installed. After the lockfile is committed, use `npm ci` in clean environments. If dependencies are already installed, do not reinstall them unnecessarily.
+Use `npm ci` in clean environments for reproducible installs from `package-lock.json`. Use `npm install` only when intentionally changing dependencies or refreshing the lockfile. If dependencies are already installed, do not reinstall them unnecessarily.
 
 Use `npm run audit` as the default local completion check.
 

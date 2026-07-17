@@ -75,22 +75,30 @@ async function reserveTask(accessToken, idempotencyKey, workPackage) {
   return reservation;
 }
 
-async function updateTask(accessToken, taskId, changes) {
-  const updateResponse = await supabaseRequest(
-    `/rest/v1/agent_dispatch_tasks?id=eq.${encodeURIComponent(taskId)}&status=eq.reserved`,
+async function finalizeTask(accessToken, taskId, changes) {
+  const finalizeResponse = await supabaseRequest(
+    '/rest/v1/rpc/finalize_agent_dispatch_task',
     accessToken,
     {
-      method: 'PATCH',
-      headers: { Prefer: 'return=representation' },
-      body: JSON.stringify({ ...changes, updated_at: new Date().toISOString() })
+      method: 'POST',
+      body: JSON.stringify({
+        requested_task_id: taskId,
+        requested_status: changes.status,
+        requested_provider: changes.provider,
+        requested_external_id: changes.externalId || null,
+        requested_external_url: changes.externalUrl || null,
+        requested_error_message: changes.errorMessage || null
+      })
     }
   );
 
-  const payload = await updateResponse.json().catch(() => []);
-  if (!updateResponse.ok || !Array.isArray(payload) || payload.length !== 1) {
-    throw new Error('task state update failed');
+  const payload = await finalizeResponse.json().catch(() => ({}));
+  if (!finalizeResponse.ok) {
+    const error = new Error('task state finalization failed');
+    error.details = payload.message || 'unknown task-state error';
+    throw error;
   }
-  return payload[0];
+  return payload;
 }
 
 async function createGitHubTask(workPackage, requestedBy, taskId) {
@@ -207,10 +215,10 @@ export default async function handler(request, response) {
     );
   } catch (error) {
     console.error('Agent task dispatch failure:', error.message);
-    await updateTask(accessToken, reservation.task_id, {
+    await finalizeTask(accessToken, reservation.task_id, {
       status: 'failed',
       provider: 'github-issue',
-      error_message: error.details || error.message
+      errorMessage: error.details || error.message
     }).catch((stateError) => {
       console.error('Agent task failure-state update failed:', stateError.message);
     });
@@ -223,12 +231,11 @@ export default async function handler(request, response) {
   }
 
   try {
-    await updateTask(accessToken, reservation.task_id, {
+    await finalizeTask(accessToken, reservation.task_id, {
       status: 'dispatched',
       provider: 'github-issue',
-      external_id: String(task.issueNumber),
-      external_url: task.issueUrl,
-      error_message: null
+      externalId: String(task.issueNumber),
+      externalUrl: task.issueUrl
     });
   } catch (error) {
     console.error('Agent task finalization failure:', error.message);

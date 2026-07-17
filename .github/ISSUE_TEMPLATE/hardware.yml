@@ -1,0 +1,54 @@
+name: Hardware
+about: Define a hardware, wiring, sensor, or vehicle-interface task
+title: "[Hardware] "
+labels: ["area:hardware", "needs-human-test"]
+body:
+  - type: textarea
+    id: objective
+    attributes:
+      label: Engineering objective
+    validations:
+      required: true
+  - type: textarea
+    id: interfaces
+    attributes:
+      label: Components and interfaces
+      description: Include part numbers, voltages, buses, connectors, pin assumptions, and vehicle interface.
+    validations:
+      required: true
+  - type: textarea
+    id: limits
+    attributes:
+      label: Electrical and mechanical limits
+      description: Include absolute maximums, expected operating range, protection, packaging, and environmental constraints.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      placeholder: "- [ ] ..."
+    validations:
+      required: true
+  - type: textarea
+    id: test
+    attributes:
+      label: Physical validation plan
+      description: State instruments, bench setup, measurements, pass limits, and evidence to retain.
+    validations:
+      required: true
+  - type: textarea
+    id: hazards
+    attributes:
+      label: Hazards and fail-safe behavior
+    validations:
+      required: true
+  - type: checkboxes
+    id: evidence
+    attributes:
+      label: Evidence rules
+      options:
+        - label: Software output alone will not be treated as proof of physical behavior.
+          required: true
+        - label: Vehicle testing requires explicit human authorization.
+          required: true

@@ -12,7 +12,7 @@ function injectNav() {
   const button = document.createElement('button');
   button.id = 'rideAnalyticsNav';
   button.innerHTML = '<span class="navIcon">⌁</span><span>Ride Analytics</span><em>NEW</em>';
-  button.onclick = openAnalytics;
+  button.onclick = () => openAnalytics();
   const group = [...nav.querySelectorAll('.navGroup')].find(item => item.querySelector('.navLabel')?.textContent.trim() === 'Operations');
   (group || nav).appendChild(button);
   return true;
@@ -37,7 +37,9 @@ function summaryCard(label, value) {
   return `<article><small>${esc(label)}</small><strong>${esc(value)}</strong></article>`;
 }
 
-async function openAnalytics() {
+async function openAnalytics(selectedRideId = null) {
+  const requestedId = ['string','number'].includes(typeof selectedRideId) ? String(selectedRideId) : null;
+  document.querySelector('#rideDetailModal')?.remove();
   document.querySelector('#rideAnalyticsOverlay')?.remove();
   const overlay = document.createElement('div');
   overlay.id = 'rideAnalyticsOverlay';
@@ -45,14 +47,21 @@ async function openAnalytics() {
   document.body.appendChild(overlay);
   $('#closeAnalytics').onclick = () => overlay.remove();
 
-  const { data: rides, error } = await supabase.from('ride_sessions').select('*').eq('status', 'complete').order('started_at', { ascending: false }).limit(30);
+  const { data, error } = await supabase.from('ride_sessions').select('*').eq('status', 'complete').order('started_at', { ascending: false }).limit(30);
+  let rides = data || [];
   const body = $('#analyticsBody');
   if (!body) return;
   if (error) { body.innerHTML = `<div class="analyticsEmpty">${esc(error.message)}</div>`; return; }
-  if (!rides?.length) { body.innerHTML = '<div class="analyticsEmpty">Complete a ride to generate analytics.</div>'; return; }
+  if (requestedId && !rides.some(ride => String(ride.id) === requestedId)) {
+    const { data: requestedRide, error: requestedError } = await supabase.from('ride_sessions').select('*').eq('id', requestedId).eq('status', 'complete').maybeSingle();
+    if (requestedError) { body.innerHTML = `<div class="analyticsEmpty">${esc(requestedError.message)}</div>`; return; }
+    if (requestedRide) rides = [requestedRide, ...rides];
+  }
+  if (!rides.length) { body.innerHTML = '<div class="analyticsEmpty">Complete a ride to generate analytics.</div>'; return; }
 
-  body.innerHTML = `<label class="analyticsPicker"><span>RIDE</span><select id="analyticsRide">${rides.map(ride => `<option value="${ride.id}">${esc(ride.bike_name || 'Motorcycle')} · ${new Date(ride.started_at).toLocaleString()}</option>`).join('')}</select></label><div id="analyticsResult"></div>`;
-  const loadSelected = () => loadRide(rides.find(ride => ride.id === $('#analyticsRide')?.value));
+  const selectedId = requestedId && rides.some(ride => String(ride.id) === requestedId) ? requestedId : String(rides[0].id);
+  body.innerHTML = `<label class="analyticsPicker"><span>RIDE</span><select id="analyticsRide">${rides.map(ride => `<option value="${ride.id}" ${String(ride.id)===selectedId?'selected':''}>${esc(ride.bike_name || 'Motorcycle')} · ${new Date(ride.started_at).toLocaleString()}</option>`).join('')}</select></label><div id="analyticsResult"></div>`;
+  const loadSelected = () => loadRide(rides.find(ride => String(ride.id) === String($('#analyticsRide')?.value)));
   $('#analyticsRide').onchange = loadSelected;
   loadSelected();
 }
@@ -77,6 +86,9 @@ async function loadRide(ride) {
 
   result.innerHTML = `<div class="analyticsSummary">${summaryCard('DISTANCE', `${Number(ride.distance_miles || 0).toFixed(1)} mi`)}${summaryCard('MAX SPEED', `${Math.round(Number(ride.max_speed_mph || 0))} mph`)}${summaryCard('MAX LEAN', `${maxLean.toFixed(1)}°`)}${summaryCard('MAX G', `${maxG.toFixed(2)} g`)}${summaryCard('ELEVATION GAIN', `${Math.round(gain)} ft`)}${summaryCard('SAMPLES', String(rows.length))}</div><section class="analyticsChart"><h3>Speed</h3>${chart(rows, 'speed_mps', 'Speed mph', mph)}</section><section class="analyticsChart"><h3>Lean angle</h3>${chart(rows, 'lean_deg', 'Lean angle')}</section><section class="analyticsChart"><h3>Acceleration</h3>${chart(rows, 'accel_g', 'Acceleration g')}</section><section class="analyticsChart"><h3>Elevation</h3>${chart(rows, 'altitude_m', 'Elevation m')}</section><section class="analyticsEvents"><h3>Top lean points</h3>${topLean.length ? topLean.map(row => `<article><strong>${Math.abs(Number(row.lean_deg)).toFixed(1)}°</strong><span>${Math.round(mph(row.speed_mps))} mph</span><small>${Number.isFinite(Number(row.latitude)) ? `${Number(row.latitude).toFixed(5)}, ${Number(row.longitude).toFixed(5)}` : 'No coordinates'}</small></article>`).join('') : '<div class="analyticsEmpty">No lean samples recorded yet.</div>'}</section>`;
 }
+
+window.MotoRideAnalytics = { open: openAnalytics };
+window.addEventListener('moto-open-ride-analytics', event => openAnalytics(event.detail?.rideId));
 
 let attempts = 0;
 const navTimer = setInterval(() => {

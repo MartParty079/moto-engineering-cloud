@@ -9,12 +9,20 @@ function closeMenu(){
 }
 
 function removeAdminBadge(){
-  document.querySelectorAll('#accessRoleBadge,.accessRoleBadge,[title*="View the app as another role"],[title^="Access level:"]').forEach(el=>el.remove());
+  document.querySelectorAll('#accessQuickButton,#accessRoleBadge,.accessRoleBadge,[title*="View the app as another role"],[title^="Access level:"]').forEach(el=>el.remove());
   document.querySelectorAll('button').forEach(button=>{
     const label=(button.textContent||'').replace(/\s+/g,' ').trim().toLowerCase();
     const aria=(button.getAttribute('aria-label')||'').toLowerCase();
     if(label==='administrator'||label==='admin'||aria.includes('administrator access')||aria.includes('admin access'))button.remove();
   });
+}
+
+function removeRedundantGarageSummary(){
+  document.querySelectorAll('.bikeCardTotals').forEach(el=>el.remove());
+}
+
+function cleanRideCenterNav(){
+  document.querySelectorAll('#rideCenterNav em').forEach(el=>el.remove());
 }
 
 function regroupParts(){
@@ -69,6 +77,8 @@ function addRideCenterAdventureShortcut(){
 
 function sync(){
   removeAdminBadge();
+  removeRedundantGarageSummary();
+  cleanRideCenterNav();
   regroupParts();
   syncActiveView();
   addRideCenterAdventureShortcut();

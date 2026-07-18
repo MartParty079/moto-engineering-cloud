@@ -1,83 +1,12 @@
 /* Mobile workflow corrections loaded last. */
+#accessQuickButton,
 #accessRoleBadge,
 .accessRoleBadge,
 [title*="View the app as another role"],
-[title^="Access level:"]{display:none!important}
+[title^="Access level:"],
+#rideCenterNav em,
+.bikeCardTotals{display:none!important}
 
-.rideCenterAdventure{
-  width:auto!important;
-  min-width:88px;
-  padding:0 14px!important;
-  border:1px solid rgba(244,81,44,.55)!important;
-  border-radius:7px!important;
-  background:rgba(244,81,44,.14)!important;
-  color:#ff8a67!important;
-  font-size:11px!important;
-  font-weight:900!important;
-  letter-spacing:.08em;
-  white-space:nowrap;
-}
-.rideHeaderActions{display:flex;align-items:center;gap:8px}
+.rideCenterAdventure{width:auto!important;min-width:88px;padding:0 14px!important;border:1px solid rgba(244,81,44,.55)!important;border-radius:7px!important;background:rgba(244,81,44,.14)!important;color:#ff8a67!important;font-size:11px!important;font-weight:900!important;letter-spacing:.08em;white-space:nowrap}.rideHeaderActions{display:flex;align-items:center;gap:8px}
 
-@media(max-width:780px){
-  body:not(.garage-view){padding-bottom:calc(var(--app-bottom-nav-core) + var(--app-safe-bottom))!important}
-
-  .motoBottomNav{
-    left:0!important;
-    right:0!important;
-    bottom:0!important;
-    width:100%!important;
-    height:calc(var(--app-bottom-nav-core) + var(--app-safe-bottom))!important;
-    padding:5px max(5px,var(--app-safe-right)) calc(5px + var(--app-safe-bottom)) max(5px,var(--app-safe-left))!important;
-    border-radius:18px 18px 0 0!important;
-  }
-
-  .advBottomBar{
-    left:0!important;
-    right:0!important;
-    bottom:0!important;
-    width:100%!important;
-    min-height:0!important;
-    height:calc(54px + var(--app-safe-bottom))!important;
-    padding:3px max(5px,var(--app-safe-right)) calc(3px + var(--app-safe-bottom)) max(5px,var(--app-safe-left))!important;
-    border-radius:14px 14px 0 0!important;
-    align-items:start!important;
-  }
-  .advBottomBar button{
-    height:48px!important;
-    min-height:48px!important;
-    padding:3px 1px 1px!important;
-    font-size:7px!important;
-    line-height:1!important;
-  }
-  .advBottomBar button span{
-    margin-bottom:2px!important;
-    font-size:15px!important;
-  }
-  .advSheet{bottom:calc(54px + var(--app-safe-bottom))!important}
-  .advToast{bottom:calc(62px + var(--app-safe-bottom))!important}
-  .adventureNavPanel{bottom:calc(58px + var(--app-safe-bottom))!important}
-
-  body.garage-view{
-    padding-bottom:0!important;
-    min-height:0!important;
-  }
-  body.garage-view .motoBottomNav{display:none!important}
-  body.garage-view .layout{
-    min-height:0!important;
-    height:auto!important;
-  }
-  body.garage-view #main{
-    min-height:0!important;
-    height:auto!important;
-    padding-bottom:0!important;
-    margin-bottom:0!important;
-  }
-  body.garage-view #main>.stack:last-child,
-  body.garage-view #main>.section:last-child{
-    margin-bottom:0!important;
-    padding-bottom:0!important;
-  }
-
-  .rideCenterAdventure{min-width:78px;padding-inline:10px!important;font-size:10px!important}
-}
+@media(max-width:780px){body:not(.garage-view){padding-bottom:calc(var(--app-bottom-nav-core) + var(--app-safe-bottom))!important}.motoBottomNav{left:0!important;right:0!important;bottom:0!important;width:100%!important;height:calc(var(--app-bottom-nav-core) + var(--app-safe-bottom))!important;padding:5px max(5px,var(--app-safe-right)) calc(5px + var(--app-safe-bottom)) max(5px,var(--app-safe-left))!important;border-radius:18px 18px 0 0!important}.advBottomBar{left:0!important;right:0!important;bottom:0!important;width:100%!important;min-height:0!important;height:calc(54px + var(--app-safe-bottom))!important;padding:3px max(5px,var(--app-safe-right)) calc(3px + var(--app-safe-bottom)) max(5px,var(--app-safe-left))!important;border-radius:14px 14px 0 0!important;align-items:start!important}.advBottomBar button{height:48px!important;min-height:48px!important;padding:3px 1px 1px!important;font-size:7px!important;line-height:1!important}.advBottomBar button span{margin-bottom:2px!important;font-size:15px!important}.advSheet{bottom:calc(54px + var(--app-safe-bottom))!important}.advToast{bottom:calc(62px + var(--app-safe-bottom))!important}.adventureNavPanel{bottom:calc(58px + var(--app-safe-bottom))!important}body.garage-view{padding-bottom:0!important;min-height:0!important}body.garage-view .motoBottomNav{display:none!important}body.garage-view .layout{min-height:0!important;height:auto!important}body.garage-view #main{min-height:0!important;height:auto!important;padding-bottom:0!important;margin-bottom:0!important}body.garage-view #main>.stack:last-child,body.garage-view #main>.section:last-child{margin-bottom:0!important;padding-bottom:0!important}.rideCenterAdventure{min-width:78px;padding-inline:10px!important;font-size:10px!important}}

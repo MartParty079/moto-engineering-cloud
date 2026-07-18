@@ -19,7 +19,7 @@ function regroupParts(){
   const group=anchor?.closest('.navGroup');
   if(!group)return;
   const label=group.querySelector('.navLabel');
-  if(label)label.textContent='ENGINEERING';
+  if(label&&label.textContent.trim()!=='ENGINEERING')label.textContent='ENGINEERING';
   if(parts.parentElement!==group){
     if(engineeringButton)engineeringButton.after(parts);
     else if(roadmapButton)roadmapButton.after(parts);
@@ -30,8 +30,8 @@ function regroupParts(){
 function syncActiveView(){
   const active=$('#nav [data-v].active');
   const view=active?.dataset.v||'';
-  if(view)document.body.dataset.activeView=view;
-  else delete document.body.dataset.activeView;
+  if(view&&document.body.dataset.activeView!==view)document.body.dataset.activeView=view;
+  else if(!view&&document.body.dataset.activeView)delete document.body.dataset.activeView;
 }
 
 function addRideCenterAdventureShortcut(){
@@ -45,8 +45,7 @@ function addRideCenterAdventureShortcut(){
   button.setAttribute('aria-label','Open Adventure map');
   button.onclick=()=>{
     closeMenu();
-    const adventure=$('#adventureNav');
-    if(adventure)adventure.click();
+    $('#adventureNav')?.click();
   };
   actions.prepend(button);
 }

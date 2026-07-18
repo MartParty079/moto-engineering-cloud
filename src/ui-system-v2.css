@@ -43,7 +43,7 @@ button,
 input,select,textarea{border-radius:7px!important}
 .garageRound,.recordPulse,.rideDot,.systemStatus i{border-radius:50%!important}
 
-/* YouTube-style content placeholders. */
+/* YouTube-style content placeholders. The overlay is visual only and can never trap input. */
 #pageSkeleton{
   position:fixed;
   z-index:46;
@@ -53,13 +53,13 @@ input,select,textarea{border-radius:7px!important}
   bottom:0;
   overflow:hidden auto;
   padding:32px 36px 60px;
-  background:linear-gradient(180deg,rgba(9,12,15,.985),rgba(8,10,13,.995));
+  background:linear-gradient(180deg,rgba(9,12,15,.97),rgba(8,10,13,.985));
   opacity:0;
   visibility:hidden;
-  pointer-events:none;
+  pointer-events:none!important;
   transition:opacity .14s ease,visibility .14s ease;
 }
-#pageSkeleton.visible{opacity:1;visibility:visible;pointer-events:auto}
+#pageSkeleton.visible{opacity:1;visibility:visible;pointer-events:none!important}
 .pageSkeletonInner{width:100%;max-width:1428px;margin:0 auto}
 .skeletonBlock{
   position:relative;

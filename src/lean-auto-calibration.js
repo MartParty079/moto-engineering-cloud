@@ -31,11 +31,13 @@ function screenAngle(){
   return ((raw%360)+360)%360;
 }
 function currentSpeed(){
-  const value=Number(window.MotoGPS?.speed ?? window.__motoLatestGpsFix?.speed);
+  const raw=window.MotoGPS?.speed ?? window.__motoLatestGpsFix?.speed;
+  const value=raw===null||raw===undefined?null:Number(raw);
   return Number.isFinite(value)?value:null;
 }
 function currentHeading(){
-  const value=Number(window.MotoGPS?.heading ?? window.__motoLatestGpsFix?.heading);
+  const raw=window.MotoGPS?.heading ?? window.__motoLatestGpsFix?.heading;
+  const value=raw===null||raw===undefined?null:Number(raw);
   return Number.isFinite(value)?value:null;
 }
 function setStatus(text,badge='CALIBRATING'){
@@ -90,10 +92,10 @@ function finishCalibration(){
   window.dispatchEvent(new CustomEvent('moto-lean-calibrated',{detail:{automatic:true,screenAngle:screenAngle(),timestamp:Date.now()}}));
 }
 function onOrientation(event){
-  const gamma=Number(event.gamma),beta=Number(event.beta),alpha=Number(event.alpha);
+  const gamma=typeof event.gamma==='number'?event.gamma:null,beta=typeof event.beta==='number'?event.beta:null,alpha=typeof event.alpha==='number'?event.alpha:null;
   if(!Number.isFinite(gamma))return;
   const angle=screenAngle();
-  if(lastScreenAngle!==null&&angle!==lastScreenAngle&&calibrated)startCalibration('Phone orientation changed. Auto recalibrating lean.');
+  if(lastScreenAngle!==null&&angle!==lastScreenAngle&&(calibrated||calibrating))startCalibration('Phone orientation changed. Auto recalibrating lean.');
   lastScreenAngle=angle;
   if(!calibrating){
     queueMicrotask(publishCorrectedMotion);

@@ -1,0 +1,21 @@
+/* Mobile workflow corrections loaded last. */
+.rideCenterAdventure{
+  width:auto!important;
+  min-width:88px;
+  padding:0 14px!important;
+  border:1px solid rgba(244,81,44,.55)!important;
+  border-radius:7px!important;
+  background:rgba(244,81,44,.14)!important;
+  color:#ff8a67!important;
+  font-size:11px!important;
+  font-weight:900!important;
+  letter-spacing:.08em;
+  white-space:nowrap;
+}
+.rideHeaderActions{display:flex;align-items:center;gap:8px}
+
+@media(max-width:780px){
+  body[data-active-view="garage"] .motoBottomNav{display:none!important}
+  body[data-active-view="garage"]{padding-bottom:env(safe-area-inset-bottom)!important}
+  .rideCenterAdventure{min-width:78px;padding-inline:10px!important;font-size:10px!important}
+}

@@ -18,3 +18,6 @@
 .userMetricGrid span{display:flex;flex-direction:column;gap:3px;padding:10px;border:1px solid rgba(255,255,255,.07);border-radius:10px;color:var(--muted,#94a3b8);font-size:10px;text-transform:uppercase;letter-spacing:.06em}
 .userMetricGrid b{color:var(--text,#e5edf7);font-size:16px;letter-spacing:0}
 @media(max-width:720px){.accessRoleBadge{display:inline-flex;padding:5px 7px;font-size:9px;letter-spacing:.08em}.releaseControls{grid-template-columns:1fr}.featureGrantGrid{grid-template-columns:1fr}.rolePreviewGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.userMetricGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Role switching lives exclusively in Administration > View as Role. */
+#accessRoleBadge{display:none!important}

@@ -4,7 +4,8 @@ const $ = selector => document.querySelector(selector);
 const esc = (value = '') => String(value ?? '').replace(/[&<>"']/g, character => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
 }[character]));
-const mph = value => Number(value || 0) * 2.236936;
+const finite = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value)) ? Number(value) : null;
+const mph = value => { const numeric=finite(value); return Number.isFinite(numeric)?numeric*2.236936:null; };
 
 function injectNav() {
   const nav = $('#nav');
@@ -19,14 +20,18 @@ function injectNav() {
 }
 
 function chart(rows, key, label, convert = value => value) {
-  const points = rows.map((row, index) => ({ index, value: convert(Number(row[key])) })).filter(point => Number.isFinite(point.value));
+  const points = rows.map((row, index) => {
+    const raw=finite(row[key]);
+    const value=Number.isFinite(raw)?convert(raw):null;
+    return { index, value };
+  }).filter(point => Number.isFinite(point.value));
   if (points.length < 2) return `<div class="analyticsEmpty">No ${esc(label.toLowerCase())} data recorded.</div>`;
   const min = Math.min(...points.map(point => point.value));
   const max = Math.max(...points.map(point => point.value));
   const span = Math.max(0.001, max - min);
   const width = 720, height = 230, pad = 30;
-  const polyline = points.map((point, index) => {
-    const x = pad + index / Math.max(1, points.length - 1) * (width - pad * 2);
+  const polyline = points.map(point => {
+    const x = pad + point.index / Math.max(1, rows.length - 1) * (width - pad * 2);
     const y = height - pad - (point.value - min) / span * (height - pad * 2);
     return `${x.toFixed(1)},${y.toFixed(1)}`;
   }).join(' ');
@@ -70,21 +75,23 @@ async function loadRide(ride) {
   const result = $('#analyticsResult');
   if (!result || !ride) return;
   result.innerHTML = '<div class="analyticsEmpty">Loading ride samples…</div>';
-  const { data, error } = await supabase.from('ride_samples').select('*').eq('session_id', ride.id).order('recorded_at').limit(12000);
+  const { data, error } = await supabase.from('ride_samples').select('*').eq('session_id', ride.id).order('recorded_at').limit(20000);
   if (error) { result.innerHTML = `<div class="analyticsEmpty">${esc(error.message)}</div>`; return; }
   const rows = data || [];
-  const leanValues = rows.map(row => Math.abs(Number(row.lean_deg))).filter(Number.isFinite);
-  const accelValues = rows.map(row => Number(row.accel_g)).filter(Number.isFinite);
-  const maxLean = Math.max(Number(ride.max_lean_deg || 0), ...(leanValues.length ? leanValues : [0]));
-  const maxG = Math.max(Number(ride.max_accel_g || 0), ...(accelValues.length ? accelValues : [0]));
+  const leanRows = rows.map(row => ({...row,lean:finite(row.lean_deg)})).filter(row => Number.isFinite(row.lean));
+  const leanValues = leanRows.map(row => Math.abs(row.lean));
+  const accelValues = rows.map(row => finite(row.accel_g)).filter(Number.isFinite);
+  const maxLean = leanValues.length ? Math.max(...leanValues) : null;
+  const storedMaxG = finite(ride.max_accel_g);
+  const maxG = Math.max(storedMaxG??0, ...(accelValues.length ? accelValues : [0]));
   let gain = 0;
   for (let index = 1; index < rows.length; index += 1) {
-    const current = Number(rows[index].altitude_m), previous = Number(rows[index - 1].altitude_m);
+    const current = finite(rows[index].altitude_m), previous = finite(rows[index - 1].altitude_m);
     if (Number.isFinite(current) && Number.isFinite(previous) && current > previous) gain += (current - previous) * 3.28084;
   }
-  const topLean = rows.filter(row => Number.isFinite(Number(row.lean_deg))).sort((a,b) => Math.abs(Number(b.lean_deg)) - Math.abs(Number(a.lean_deg))).slice(0,5);
+  const topLean = [...leanRows].sort((a,b) => Math.abs(b.lean) - Math.abs(a.lean)).slice(0,5);
 
-  result.innerHTML = `<div class="analyticsSummary">${summaryCard('DISTANCE', `${Number(ride.distance_miles || 0).toFixed(1)} mi`)}${summaryCard('MAX SPEED', `${Math.round(Number(ride.max_speed_mph || 0))} mph`)}${summaryCard('MAX LEAN', `${maxLean.toFixed(1)}°`)}${summaryCard('MAX G', `${maxG.toFixed(2)} g`)}${summaryCard('ELEVATION GAIN', `${Math.round(gain)} ft`)}${summaryCard('SAMPLES', String(rows.length))}</div><section class="analyticsChart"><h3>Speed</h3>${chart(rows, 'speed_mps', 'Speed mph', mph)}</section><section class="analyticsChart"><h3>Lean angle</h3>${chart(rows, 'lean_deg', 'Lean angle')}</section><section class="analyticsChart"><h3>Acceleration</h3>${chart(rows, 'accel_g', 'Acceleration g')}</section><section class="analyticsChart"><h3>Elevation</h3>${chart(rows, 'altitude_m', 'Elevation m')}</section><section class="analyticsEvents"><h3>Top lean points</h3>${topLean.length ? topLean.map(row => `<article><strong>${Math.abs(Number(row.lean_deg)).toFixed(1)}°</strong><span>${Math.round(mph(row.speed_mps))} mph</span><small>${Number.isFinite(Number(row.latitude)) ? `${Number(row.latitude).toFixed(5)}, ${Number(row.longitude).toFixed(5)}` : 'No coordinates'}</small></article>`).join('') : '<div class="analyticsEmpty">No lean samples recorded yet.</div>'}</section>`;
+  result.innerHTML = `<div class="analyticsSummary">${summaryCard('DISTANCE', `${Number(ride.distance_miles || 0).toFixed(1)} mi`)}${summaryCard('MAX SPEED', `${Math.round(Number(ride.max_speed_mph || 0))} mph`)}${summaryCard('MAX LEAN', Number.isFinite(maxLean)?`${maxLean.toFixed(1)}°`:'--')}${summaryCard('LEAN POINTS', String(leanRows.length))}${summaryCard('MAX G', `${maxG.toFixed(2)} g`)}${summaryCard('ELEVATION GAIN', `${Math.round(gain)} ft`)}${summaryCard('ALL SAMPLES', String(rows.length))}</div><section class="analyticsChart"><h3>Speed</h3>${chart(rows, 'speed_mps', 'Speed mph', mph)}</section><section class="analyticsChart"><h3>Lean angle</h3>${chart(rows, 'lean_deg', 'Calibrated lean angle')}</section><section class="analyticsChart"><h3>Acceleration</h3>${chart(rows, 'accel_g', 'Acceleration g')}</section><section class="analyticsChart"><h3>Elevation</h3>${chart(rows, 'altitude_m', 'Elevation m')}</section><section class="analyticsEvents"><h3>Top calibrated lean points</h3>${topLean.length ? topLean.map(row => {const speed=mph(row.speed_mps);return `<article><strong>${Math.abs(row.lean).toFixed(1)}°</strong><span>${Number.isFinite(speed)?`${Math.round(speed)} mph`:'-- mph'}</span><small>${Number.isFinite(finite(row.latitude)) && Number.isFinite(finite(row.longitude)) ? `${finite(row.latitude).toFixed(5)}, ${finite(row.longitude).toFixed(5)}` : 'No coordinates'}</small></article>`}).join('') : '<div class="analyticsEmpty">No calibrated lean points were saved for this ride.</div>'}</section>`;
 }
 
 window.MotoRideAnalytics = { open: openAnalytics };

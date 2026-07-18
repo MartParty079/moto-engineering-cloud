@@ -1,4 +1,6 @@
 /* Mobile workflow corrections loaded last. */
+#accessRoleBadge,.accessRoleBadge{display:none!important}
+
 .rideCenterAdventure{
   width:auto!important;
   min-width:88px;
@@ -15,7 +17,11 @@
 .rideHeaderActions{display:flex;align-items:center;gap:8px}
 
 @media(max-width:780px){
+  body:has(#nav [data-v="garage"].active) .motoBottomNav{display:none!important}
+  body:has(#nav [data-v="garage"].active){padding-bottom:0!important}
+  body:has(#nav [data-v="garage"].active) #main{padding-bottom:max(12px,env(safe-area-inset-bottom))!important;min-height:auto!important}
   body[data-active-view="garage"] .motoBottomNav{display:none!important}
-  body[data-active-view="garage"]{padding-bottom:env(safe-area-inset-bottom)!important}
+  body[data-active-view="garage"]{padding-bottom:0!important}
+  body[data-active-view="garage"] #main{padding-bottom:max(12px,env(safe-area-inset-bottom))!important;min-height:auto!important}
   .rideCenterAdventure{min-width:78px;padding-inline:10px!important;font-size:10px!important}
 }

@@ -1,5 +1,8 @@
 /* Mobile workflow corrections loaded last. */
-#accessRoleBadge,.accessRoleBadge{display:none!important}
+#accessRoleBadge,
+.accessRoleBadge,
+[title*="View the app as another role"],
+[title^="Access level:"]{display:none!important}
 
 .rideCenterAdventure{
   width:auto!important;
@@ -34,10 +37,26 @@
     right:0!important;
     bottom:0!important;
     width:100%!important;
-    min-height:calc(70px + var(--app-safe-bottom))!important;
-    padding:7px max(7px,var(--app-safe-right)) calc(7px + var(--app-safe-bottom)) max(7px,var(--app-safe-left))!important;
-    border-radius:18px 18px 0 0!important;
+    min-height:0!important;
+    height:calc(54px + var(--app-safe-bottom))!important;
+    padding:3px max(5px,var(--app-safe-right)) calc(3px + var(--app-safe-bottom)) max(5px,var(--app-safe-left))!important;
+    border-radius:14px 14px 0 0!important;
+    align-items:start!important;
   }
+  .advBottomBar button{
+    height:48px!important;
+    min-height:48px!important;
+    padding:3px 1px 1px!important;
+    font-size:7px!important;
+    line-height:1!important;
+  }
+  .advBottomBar button span{
+    margin-bottom:2px!important;
+    font-size:15px!important;
+  }
+  .advSheet{bottom:calc(54px + var(--app-safe-bottom))!important}
+  .advToast{bottom:calc(62px + var(--app-safe-bottom))!important}
+  .adventureNavPanel{bottom:calc(58px + var(--app-safe-bottom))!important}
 
   body.garage-view{
     padding-bottom:0!important;

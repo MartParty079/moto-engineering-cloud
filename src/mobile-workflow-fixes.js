@@ -9,7 +9,12 @@ function closeMenu(){
 }
 
 function removeAdminBadge(){
-  document.querySelectorAll('#accessRoleBadge,.accessRoleBadge').forEach(el=>el.remove());
+  document.querySelectorAll('#accessRoleBadge,.accessRoleBadge,[title*="View the app as another role"],[title^="Access level:"]').forEach(el=>el.remove());
+  document.querySelectorAll('button').forEach(button=>{
+    const label=(button.textContent||'').replace(/\s+/g,' ').trim().toLowerCase();
+    const aria=(button.getAttribute('aria-label')||'').toLowerCase();
+    if(label==='administrator'||label==='admin'||aria.includes('administrator access')||aria.includes('admin access'))button.remove();
+  });
 }
 
 function regroupParts(){
@@ -83,6 +88,7 @@ document.addEventListener('click',event=>{
 },true);
 
 const observer=new MutationObserver(queueSync);
-observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
+observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class','title','aria-label']});
 window.addEventListener('pageshow',queueSync);
+window.addEventListener('moto-page-ready',queueSync);
 queueSync();

@@ -17,11 +17,48 @@
 .rideHeaderActions{display:flex;align-items:center;gap:8px}
 
 @media(max-width:780px){
-  body:has(#nav [data-v="garage"].active) .motoBottomNav{display:none!important}
-  body:has(#nav [data-v="garage"].active){padding-bottom:0!important}
-  body:has(#nav [data-v="garage"].active) #main{padding-bottom:max(12px,env(safe-area-inset-bottom))!important;min-height:auto!important}
-  body[data-active-view="garage"] .motoBottomNav{display:none!important}
-  body[data-active-view="garage"]{padding-bottom:0!important}
-  body[data-active-view="garage"] #main{padding-bottom:max(12px,env(safe-area-inset-bottom))!important;min-height:auto!important}
+  body:not(.garage-view){padding-bottom:calc(var(--app-bottom-nav-core) + var(--app-safe-bottom))!important}
+
+  .motoBottomNav{
+    left:0!important;
+    right:0!important;
+    bottom:0!important;
+    width:100%!important;
+    height:calc(var(--app-bottom-nav-core) + var(--app-safe-bottom))!important;
+    padding:5px max(5px,var(--app-safe-right)) calc(5px + var(--app-safe-bottom)) max(5px,var(--app-safe-left))!important;
+    border-radius:18px 18px 0 0!important;
+  }
+
+  .advBottomBar{
+    left:0!important;
+    right:0!important;
+    bottom:0!important;
+    width:100%!important;
+    min-height:calc(70px + var(--app-safe-bottom))!important;
+    padding:7px max(7px,var(--app-safe-right)) calc(7px + var(--app-safe-bottom)) max(7px,var(--app-safe-left))!important;
+    border-radius:18px 18px 0 0!important;
+  }
+
+  body.garage-view{
+    padding-bottom:0!important;
+    min-height:0!important;
+  }
+  body.garage-view .motoBottomNav{display:none!important}
+  body.garage-view .layout{
+    min-height:0!important;
+    height:auto!important;
+  }
+  body.garage-view #main{
+    min-height:0!important;
+    height:auto!important;
+    padding-bottom:0!important;
+    margin-bottom:0!important;
+  }
+  body.garage-view #main>.stack:last-child,
+  body.garage-view #main>.section:last-child{
+    margin-bottom:0!important;
+    padding-bottom:0!important;
+  }
+
   .rideCenterAdventure{min-width:78px;padding-inline:10px!important;font-size:10px!important}
 }

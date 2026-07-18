@@ -1,4 +1,4 @@
-const CACHE='motocloud-shell-v6';
+const CACHE='motocloud-shell-v7';
 const SHELL=['/','/manifest.webmanifest','/app-icon.svg'];
 
 self.addEventListener('install',event=>{

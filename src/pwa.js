@@ -1,12 +1,12 @@
 const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
 const isStandalone=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
-const PWA_BUILD='garage-primary-cards-v7';
+const PWA_BUILD='adventure-heading-overscan-v8';
 
 async function clearLegacyMotoCaches(){
   if(!('caches' in window))return;
   try{
     const keys=await caches.keys();
-    await Promise.all(keys.filter(key=>key.startsWith('motocloud-shell-')&&key!=='motocloud-shell-v7').map(key=>caches.delete(key)));
+    await Promise.all(keys.filter(key=>key.startsWith('motocloud-shell-')&&key!=='motocloud-shell-v8').map(key=>caches.delete(key)));
   }catch(error){
     console.warn('Legacy cache cleanup skipped',error);
   }
@@ -20,13 +20,13 @@ if(localStorage.getItem('motoPwaBuild')!==PWA_BUILD){
 if('serviceWorker' in navigator){
   window.addEventListener('load',async()=>{
     try{
-      const registration=await navigator.serviceWorker.register('/sw.js?v=7',{updateViaCache:'none'});
+      const registration=await navigator.serviceWorker.register('/sw.js?v=8',{updateViaCache:'none'});
       await registration.update();
       registration.addEventListener('updatefound',()=>{
         const worker=registration.installing;
         if(!worker)return;
         worker.addEventListener('statechange',()=>{
-          if(worker.state==='activated')console.info('MotoCloud garage card update installed.');
+          if(worker.state==='activated')console.info('MotoCloud Adventure heading update installed.');
         });
       });
     }catch(error){

@@ -28,7 +28,7 @@ function removeAccessUI(){
 function ensureAccessUI(){
   if(!session||!profile)return;
   document.querySelector('#accessRoleBadge')?.remove();
-  ensureQuickButton();
+  document.querySelector('#accessQuickButton')?.remove();
   ensureNavControls();
   bindReleaseBadges();
 }

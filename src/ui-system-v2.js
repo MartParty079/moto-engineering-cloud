@@ -1,7 +1,9 @@
-const MIN_VISIBLE_MS=220;
+const MIN_VISIBLE_MS=180;
+const MAX_VISIBLE_MS=1600;
 let shownAt=0;
 let awaitingContent=false;
 let hideTimer=null;
+let failsafeTimer=null;
 let themePinned=false;
 
 function ensureThemeLast(){
@@ -23,12 +25,16 @@ function skeletonMarkup(){
 
 function ensureSkeleton(){
   let overlay=document.querySelector('#pageSkeleton');
-  if(!overlay){document.body.insertAdjacentHTML('beforeend',skeletonMarkup());overlay=document.querySelector('#pageSkeleton')}
+  if(!overlay){
+    document.body.insertAdjacentHTML('beforeend',skeletonMarkup());
+    overlay=document.querySelector('#pageSkeleton');
+  }
   return overlay;
 }
 
 function hideSkeleton(){
   clearTimeout(hideTimer);
+  clearTimeout(failsafeTimer);
   document.querySelector('#pageSkeleton')?.classList.remove('visible');
   awaitingContent=false;
 }
@@ -37,22 +43,20 @@ function showSkeleton(){
   if(!document.querySelector('#main'))return;
   const overlay=ensureSkeleton();
   clearTimeout(hideTimer);
+  clearTimeout(failsafeTimer);
   awaitingContent=true;
   shownAt=Date.now();
   overlay.classList.add('visible');
+  failsafeTimer=setTimeout(hideSkeleton,MAX_VISIBLE_MS);
 }
 
 function hideSkeletonWhenReady(){
   if(!awaitingContent)return;
   const main=document.querySelector('#main');
   if(!main||!main.children.length)return;
-  const overlay=ensureSkeleton();
   const remaining=Math.max(0,MIN_VISIBLE_MS-(Date.now()-shownAt));
   clearTimeout(hideTimer);
-  hideTimer=setTimeout(()=>{
-    overlay.classList.remove('visible');
-    awaitingContent=false;
-  },remaining);
+  hideTimer=setTimeout(hideSkeleton,remaining);
 }
 
 function regroupNavigation(){
@@ -76,9 +80,10 @@ function regroupNavigation(){
 function refresh(){
   ensureThemeLast();
   regroupNavigation();
-  const main=document.querySelector('#main');
-  if(!main){hideSkeleton();return}
-  if(!main.children.length&&!awaitingContent)showSkeleton();
+  if(!document.querySelector('#main')){
+    hideSkeleton();
+    return;
+  }
   hideSkeletonWhenReady();
 }
 
@@ -91,10 +96,11 @@ observer.observe(document.body,{childList:true,subtree:true});
 
 window.MotoPageSkeleton={show:showSkeleton,hide:hideSkeleton};
 window.addEventListener('moto-page-loading',showSkeleton);
-window.addEventListener('moto-page-ready',hideSkeletonWhenReady);
+window.addEventListener('moto-page-ready',hideSkeleton);
+window.addEventListener('pageshow',()=>setTimeout(hideSkeleton,0));
+window.addEventListener('error',hideSkeleton);
+window.addEventListener('unhandledrejection',hideSkeleton);
 
 ensureThemeLast();
 regroupNavigation();
-const initialMain=document.querySelector('#main');
-if(initialMain&&!initialMain.children.length)showSkeleton();
-hideSkeletonWhenReady();
+hideSkeleton();

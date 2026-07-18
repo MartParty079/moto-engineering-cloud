@@ -8,8 +8,8 @@
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait-primary",
-  "background_color": "#0d0914",
-  "theme_color": "#3b0764",
+  "background_color": "#090b0e",
+  "theme_color": "#f4512c",
   "categories": ["productivity", "utilities", "automotive"],
   "icons": [
     {

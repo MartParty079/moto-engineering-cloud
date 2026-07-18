@@ -2,10 +2,12 @@ const MIN_VISIBLE_MS=220;
 let shownAt=0;
 let awaitingContent=false;
 let hideTimer=null;
+let themePinned=false;
 
 function ensureThemeLast(){
+  if(themePinned)return;
   const link=document.querySelector('link[data-ui-system-v2]');
-  if(link)document.head.appendChild(link);
+  if(link){document.head.appendChild(link);themePinned=true}
 }
 
 function skeletonMarkup(){
@@ -25,7 +27,14 @@ function ensureSkeleton(){
   return overlay;
 }
 
+function hideSkeleton(){
+  clearTimeout(hideTimer);
+  document.querySelector('#pageSkeleton')?.classList.remove('visible');
+  awaitingContent=false;
+}
+
 function showSkeleton(){
+  if(!document.querySelector('#main'))return;
   const overlay=ensureSkeleton();
   clearTimeout(hideTimer);
   awaitingContent=true;
@@ -67,6 +76,9 @@ function regroupNavigation(){
 function refresh(){
   ensureThemeLast();
   regroupNavigation();
+  const main=document.querySelector('#main');
+  if(!main){hideSkeleton();return}
+  if(!main.children.length&&!awaitingContent)showSkeleton();
   hideSkeletonWhenReady();
 }
 
@@ -77,14 +89,12 @@ document.addEventListener('click',event=>{
 const observer=new MutationObserver(()=>queueMicrotask(refresh));
 observer.observe(document.body,{childList:true,subtree:true});
 
-window.MotoPageSkeleton={show:showSkeleton,hide:()=>{
-  document.querySelector('#pageSkeleton')?.classList.remove('visible');
-  awaitingContent=false;
-}};
+window.MotoPageSkeleton={show:showSkeleton,hide:hideSkeleton};
 window.addEventListener('moto-page-loading',showSkeleton);
 window.addEventListener('moto-page-ready',hideSkeletonWhenReady);
 
 ensureThemeLast();
 regroupNavigation();
-if(!document.querySelector('#main')?.children.length)showSkeleton();
+const initialMain=document.querySelector('#main');
+if(initialMain&&!initialMain.children.length)showSkeleton();
 hideSkeletonWhenReady();

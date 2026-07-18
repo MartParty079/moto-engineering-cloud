@@ -8,6 +8,10 @@ function closeMenu(){
   document.querySelector('.menuButton')?.setAttribute('aria-expanded','false');
 }
 
+function removeAdminBadge(){
+  document.querySelectorAll('#accessRoleBadge,.accessRoleBadge').forEach(el=>el.remove());
+}
+
 function regroupParts(){
   const nav=$('#nav');
   const parts=nav?.querySelector('[data-v="parts"]');
@@ -34,6 +38,19 @@ function syncActiveView(){
   else if(!view&&document.body.dataset.activeView)delete document.body.dataset.activeView;
 }
 
+function openAdventureFromRideCenter(){
+  closeMenu();
+  document.querySelector('#rideCenterOverlay')?.remove();
+  requestAnimationFrame(()=>{
+    const adventure=$('#adventureNav');
+    if(adventure){
+      adventure.click();
+      return;
+    }
+    document.querySelector('.motoBottomNav button:nth-child(3)')?.click();
+  });
+}
+
 function addRideCenterAdventureShortcut(){
   const actions=$('#rideCenterOverlay .rideHeaderActions');
   if(!actions||$('#rideCenterAdventure'))return;
@@ -43,14 +60,12 @@ function addRideCenterAdventureShortcut(){
   button.className='rideCenterAdventure';
   button.textContent='ADV MAP';
   button.setAttribute('aria-label','Open Adventure map');
-  button.onclick=()=>{
-    closeMenu();
-    $('#adventureNav')?.click();
-  };
+  button.onclick=openAdventureFromRideCenter;
   actions.prepend(button);
 }
 
 function sync(){
+  removeAdminBadge();
   regroupParts();
   syncActiveView();
   addRideCenterAdventureShortcut();

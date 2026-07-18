@@ -36,6 +36,7 @@ function syncActiveView(){
   const view=active?.dataset.v||'';
   if(view&&document.body.dataset.activeView!==view)document.body.dataset.activeView=view;
   else if(!view&&document.body.dataset.activeView)delete document.body.dataset.activeView;
+  document.body.classList.toggle('garage-view',view==='garage');
 }
 
 function openAdventureFromRideCenter(){
@@ -43,10 +44,7 @@ function openAdventureFromRideCenter(){
   document.querySelector('#rideCenterOverlay')?.remove();
   requestAnimationFrame(()=>{
     const adventure=$('#adventureNav');
-    if(adventure){
-      adventure.click();
-      return;
-    }
+    if(adventure){adventure.click();return}
     document.querySelector('.motoBottomNav button:nth-child(3)')?.click();
   });
 }
@@ -85,6 +83,6 @@ document.addEventListener('click',event=>{
 },true);
 
 const observer=new MutationObserver(queueSync);
-observer.observe(document.querySelector('#app')||document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
+observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
 window.addEventListener('pageshow',queueSync);
 queueSync();

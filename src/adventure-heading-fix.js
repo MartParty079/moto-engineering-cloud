@@ -46,6 +46,8 @@ window.addEventListener('resize',queueCoverage);
 window.addEventListener('orientationchange',()=>setTimeout(queueCoverage,120));
 window.visualViewport?.addEventListener('resize',queueCoverage);
 
-const observer=new MutationObserver(queueCoverage);
-observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class','style']});
+const observer=new MutationObserver(mutations=>{
+  if(mutations.some(m=>[...m.addedNodes].some(node=>node.nodeType===1&&(node.id==='adventureOverlay'||node.querySelector?.('#adventureMap')))))queueCoverage();
+});
+observer.observe(document.body,{childList:true,subtree:true});
 queueCoverage();

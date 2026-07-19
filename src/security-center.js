@@ -79,12 +79,17 @@ function securityNavGroup() {
     footer ? nav.insertBefore(group, footer) : nav.appendChild(group);
   }
   const badge = group.querySelector('em');
-  if (badge) badge.textContent = verifiedTotp() ? (hasAal2() ? 'AAL2' : 'VERIFY') : 'SETUP';
-  group.querySelector('#securityCenterNav').onclick = event => {
-    event.preventDefault();
-    event.stopPropagation();
-    void openSecurityCenter();
-  };
+  const badgeText = verifiedTotp() ? (hasAal2() ? 'AAL2' : 'VERIFY') : 'SETUP';
+  if (badge && badge.textContent !== badgeText) badge.textContent = badgeText;
+  const button = group.querySelector('#securityCenterNav');
+  if (button && button.dataset.securityBound !== '1') {
+    button.dataset.securityBound = '1';
+    button.onclick = event => {
+      event.preventDefault();
+      event.stopPropagation();
+      void openSecurityCenter();
+    };
+  }
   return group;
 }
 
@@ -114,7 +119,7 @@ function hardenAuthForm() {
     const submit = form.querySelector('button[type="submit"],button[value="signin"]');
     if (!email || !suppliedPassword) return;
     if (localFailedAttempts >= 5) {
-      if (message) message.textContent = 'Too many local attempts. Close and reopen the app, or wait for the server lockout to expire.';
+      if (message) message.textContent = 'Too many local attempts. Wait for the server lockout to expire.';
       return;
     }
     if (submit) submit.disabled = true;

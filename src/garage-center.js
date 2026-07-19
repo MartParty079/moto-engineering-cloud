@@ -7,7 +7,7 @@ const duration=s=>{s=Math.max(0,Number(s||0));const h=Math.floor(s/3600),m=Math.
 const fullDate=v=>v?new Date(v).toLocaleString():'—';
 const shortDate=v=>v?new Date(v).toLocaleDateString(undefined,{month:'short',day:'numeric'}):'—';
 const bikeLabel=b=>[b?.year,b?.make,b?.model].filter(Boolean).join(' ')||b?.name||'Motorcycle';
-const cssImage=url=>url?`url("${String(url).replace(/["\\\n\r]/g,'')}")`:'linear-gradient(145deg,#1b2836,#0a0f15 72%)';
+const cssImage=url=>url?`url('${String(url).replace(/['\\\n\r]/g,'')}')`:'linear-gradient(145deg,#1b2836,#0a0f15 72%)';
 let cache={bikes:[],rides:[],intervals:[],tires:[],fuel:[]},loading=false,queued=false;
 async function rows(label,query){const{data,error}=await query;if(error){console.warn(`${label} unavailable`,error);return[]}return data||[]}
 async function refresh(){if(loading)return;loading=true;try{const[bikes,rides,intervals,tires,fuel]=await Promise.all([

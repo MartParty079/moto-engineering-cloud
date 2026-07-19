@@ -33,11 +33,17 @@ async function loadGarageData(){
  if(bikeError)throw bikeError;
  if(rideError)console.warn('Motorcycle ride totals unavailable',rideError);
  cachedBikes=bikes||[];
- cachedSessions=sessions||[];
+ cachedSessions=sessions||[]
+}
+
+function cardBikeId(card){
+ const editRef=card.querySelector('[data-edit^="bikes:"]')?.dataset.edit;
+ const deleteRef=card.querySelector('[data-del^="bikes:"]')?.dataset.del;
+ return (editRef||deleteRef||'').split(':')[1]||card.dataset.bikeProfile||''
 }
 
 function addCardSummary(card,bike){
- const totals=sessionTotals(cachedSessions.filter(r=>r.bike_id===bike.id));
+ const totals=sessionTotals(cachedSessions.filter(r=>String(r.bike_id)===String(bike.id)));
  card.dataset.bikeProfile=bike.id;
  card.tabIndex=0;
  card.setAttribute('role','button');
@@ -46,23 +52,32 @@ function addCardSummary(card,bike){
  let summary=card.querySelector('.bikeCardTotals');
  if(!summary){
   summary=document.createElement('div');
-  summary.className='bikeCardTotals';
-  card.querySelector(':scope > div')?.appendChild(summary)
+  summary.className='bikeCardTotals'
  }
- summary.innerHTML=`<span><small>TOTAL MILEAGE</small><b>${miles(bike.odometer)}</b></span><span><small>TOTAL HOURS</small><b>${hours(totals.seconds)}</b></span><em>Open motorcycle profile ›</em>`
+ summary.innerHTML=`<span><small>TOTAL MILEAGE</small><b>${miles(bike.odometer)}</b></span><span><small>RIDE HOURS</small><b>${hours(totals.seconds)}</b></span><span><small>SAVED RIDES</small><b>${totals.rides}</b></span>`;
+ const host=card.querySelector(':scope > div')||card;
+ const drawer=host.querySelector(':scope > .garageCompactDrawer');
+ if(drawer)host.insertBefore(summary,drawer);
+ else if(summary.parentElement!==host)host.appendChild(summary)
 }
 
-async function enhanceMotorcycleCards(){
+async function enhanceMotorcycleCards(force=false){
  const main=$('#main');
  const title=main?.querySelector('.section h2')?.textContent.trim();
  if(!main||title!=='Motorcycles'||enhancing)return;
  const cards=$$('.bikeHero');
- if(!cards.length||cards.every(c=>c.dataset.bikeProfile))return;
+ if(!cards.length)return;
+ const missing=cards.some(card=>!card.dataset.bikeProfile||!card.querySelector('.bikeCardTotals'));
+ if(!force&&!missing)return;
  enhancing=true;
  try{
-  await loadGarageData();
+  if(force||!cachedBikes.length)await loadGarageData();
   if(!document.body.contains(main))return;
-  cards.forEach((card,index)=>{const bike=cachedBikes[index];if(bike)addCardSummary(card,bike)})
+  cards.forEach((card,index)=>{
+   const id=cardBikeId(card);
+   const bike=cachedBikes.find(row=>String(row.id)===String(id))||cachedBikes[index];
+   if(bike)addCardSummary(card,bike)
+  })
  }catch(error){console.error('Could not prepare motorcycle profiles',error)}finally{enhancing=false}
 }
 
@@ -146,7 +161,8 @@ document.addEventListener('keydown',e=>{
  e.preventDefault();activateCard(card)
 });
 
-const observer=new MutationObserver(()=>setTimeout(enhanceMotorcycleCards,0));
+const observer=new MutationObserver(()=>setTimeout(()=>enhanceMotorcycleCards(),0));
 observer.observe(document.querySelector('#app')||document.body,{childList:true,subtree:true});
-supabase.auth.onAuthStateChange(()=>{cachedBikes=[];cachedSessions=[];setTimeout(enhanceMotorcycleCards,50)});
-enhanceMotorcycleCards();
+supabase.auth.onAuthStateChange(()=>{cachedBikes=[];cachedSessions=[];setTimeout(()=>enhanceMotorcycleCards(true),50)});
+window.addEventListener('moto-ride-complete',()=>{cachedSessions=[];setTimeout(()=>enhanceMotorcycleCards(true),50)});
+enhanceMotorcycleCards(true);

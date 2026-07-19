@@ -1,5 +1,11 @@
 [functions.ai-chat]
-verify_jwt = false
+verify_jwt = true
 
 [functions.ai-apply-proposal]
+verify_jwt = true
+
+[functions.admin-invite-user]
+verify_jwt = true
+
+[functions.auth-recover]
 verify_jwt = false

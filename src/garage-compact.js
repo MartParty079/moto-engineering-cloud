@@ -14,14 +14,17 @@
       drawer = document.createElement('details');
       drawer.className = 'garageCompactDrawer';
       drawer.innerHTML = `<summary><span>Quick settings</span><i aria-hidden="true">⌄</i></summary><div class="garageCompactContent"></div>`;
-      drawer.addEventListener('click', event => event.stopPropagation());
       hostFor(card).appendChild(drawer);
     }
     drawer.querySelector('summary')?.setAttribute('aria-label', labelFor(card));
-    drawer.addEventListener('toggle', () => {
-      const text = drawer.querySelector('summary span');
-      if (text) text.textContent = drawer.open ? 'Hide settings' : 'Quick settings';
-    }, { once:false });
+    if (!drawer.dataset.bound) {
+      drawer.dataset.bound = '1';
+      drawer.addEventListener('click', event => event.stopPropagation());
+      drawer.addEventListener('toggle', () => {
+        const text = drawer.querySelector('summary span');
+        if (text) text.textContent = drawer.open ? 'Hide settings' : 'Quick settings';
+      });
+    }
     return drawer;
   }
   function compactCard(card) {

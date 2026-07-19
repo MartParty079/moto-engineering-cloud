@@ -45,7 +45,6 @@ function removeDuplicateDeck() {
   $$('.bikeHero').forEach(card => {
     card.hidden = false;
     card.removeAttribute('hidden');
-    card.querySelector('.bikeCardTotals')?.remove();
   });
 }
 
@@ -63,7 +62,6 @@ function openSettings(card) {
 }
 
 function addPrimaryActions(card, bike) {
-  card.querySelector('.bikeCardTotals')?.remove();
   if (card.querySelector('.garagePrimaryActions')) return;
   const host = card.querySelector(':scope > div') || card;
   const actions = document.createElement('div');

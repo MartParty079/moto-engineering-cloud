@@ -194,8 +194,16 @@
     requestAnimationFrame(scan);
   }
 
+  function nodeNeedsScan(node){
+    if (node.nodeType !== 1) return false;
+    if (node.matches?.('#adventureOverlay,#rideDashOverlay,#dashStylePicker') || node.querySelector?.('#adventureOverlay,#rideDashOverlay,#dashStylePicker')) return true;
+    const value = text(node).toUpperCase();
+    if (value.includes('ACTIVE ROUTE')) return true;
+    return Boolean(node.closest?.('#adventureOverlay .advTopBar') && value.includes('RIDE'));
+  }
+
   const observer = new MutationObserver(mutations => {
-    if (mutations.some(mutation => [...mutation.addedNodes].some(node => node.nodeType === 1 && (node.matches?.('#adventureOverlay,#rideDashOverlay,#dashStylePicker') || node.querySelector?.('#adventureOverlay,#rideDashOverlay,#dashStylePicker'))))) queueScan();
+    if (mutations.some(mutation => [...mutation.addedNodes].some(nodeNeedsScan))) queueScan();
   });
   observer.observe(document.body,{childList:true,subtree:true});
 

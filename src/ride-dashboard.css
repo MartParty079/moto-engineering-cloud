@@ -411,7 +411,7 @@
   content:"";
   background:
     radial-gradient(circle at center,var(--dash-panel-2) 0 49%,transparent 50%),
-    conic-gradient(from 225deg,var(--dash-accent) 0 calc(var(--speed-pct) * .75),rgba(255,255,255,.08) 0 75%,transparent 0);
+    conic-gradient(from 225deg,var(--dash-accent) 0 var(--speed-sweep),rgba(255,255,255,.08) var(--speed-sweep) 75%,transparent 75%);
   filter:drop-shadow(0 0 12px rgba(var(--dash-accent-rgb),.28));
   transform:rotate(0deg);
 }
@@ -450,7 +450,7 @@
   border:7px solid rgba(120,112,96,.26);
   background:
     radial-gradient(circle,#10100f 0 53%,transparent 54%),
-    conic-gradient(from 225deg,var(--dash-accent) 0 calc(var(--speed-pct) * .75),rgba(225,218,199,.1) 0 75%,transparent 0);
+    conic-gradient(from 225deg,var(--dash-accent) 0 var(--speed-sweep),rgba(225,218,199,.1) var(--speed-sweep) 75%,transparent 75%);
   box-shadow:inset 0 0 0 2px rgba(255,255,255,.08),inset 0 0 20px #000,0 0 0 1px rgba(255,255,255,.12);
 }
 #rideDashOverlay[data-gauge="analog"] .dashSpeedNumber{font-family:Georgia,serif;font-weight:500;text-shadow:none}
@@ -468,7 +468,7 @@
 }
 .dashLeanGauge::after{
   position:absolute;
-  left:calc(50% + (var(--lean-side) * var(--lean-pct) * .36));
+  left:calc(50% + var(--lean-offset));
   bottom:5px;
   width:3px;
   height:64px;
@@ -476,7 +476,7 @@
   content:"";
   background:var(--dash-accent);
   box-shadow:0 0 12px rgba(var(--dash-accent-rgb),.72);
-  transform:rotate(calc(var(--lean-side) * var(--lean-pct) * .32deg));
+  transform:rotate(var(--lean-angle));
   transform-origin:bottom center;
 }
 .dashLeanGauge>div{position:relative;z-index:2;text-align:center}

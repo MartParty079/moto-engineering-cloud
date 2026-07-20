@@ -1,0 +1,143 @@
+/* Lean GUI recovery states.
+   The gauge remains visually quiet until motion data is genuinely calibrated. */
+#rideDashOverlay .widget-lean{
+  cursor:pointer;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+}
+
+#rideDashOverlay .widget-lean:focus-visible{
+  outline:2px solid var(--dash-accent);
+  outline-offset:2px;
+}
+
+#rideDashOverlay[data-lean-state="waiting"] .widget-lean .dashLeanGauge,
+#rideDashOverlay[data-lean-state="requesting"] .widget-lean .dashLeanGauge,
+#rideDashOverlay[data-lean-state="calibrating"] .widget-lean .dashLeanGauge,
+#rideDashOverlay[data-lean-state="no-data"] .widget-lean .dashLeanGauge,
+#rideDashOverlay[data-lean-state="denied"] .widget-lean .dashLeanGauge,
+#rideDashOverlay[data-lean-state="unsupported"] .widget-lean .dashLeanGauge{
+  opacity:.22;
+  filter:saturate(.25);
+}
+
+#rideDashOverlay .widget-lean::after{
+  position:absolute;
+  left:50%;
+  bottom:14px;
+  z-index:8;
+  display:none;
+  max-width:calc(100% - 30px);
+  padding:7px 11px;
+  border:1px solid rgba(var(--dash-accent-rgb),.38);
+  border-radius:999px;
+  background:rgba(3,7,11,.88);
+  color:var(--dash-accent);
+  font-size:7px;
+  font-weight:950;
+  letter-spacing:.12em;
+  text-align:center;
+  text-transform:uppercase;
+  white-space:nowrap;
+  transform:translateX(-50%);
+  box-shadow:0 8px 22px rgba(0,0,0,.28),inset 0 0 14px rgba(var(--dash-accent-rgb),.05);
+  backdrop-filter:blur(10px);
+  pointer-events:none;
+}
+
+#rideDashOverlay[data-lean-state="waiting"] .widget-lean::after{
+  display:block;
+  content:"Tap to enable lean sensor";
+}
+
+#rideDashOverlay[data-lean-state="requesting"] .widget-lean::after{
+  display:block;
+  content:"Requesting sensor access";
+}
+
+#rideDashOverlay[data-lean-state="calibrating"] .widget-lean::after{
+  display:block;
+  content:"Hold upright · calibrating";
+}
+
+#rideDashOverlay[data-lean-state="no-data"] .widget-lean::after{
+  display:block;
+  content:"No sensor data · tap to retry";
+  border-color:rgba(245,158,11,.5);
+  color:#f59e0b;
+}
+
+#rideDashOverlay[data-lean-state="denied"] .widget-lean::after{
+  display:block;
+  content:"Motion permission required";
+  border-color:rgba(239,68,68,.5);
+  color:#ef4444;
+}
+
+#rideDashOverlay[data-lean-state="unsupported"] .widget-lean::after{
+  display:block;
+  content:"Lean sensor unavailable";
+  color:#94a3b8;
+}
+
+#rideDashOverlay[data-lean-state="calibrating"] .widget-lean::before,
+#rideDashOverlay[data-lean-state="requesting"] .widget-lean::before{
+  position:absolute;
+  top:14px;
+  right:14px;
+  z-index:8;
+  width:13px;
+  height:13px;
+  border:2px solid rgba(var(--dash-accent-rgb),.18);
+  border-top-color:var(--dash-accent);
+  border-radius:50%;
+  content:"";
+  animation:rideLeanSpin .8s linear infinite;
+}
+
+#rideDashOverlay[data-lean-state="live"] .widget-lean{
+  border-color:color-mix(in srgb,var(--dash-accent) 48%,transparent);
+}
+
+#rideDashOverlay[data-lean-state="live"] .widget-lean::after{
+  display:block;
+  bottom:10px;
+  padding:4px 8px;
+  border-color:rgba(34,197,94,.34);
+  background:rgba(3,12,8,.7);
+  color:#4ade80;
+  content:"Live · tap to recalibrate";
+  font-size:5.5px;
+  opacity:.7;
+}
+
+#rideDashOverlay[data-ride-active="true"][data-lean-state="live"] .widget-lean::after{
+  opacity:.42;
+}
+
+#rideDashOverlay[data-lean-state="waiting"] .widget-maxLean .dashValue,
+#rideDashOverlay[data-lean-state="calibrating"] .widget-maxLean .dashValue,
+#rideDashOverlay[data-lean-state="no-data"] .widget-maxLean .dashValue,
+#rideDashOverlay[data-lean-state="denied"] .widget-maxLean .dashValue{
+  opacity:.36;
+}
+
+@keyframes rideLeanSpin{to{transform:rotate(360deg)}}
+
+@media(max-width:390px){
+  #rideDashOverlay .widget-lean::after{
+    bottom:10px;
+    max-width:calc(100% - 20px);
+    padding:6px 8px;
+    font-size:6px;
+    letter-spacing:.08em;
+  }
+
+  #rideDashOverlay[data-lean-state="live"] .widget-lean::after{
+    font-size:5px;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  #rideDashOverlay[data-lean-state] .widget-lean::before{animation-duration:1.5s}
+}

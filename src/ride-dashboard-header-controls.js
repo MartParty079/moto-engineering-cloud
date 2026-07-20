@@ -25,6 +25,8 @@ function syncRideDashState(overlay){
 
 function openRideQuickSettings(overlay,controls){
   overlay.querySelector('#dashRideQuickSettings')?.remove();
+  const toolsState = window.MotoRideTools?.getState?.() || {};
+  const sensorsEnabled = Boolean(toolsState.motionEnabled);
   const modal = document.createElement('div');
   modal.id = 'dashRideQuickSettings';
   modal.className = 'dashRideQuickSettings';
@@ -33,6 +35,7 @@ function openRideQuickSettings(overlay,controls){
     <div class="dashRideSettingsGrid">
       <button id="dashRideSettingsStyle" type="button"><span>STYLE</span><small>Themes, colors and gauges</small></button>
       <button id="dashRideSettingsLayout" type="button"><span>LAYOUT</span><small>Widgets and displays</small></button>
+      <button id="dashRideSettingsSensors" type="button"><span>${sensorsEnabled ? 'RECALIBRATE' : 'ENABLE SENSORS'}</span><small>${sensorsEnabled ? 'Zero lean angle again' : 'Lean and motion telemetry'}</small></button>
       <button id="dashRideSettingsHistory" type="button"><span>HISTORY</span><small>Completed rides and statistics</small></button>
       <button id="dashRideSettingsStop" class="danger" type="button"><span>STOP & SAVE</span><small>Finish the current ride</small></button>
     </div>
@@ -47,6 +50,27 @@ function openRideQuickSettings(overlay,controls){
     close();
     controls.originalEditHandler?.call(controls.editButton);
     requestAnimationFrame(() => syncRideDashState(overlay));
+  };
+  modal.querySelector('#dashRideSettingsSensors').onclick = async event => {
+    const button = event.currentTarget;
+    const tools = window.MotoRideTools;
+    if(!tools){ alert('Ride sensors are still loading.'); return; }
+    button.disabled = true;
+    const label = button.querySelector('span');
+    const detail = button.querySelector('small');
+    if(label) label.textContent = sensorsEnabled ? 'CALIBRATING…' : 'REQUESTING…';
+    if(detail) detail.textContent = 'Hold the motorcycle upright and steady';
+    try{
+      if(sensorsEnabled) tools.recalibrate?.();
+      else await tools.enableSensors?.();
+      if(label) label.textContent = 'CALIBRATING';
+      if(detail) detail.textContent = 'Lean telemetry will zero automatically';
+      setTimeout(close,650);
+    }catch(error){
+      button.disabled = false;
+      if(label) label.textContent = 'TRY AGAIN';
+      if(detail) detail.textContent = error?.message || String(error);
+    }
   };
   modal.querySelector('#dashRideSettingsHistory').onclick = () => { close(); window.MotoRideDash?.openHistory?.(); };
   modal.querySelector('#dashRideSettingsStop').onclick = () => { close(); controls.rideButton.click(); };

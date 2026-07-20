@@ -15,8 +15,14 @@ function loadRideExperience(){
   if(!document.querySelector('style[data-ride-navigation-v2]')){
     const style=document.createElement('style');
     style.dataset.rideNavigationV2='1';
-    style.textContent=`.motoBottomNav button>svg{display:block;width:18px;height:18px;margin:0 auto 2px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.motoBottomNav button.active>svg{color:var(--accent,#f4512c)}@media(max-width:720px){#rideDashOverlay[data-ride-experience="v2"][data-ride-active="true"] .rideXSmartStrip{display:flex;overflow-x:auto;scrollbar-width:none;padding:3px 4px}#rideDashOverlay[data-ride-experience="v2"][data-ride-active="true"] .rideXSmartStrip::-webkit-scrollbar{display:none}#rideDashOverlay[data-ride-experience="v2"][data-ride-active="true"] .rideXSmartStrip button{flex:0 0 132px;min-height:40px}#rideDashOverlay[data-ride-experience="v2"][data-ride-active="true"] .rideXCompliance{flex-basis:155px}#rideDashOverlay[data-ride-experience="v2"][data-ride-active="false"] #rideXModeButton{display:none!important}}`;
+    style.textContent=`.motoBottomNav button>svg{display:block;width:18px;height:18px;margin:0 auto 2px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.motoBottomNav button.active>svg{color:var(--accent,#f4512c)}.rideXComplianceRing{background:radial-gradient(circle,#070a0e 54%,transparent 56%),conic-gradient(var(--adaptive) 0 62%,rgba(255,255,255,.08) 62% 75%,transparent 75%)!important}@media(max-width:720px){#rideDashOverlay[data-ride-experience="v2"][data-ride-active="true"] .rideXSmartStrip{display:flex;overflow-x:auto;scrollbar-width:none;padding:3px 4px}#rideDashOverlay[data-ride-experience="v2"][data-ride-active="true"] .rideXSmartStrip::-webkit-scrollbar{display:none}#rideDashOverlay[data-ride-experience="v2"][data-ride-active="true"] .rideXSmartStrip button{flex:0 0 132px;min-height:40px}#rideDashOverlay[data-ride-experience="v2"][data-ride-active="true"] .rideXCompliance{flex-basis:155px}#rideDashOverlay[data-ride-experience="v2"][data-ride-active="false"] #rideXModeButton{display:none!important}}`;
     document.head.appendChild(style);
+  }
+  if(!window.__motoRideRefreshGuard){
+    window.__motoRideRefreshGuard=true;
+    window.addEventListener('moto-ride-dash-refreshed',event=>{
+      if(event.detail?.overlay?.dataset?.rideExperience==='v2')event.stopImmediatePropagation();
+    });
   }
   if(!window.__motoRideExperienceLoading){
     window.__motoRideExperienceLoading=Promise.all([

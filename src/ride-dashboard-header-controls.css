@@ -1,5 +1,5 @@
-/* Ride Dash header controls v2
-   Moves the ride action into the command rail and keeps style inside Edit mode. */
+/* Ride Dash header controls v3
+   Maximizes telemetry after a ride starts and reduces active controls to Settings, Map and Close. */
 
 #rideDashOverlay[data-header-controls-v2="ready"] .rideDash>header{
   gap:5px;
@@ -45,7 +45,6 @@
   opacity:.62;
 }
 
-/* Status remains visible, but no longer consumes a full control row. */
 #rideDashOverlay[data-header-controls-v2="ready"] .dashRideControl{
   min-height:24px;
   padding:2px 8px;
@@ -78,7 +77,6 @@
   font-size:9px;
 }
 
-/* STYLE now lives inside the edit-only floating toolbar. */
 #rideDashOverlay[data-header-controls-v2="ready"] #dashStyle{
   min-width:52px;
   color:var(--dash-accent);
@@ -94,6 +92,170 @@
   padding:0 8px;
   font-size:7px;
   letter-spacing:.07em;
+}
+
+/* Active ride: strip the dash down to only three top controls. */
+#rideDashOverlay[data-header-controls-v2="ready"][data-ride-active="true"]{
+  --dash-gap:6px;
+}
+
+#rideDashOverlay[data-header-controls-v2="ready"][data-ride-active="true"] .rideDash>header{
+  min-height:32px;
+  padding:calc(2px + env(safe-area-inset-top)) 7px 2px;
+}
+
+#rideDashOverlay[data-header-controls-v2="ready"][data-ride-active="true"] .dashBrand,
+#rideDashOverlay[data-header-controls-v2="ready"][data-ride-active="true"] .dashRideControl,
+#rideDashOverlay[data-header-controls-v2="ready"][data-ride-active="true"] .dashTabs,
+#rideDashOverlay[data-header-controls-v2="ready"][data-ride-active="true"] .dashHeaderActions #dashRideToggle{
+  display:none;
+}
+
+#rideDashOverlay[data-header-controls-v2="ready"][data-ride-active="true"] .dashHeaderActions{
+  display:grid;
+  width:100%;
+  grid-template-columns:1fr 1fr 1fr;
+  align-items:center;
+  gap:4px;
+}
+
+#rideDashOverlay[data-header-controls-v2="ready"][data-ride-active="true"] .dashHeaderActions button{
+  width:34px;
+  min-width:34px;
+  height:30px;
+  padding:0 5px;
+  font-size:6px;
+}
+
+#rideDashOverlay[data-header-controls-v2="ready"][data-ride-active="true"] #dashEdit{
+  grid-column:1;
+  grid-row:1;
+  justify-self:start;
+  color:var(--dash-accent);
+}
+
+#rideDashOverlay[data-header-controls-v2="ready"][data-ride-active="true"] #dashAdventure{
+  grid-column:2;
+  grid-row:1;
+  justify-self:center;
+  border-color:var(--dash-accent);
+  background:rgba(var(--dash-accent-rgb),.12);
+  color:var(--dash-accent);
+}
+
+#rideDashOverlay[data-header-controls-v2="ready"][data-ride-active="true"] #dashClose{
+  grid-column:3;
+  grid-row:1;
+  justify-self:end;
+  font-size:17px!important;
+}
+
+#rideDashOverlay[data-header-controls-v2="ready"][data-ride-active="true"] .dashPage{
+  padding:3px;
+}
+
+#rideDashOverlay[data-header-controls-v2="ready"][data-ride-active="true"] .dashGrid{
+  gap:6px;
+}
+
+#rideDashOverlay[data-header-controls-v2="ready"][data-ride-active="true"].editing .dashPage{
+  padding-bottom:48px;
+}
+
+/* Compact ride settings sheet opened by SET during a live ride. */
+.dashRideQuickSettings{
+  position:fixed;
+  inset:0;
+  z-index:9910;
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+  padding:10px;
+  background:rgba(0,0,0,.7);
+  backdrop-filter:blur(10px);
+}
+
+.dashRideQuickSettings>section{
+  width:min(100%,430px);
+  padding:12px;
+  border:1px solid var(--dash-border);
+  border-radius:16px;
+  background:linear-gradient(160deg,var(--dash-panel),var(--dash-panel-2));
+  box-shadow:0 18px 45px rgba(0,0,0,.48);
+}
+
+.dashRideQuickSettings header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:9px;
+}
+
+.dashRideQuickSettings header small{
+  display:block;
+  color:var(--dash-accent);
+  font-size:7px;
+  font-weight:950;
+  letter-spacing:.16em;
+}
+
+.dashRideQuickSettings h3{
+  margin:2px 0 0;
+  font-size:16px;
+}
+
+.dashRideQuickSettings header button{
+  width:34px;
+  height:34px;
+  border:1px solid var(--dash-border);
+  border-radius:8px;
+  background:rgba(255,255,255,.05);
+  color:#fff;
+  font-size:18px;
+}
+
+.dashRideSettingsGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:7px;
+}
+
+.dashRideSettingsGrid>button{
+  min-height:58px;
+  padding:9px 10px;
+  border:1px solid var(--dash-border);
+  border-radius:10px;
+  background:rgba(var(--dash-accent-rgb),.07);
+  color:#fff;
+  text-align:left;
+}
+
+.dashRideSettingsGrid>button span,
+.dashRideSettingsGrid>button small{
+  display:block;
+}
+
+.dashRideSettingsGrid>button span{
+  font-size:9px;
+  font-weight:950;
+  letter-spacing:.09em;
+}
+
+.dashRideSettingsGrid>button small{
+  margin-top:5px;
+  color:var(--dash-muted);
+  font-size:7px;
+}
+
+.dashRideSettingsGrid>button.danger{
+  grid-column:1/-1;
+  border-color:rgba(239,68,68,.7);
+  background:linear-gradient(135deg,rgba(185,28,28,.58),rgba(127,29,29,.32));
+}
+
+.dashRideSettingsGrid>button.danger span{
+  color:#fecaca;
 }
 
 @media(max-width:390px){
@@ -135,6 +297,17 @@
   #rideDashOverlay[data-header-controls-v2="ready"].editing .rideDash>footer #dashAddPage{
     padding-inline:6px;
     font-size:6px;
+  }
+
+  #rideDashOverlay[data-header-controls-v2="ready"][data-ride-active="true"] .rideDash>header{
+    padding-right:6px;
+    padding-left:6px;
+  }
+
+  #rideDashOverlay[data-header-controls-v2="ready"][data-ride-active="true"] .dashHeaderActions button{
+    width:32px;
+    min-width:32px;
+    height:28px;
   }
 }
 

@@ -11,6 +11,7 @@
     surface:{flat:'FLAT',glass:'GLASS',machined:'MACHINED'},
     shape:{square:'SQUARE',soft:'SOFT',round:'ROUND'}
   };
+  const MAP_DATA_KEY = 'motoAdventureDataCompactV1';
 
   let queued = false;
 
@@ -61,7 +62,6 @@
 
     source.classList.add('advOriginalRouteHidden');
     source.dataset.routeCompactSource = '1';
-    const sourceButton = source.querySelector('button');
     const name = routeName(source);
     const empty = /NO (ACTIVE )?ROUTE|NO ROUTE SELECTED|CHOOSE ROUTE/i.test(name);
 
@@ -104,10 +104,27 @@
     }
   }
 
+  function compactReturnButton(overlay){
+    const topBar = overlay.querySelector('.advTopBar');
+    if (!topBar) return;
+    const button = [...topBar.querySelectorAll('button')]
+      .find(item => item.id !== 'closeAdventure' && /RIDE/i.test(normalized(item)));
+    if (!button) return;
+    button.classList.add('advRideReturnCompact');
+    button.textContent = '←';
+    button.title = 'Return to Ride';
+    button.setAttribute('aria-label','Return to Ride');
+  }
+
   function compactAdventure(overlay){
     if (!overlay?.isConnected) return;
     overlay.dataset.mapLayout = 'ultra';
-    overlay.querySelector('#advDataOverlay')?.classList.add('compact');
+    const data = overlay.querySelector('#advDataOverlay');
+    if (data && !data.dataset.ultraLayoutManaged) {
+      data.dataset.ultraLayoutManaged = '1';
+      if (localStorage.getItem(MAP_DATA_KEY) !== 'expanded') data.classList.add('compact');
+    }
+    compactReturnButton(overlay);
     ensureToolToggle(overlay);
     ensureRouteMini(overlay);
   }
@@ -136,9 +153,6 @@
   window.addEventListener('moto-ride-dash-rendered',queueScan);
   window.addEventListener('moto-ride-dash-refreshed',queueScan);
   window.addEventListener('moto-route-update',queueScan);
-  window.addEventListener('moto-gps-fix',event => {
-    if (event.detail && document.querySelector('#adventureOverlay')) queueScan();
-  });
 
   window.MotoLayoutCleanup = {refresh:queueScan};
   queueScan();

@@ -12,6 +12,12 @@ function loadRideExperience(){
     link.dataset.rideExperienceV2='1';
     document.head.appendChild(link);
   }
+  if(!document.querySelector('style[data-ride-navigation-v2]')){
+    const style=document.createElement('style');
+    style.dataset.rideNavigationV2='1';
+    style.textContent=`.motoBottomNav button>svg{display:block;width:18px;height:18px;margin:0 auto 2px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.motoBottomNav button.active>svg{color:var(--accent,#f4512c)}@media(max-width:720px){#rideDashOverlay[data-ride-experience="v2"][data-ride-active="true"] .rideXSmartStrip{display:flex;overflow-x:auto;scrollbar-width:none;padding:3px 4px}#rideDashOverlay[data-ride-experience="v2"][data-ride-active="true"] .rideXSmartStrip::-webkit-scrollbar{display:none}#rideDashOverlay[data-ride-experience="v2"][data-ride-active="true"] .rideXSmartStrip button{flex:0 0 132px;min-height:40px}#rideDashOverlay[data-ride-experience="v2"][data-ride-active="true"] .rideXCompliance{flex-basis:155px}#rideDashOverlay[data-ride-experience="v2"][data-ride-active="false"] #rideXModeButton{display:none!important}}`;
+    document.head.appendChild(style);
+  }
   if(!window.__motoRideExperienceLoading){
     window.__motoRideExperienceLoading=Promise.all([
       import('./adventure-integration-v2.js?v=1'),
@@ -20,12 +26,13 @@ function loadRideExperience(){
   }
 }
 
+const svg=path=>`<svg viewBox="0 0 24 24" aria-hidden="true">${path}</svg>`;
 const navIcon={
-  home:'<svg viewBox="0 0 24 24"><path d="m3 11 9-8 9 8v10h-6v-6H9v6H3V11Z"/></svg>',
-  ride:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 12 17 7M6 16h12"/></svg>',
-  maps:'<svg viewBox="0 0 24 24"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Zm6-3v15m6-12v15"/></svg>',
-  garage:'<svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v11H3V10Zm4 11v-8h10v8M8 16h8"/></svg>',
-  menu:'<svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>'
+  home:svg('<path d="m3 11 9-8 9 8v10h-6v-6H9v6H3V11Z"/>'),
+  ride:svg('<circle cx="12" cy="12" r="9"/><path d="M12 12 17 7M6 16h12"/>'),
+  maps:svg('<path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Zm6-3v15m6-12v15"/>'),
+  garage:svg('<path d="m3 10 9-7 9 7v11H3V10Zm4 11v-8h10v8M8 16h8"/>'),
+  menu:svg('<path d="M4 6h16M4 12h16M4 18h16"/>')
 };
 
 function cleanRideTabs(){
@@ -99,7 +106,10 @@ function bottomNav(){
     setBottomActive(go);
     if(go === 'home') document.querySelector('[data-v="dashboard"]')?.click();
     if(go === 'ride') $('#rideCenterNav')?.click();
-    if(go === 'maps') window.MotoAdventure?.openMap?.() || $('#adventureNav')?.click();
+    if(go === 'maps'){
+      if(window.MotoAdventure?.openMap) window.MotoAdventure.openMap();
+      else $('#adventureNav')?.click();
+    }
     if(go === 'garage') document.querySelector('[data-v="garage"]')?.click();
     if(go === 'menu') $('#nav')?.classList.toggle('open');
   };

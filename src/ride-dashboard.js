@@ -182,6 +182,7 @@ function close(){
   $('#dashStylePicker')?.remove();
   $('#dashPicker')?.remove();
   $('#rideDashOverlay')?.remove();
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#f4512c');
 }
 
 function openAdventure(){
@@ -236,7 +237,7 @@ function picker(pi){
   const groups = {};
   Object.entries(catalog).forEach(([k,v]) => (groups[v.cat] ??= []).push([k,v]));
   m.innerHTML = `<section><header><div><small>WIDGET LIBRARY</small><h3>Add to ${esc(layout[pi].name)}</h3></div><button>×</button></header>${Object.entries(groups).map(([g,items]) => `<h4>${esc(g)}</h4><div>${items.map(([k,v]) => `<button data-type="${k}">${esc(v.label)}</button>`).join('')}</div>`).join('')}</section>`;
-  document.body.appendChild(m);
+  ($('#rideDashOverlay') || document.body).appendChild(m);
   m.querySelector('header button').onclick = () => m.remove();
   m.querySelectorAll('[data-type]').forEach(b => b.onclick = () => {
     const type = b.dataset.type;
@@ -268,7 +269,7 @@ function openStylePicker(){
     </div>
     <div class="dashStyleActions"><button id="dashApplyPreset">APPLY ${esc(themePresets[style.theme]?.name || 'THEME')} DISPLAY</button><button id="dashResetStyle">RESET STYLE</button></div>
   </section>`;
-  document.body.appendChild(m);
+  ($('#rideDashOverlay') || document.body).appendChild(m);
 
   const syncControls = () => {
     m.querySelectorAll('[data-setting]').forEach(group => group.querySelectorAll('[data-value]').forEach(btn => btn.classList.toggle('active', style[group.dataset.setting] === btn.dataset.value)));
@@ -357,7 +358,7 @@ function showRidePicker(){
   m.id = 'dashRidePicker';
   m.className = 'dashRidePicker';
   m.innerHTML = `<section><header><div><small>START RIDE</small><h3>Select motorcycle</h3></div><button id="dashRidePickerClose" type="button">×</button></header><div class="dashBikeGrid">${bikes.map(b => `<button type="button" data-bike-id="${esc(b.id)}"><span><strong>${esc(b.name)}</strong><small>${Math.round(Number(b.odometer || 0))} mi</small></span><b>START</b></button>`).join('') || '<p>No motorcycles found. Add one in Garage first.</p>'}</div></section>`;
-  document.body.appendChild(m);
+  ($('#rideDashOverlay') || document.body).appendChild(m);
   $('#dashRidePickerClose').onclick = () => m.remove();
   m.querySelectorAll('[data-bike-id]').forEach(b => b.onclick = () => startRide(b.dataset.bikeId,m));
 }
@@ -502,7 +503,7 @@ function value(type){
   switch(type){
     case 'speed': {
       const pct = Math.min(100, speed / 160 * 100);
-      return `<div class="dashSpeedGauge" style="--speed-pct:${pct}%"><div class="dashGaugeTicks"></div><div class="dashSpeedNumber">${Math.round(speed)}</div><span>MPH</span><i>0</i><i>160</i></div>`;
+      return `<div class="dashSpeedGauge" style="--speed-pct:${pct}%;--speed-sweep:${pct * .75}%"><div class="dashGaugeTicks"></div><div class="dashSpeedNumber">${Math.round(speed)}</div><span>MPH</span><i>0</i><i>160</i></div>`;
     }
     case 'distance': return `${Number(r.distanceMiles ?? 0).toFixed(2)} <span>mi</span>`;
     case 'rideTime': return r.elapsedText || '00:00:00';
@@ -518,7 +519,10 @@ function value(type){
     case 'lean': {
       const direction = lean < -0.5 ? 'LEFT' : lean > 0.5 ? 'RIGHT' : 'CENTER';
       const pct = Math.min(100, Math.abs(lean) / 50 * 100);
-      return `<div class="dashLeanGauge" style="--lean-pct:${pct}%;--lean-side:${lean < 0 ? -1 : 1}"><div><strong>${Math.round(Math.abs(lean))}°</strong><span>${direction}</span></div></div>`;
+      const side = lean < 0 ? -1 : 1;
+      const offset = side * pct * .36;
+      const angle = side * pct * .32;
+      return `<div class="dashLeanGauge" style="--lean-pct:${pct}%;--lean-offset:${offset}%;--lean-angle:${angle}deg"><div><strong>${Math.round(Math.abs(lean))}°</strong><span>${direction}</span></div></div>`;
     }
     case 'maxLean': return `<div class="dashDualMetric"><span><small>LEFT</small><strong>${Math.round(runtime.maxLeanLeft)}°</strong></span><i></i><span><small>RIGHT</small><strong>${Math.round(runtime.maxLeanRight)}°</strong></span></div>`;
     case 'cornerSpeed': return `${runtime.cornerSamples ? Math.round(runtime.cornerSpeedSum / runtime.cornerSamples) : 0} <span>mph</span>`;

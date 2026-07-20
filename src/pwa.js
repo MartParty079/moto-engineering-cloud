@@ -1,7 +1,7 @@
 const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
 const isStandalone=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
-const PWA_BUILD='ride-os-hotfix-v14';
-const SHELL_CACHE='motocloud-shell-v14';
+const PWA_BUILD='ride-picker-stability-v15';
+const SHELL_CACHE='motocloud-shell-v15';
 
 async function clearLegacyMotoCaches(){
   if(!('caches' in window))return;
@@ -11,7 +11,7 @@ async function clearLegacyMotoCaches(){
   }catch(error){console.warn('Legacy cache cleanup skipped',error)}
 }
 if(localStorage.getItem('motoPwaBuild')!==PWA_BUILD){localStorage.setItem('motoPwaBuild',PWA_BUILD);void clearLegacyMotoCaches()}
-if('serviceWorker' in navigator){window.addEventListener('load',async()=>{try{const registration=await navigator.serviceWorker.register('/sw.js?v=14',{updateViaCache:'none'});await registration.update();registration.addEventListener('updatefound',()=>{const worker=registration.installing;if(!worker)return;worker.addEventListener('statechange',()=>{if(worker.state==='activated')console.info('Moto Mission Ride OS status-strip fix installed.')})})}catch(error){console.error(error)}})}
+if('serviceWorker' in navigator){window.addEventListener('load',async()=>{try{const registration=await navigator.serviceWorker.register('/sw.js?v=15',{updateViaCache:'none'});await registration.update();registration.addEventListener('updatefound',()=>{const worker=registration.installing;if(!worker)return;worker.addEventListener('statechange',()=>{if(worker.state==='activated')console.info('Moto Mission motorcycle picker stability fix installed.')})})}catch(error){console.error(error)}})}
 function installGuide(){document.querySelector('#iosInstallOverlay')?.remove();const overlay=document.createElement('div');overlay.id='iosInstallOverlay';overlay.innerHTML=`<section class="iosInstallCard"><button class="iosInstallClose" aria-label="Close">×</button><img src="/app-icon.svg" alt="Moto Mission icon"><div><small>INSTALL ON IPHONE</small><h2>Add Moto Mission to your Home Screen</h2><ol><li>Tap the <b>Share</b> button in Safari.</li><li>Scroll down and tap <b>Add to Home Screen</b>.</li><li>Tap <b>Add</b>. Moto Mission will launch like a normal app.</li></ol><p>Your sign-in remains available and the app shell can open when connectivity is weak.</p></div></section>`;document.body.appendChild(overlay);overlay.querySelector('.iosInstallClose').onclick=()=>overlay.remove();overlay.onclick=e=>{if(e.target===overlay)overlay.remove()}}
 function addInstallButton(){if(isStandalone||document.querySelector('#installMotoCloud'))return;const button=document.createElement('button');button.id='installMotoCloud';button.type='button';button.innerHTML='<span>⇩</span><b>Install App</b>';button.onclick=installGuide;document.body.appendChild(button)}
 const observer=new MutationObserver(addInstallButton);observer.observe(document.querySelector('#app')||document.body,{childList:true,subtree:false});addInstallButton();

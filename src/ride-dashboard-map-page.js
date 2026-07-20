@@ -59,18 +59,22 @@ function ensureLeaflet(){
   return leafletPromise;
 }
 
-function destroyEmbeddedMap(){
-  clearTimeout(scrollTimer);
+function clearMapInstance({clearTrack = false} = {}){
   try{ map?.remove(); }catch{}
   map = null;
   mapContainer = null;
   rider = null;
   trackLine = null;
-  trackPoints = [];
   layers = {};
   activeLayer = 'street';
   follow = true;
   mapStarting = false;
+  if(clearTrack) trackPoints = [];
+}
+
+function destroyEmbeddedMap(){
+  clearTimeout(scrollTimer);
+  clearMapInstance({clearTrack:true});
   activeOverlay = null;
   activePage = null;
 }
@@ -127,6 +131,7 @@ function syncNavigation(overlay,page){
     pages.addEventListener('scroll',() => {
       clearTimeout(scrollTimer);
       scrollTimer = setTimeout(() => {
+        if(!pages.isConnected) return;
         const list = [...pages.children];
         const index = currentPageIndex(pages);
         [...tabs.children].forEach((tab,tabIndex) => tab.classList.toggle('active',tabIndex === index));
@@ -159,6 +164,7 @@ function ensureAdventureDisplay(overlay){
     tabs.insertBefore(tab,tabs.children[insertAt] || null);
   }
 
+  if(mapContainer && !page.contains(mapContainer)) clearMapInstance();
   activeOverlay = overlay;
   activePage = page;
   overlay.dataset.mapPageV1 = 'ready';
@@ -208,16 +214,27 @@ function bindMapControls(overlay,page){
       else void initializeEmbeddedMap(overlay,page);
     };
   }
-  if(layerButton && !layerButton.dataset.bound){ layerButton.dataset.bound = '1'; layerButton.onclick = () => map ? switchLayer() : void initializeEmbeddedMap(overlay,page); }
-  if(orientationButton && !orientationButton.dataset.bound){ orientationButton.dataset.bound = '1'; orientationButton.onclick = toggleOrientation; }
+  if(layerButton && !layerButton.dataset.bound){
+    layerButton.dataset.bound = '1';
+    layerButton.onclick = () => map ? switchLayer() : void initializeEmbeddedMap(overlay,page);
+  }
+  if(orientationButton && !orientationButton.dataset.bound){
+    orientationButton.dataset.bound = '1';
+    orientationButton.onclick = toggleOrientation;
+  }
   syncOrientationButton();
 }
 
 async function initializeEmbeddedMap(overlay,page){
   const container = page?.querySelector('#dashAdventureLiveMap');
   if(!container || !overlay?.isConnected) return;
-  if(map && mapContainer === container){ requestAnimationFrame(() => map?.invalidateSize(false)); return; }
+  if(map && mapContainer === container){
+    requestAnimationFrame(() => map?.invalidateSize(false));
+    return;
+  }
+  if(map && mapContainer !== container) clearMapInstance();
   if(mapStarting) return;
+
   mapStarting = true;
   activeOverlay = overlay;
   activePage = page;
@@ -234,13 +251,14 @@ async function initializeEmbeddedMap(overlay,page){
     layers.terrain = window.L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{maxZoom:17,updateWhenIdle:true,keepBuffer:2});
     layers.satellite = window.L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,updateWhenIdle:true,keepBuffer:2});
     layers.street.addTo(map);
-    trackLine = window.L.polyline([],{color:getComputedStyle(overlay).getPropertyValue('--dash-accent').trim() || '#ef2b2d',weight:5,opacity:.9,lineJoin:'round'}).addTo(map);
+    trackLine = window.L.polyline(trackPoints,{color:getComputedStyle(overlay).getPropertyValue('--dash-accent').trim() || '#ef2b2d',weight:5,opacity:.9,lineJoin:'round'}).addTo(map);
     map.on('dragstart zoomstart',() => { follow = false; });
     if(lastFix) useFix(lastFix);
     requestAnimationFrame(() => { map?.invalidateSize(true); applyMapRotation(); });
   }catch(error){
+    clearMapInstance();
     if(status) status.textContent = 'MAP UNAVAILABLE';
-    container.innerHTML = '<div class="dashMapLoadPrompt"><strong>MAP UNAVAILABLE</strong><span>GPS recording continues normally. Check the connection and reopen this page.</span></div>';
+    if(container.isConnected) container.innerHTML = '<div class="dashMapLoadPrompt"><strong>MAP UNAVAILABLE</strong><span>GPS recording continues normally. Check the connection and reopen this page.</span></div>';
     console.error('Ride Dash live map failed to initialize',error);
   }finally{
     mapStarting = false;
@@ -300,7 +318,10 @@ function updateTelemetry(overlay,fix){
   const heading = fix?.heading;
   const altitudeFeet = isFiniteNumber(fix?.altitude) ? Number(fix.altitude) * 3.28084 : null;
   const accuracyFeet = isFiniteNumber(fix?.accuracy) ? Number(fix.accuracy) * 3.28084 : null;
-  const setText = (selector,value) => { const element = overlay.querySelector(selector); if(element && element.textContent !== value) element.textContent = value; };
+  const setText = (selector,value) => {
+    const element = overlay.querySelector(selector);
+    if(element && element.textContent !== value) element.textContent = value;
+  };
   setText('#dashMapHeading',isFiniteNumber(heading) ? `${Math.round(Number(heading))}°` : '--°');
   setText('#dashMapCardinal',headingText(heading));
   setText('#dashMapAltitude',isFiniteNumber(altitudeFeet) ? String(Math.round(altitudeFeet)) : '--');

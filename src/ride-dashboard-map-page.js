@@ -3,6 +3,7 @@ const MAP_PAGE_SELECTOR = '[data-fixed-adventure-page="true"]';
 const ORIENTATION_STORE = 'motoAdventureOrientationV1';
 
 let activeOverlay = null;
+let activePage = null;
 let map = null;
 let mapContainer = null;
 let rider = null;
@@ -13,7 +14,8 @@ let activeLayer = 'street';
 let follow = true;
 let lastFix = null;
 let leafletPromise = null;
-let scanQueued = false;
+let scrollTimer = 0;
+let mapStarting = false;
 
 function isFiniteNumber(value){
   return value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
@@ -54,63 +56,40 @@ function ensureLeaflet(){
     script.onerror = reject;
     document.head.appendChild(script);
   });
-
   return leafletPromise;
 }
 
-function destroyEmbeddedMap(){
-  try { map?.remove(); } catch {}
+function clearMapInstance({clearTrack = false} = {}){
+  try{ map?.remove(); }catch{}
   map = null;
   mapContainer = null;
   rider = null;
   trackLine = null;
-  trackPoints = [];
   layers = {};
   activeLayer = 'street';
   follow = true;
+  mapStarting = false;
+  if(clearTrack) trackPoints = [];
+}
+
+function destroyEmbeddedMap(){
+  clearTimeout(scrollTimer);
+  clearMapInstance({clearTrack:true});
   activeOverlay = null;
-}
-
-function cleanupDisconnectedMap(){
-  if(activeOverlay && !activeOverlay.isConnected) destroyEmbeddedMap();
-}
-
-function reindexDisplays(overlay){
-  const pages = overlay.querySelector('#dashPages');
-  const tabs = overlay.querySelector('#dashTabs');
-  if(!pages || !tabs) return;
-
-  const pageList = [...pages.children];
-  const tabList = [...tabs.children];
-
-  pageList.forEach((page,index) => { page.dataset.page = String(index); });
-  tabList.forEach((tab,index) => {
-    tab.dataset.page = String(index);
-    tab.onclick = () => {
-      pageList[index]?.scrollIntoView({behavior:'smooth',inline:'start'});
-      if(pageList[index]?.matches(MAP_PAGE_SELECTOR)){
-        setTimeout(() => map?.invalidateSize(true),220);
-      }
-    };
-  });
+  activePage = null;
 }
 
 function mapPageMarkup(){
-  return `<div class="dashPageHead">
-      <div><small>ADVENTURE DISPLAY</small><h3>ADV Map</h3></div>
-    </div>
+  return `<div class="dashPageHead"><div><small>ADVENTURE DISPLAY</small><h3>ADV Map</h3></div></div>
     <div class="dashAdventureLiveLayout">
       <section class="dashAdventureLiveMapShell" aria-label="Live Adventure Map">
-        <div class="dashAdventureMapStatus">
-          <span id="dashMapGpsDot"></span>
-          <div><small>LIVE POSITION</small><strong id="dashMapGpsText">WAITING FOR GPS</strong></div>
-        </div>
+        <div class="dashAdventureMapStatus"><span id="dashMapGpsDot"></span><div><small>LIVE POSITION</small><strong id="dashMapGpsText">SWIPE HERE TO LOAD MAP</strong></div></div>
         <div class="dashAdventureMapControls">
           <button id="dashMapCenter" type="button" aria-label="Center map">CENTER</button>
-          <button id="dashMapLayer" type="button" aria-label="Change map layer">LAYER</button>
+          <button id="dashMapLayer" type="button" aria-label="Change map layer">STREET</button>
           <button id="dashMapOrientation" type="button" aria-label="Change map orientation">N UP</button>
         </div>
-        <div id="dashAdventureLiveMap" class="dashAdventureLiveMap"></div>
+        <div id="dashAdventureLiveMap" class="dashAdventureLiveMap"><div class="dashMapLoadPrompt"><strong>LIVE MAP READY</strong><span>Map tiles load only when this page is opened.</span></div></div>
       </section>
       <div class="dashAdventureMapTelemetry">
         <article><small>HEADING</small><strong id="dashMapHeading">--°</strong><span id="dashMapCardinal">--</span></article>
@@ -121,7 +100,50 @@ function mapPageMarkup(){
     </div>`;
 }
 
+function currentPageIndex(pages){
+  return Math.round(pages.scrollLeft / Math.max(1,pages.clientWidth));
+}
+
+function syncNavigation(overlay,page){
+  const pages = overlay.querySelector('#dashPages');
+  const tabs = overlay.querySelector('#dashTabs');
+  const dots = overlay.querySelector('#dashDots');
+  if(!pages || !tabs) return;
+
+  const pageList = [...pages.children];
+  const tabList = [...tabs.children];
+  pageList.forEach((item,index) => { item.dataset.page = String(index); });
+  tabList.forEach((tab,index) => {
+    tab.dataset.page = String(index);
+    tab.onclick = () => {
+      pageList[index]?.scrollIntoView({behavior:'smooth',inline:'start'});
+      if(pageList[index] === page) void initializeEmbeddedMap(overlay,page);
+    };
+  });
+
+  if(dots){
+    const active = currentPageIndex(pages);
+    dots.innerHTML = pageList.map((_,index) => `<i class="${index === active ? 'active' : ''}"></i>`).join('');
+  }
+
+  if(!pages.dataset.liveMapScrollBound){
+    pages.dataset.liveMapScrollBound = '1';
+    pages.addEventListener('scroll',() => {
+      clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(() => {
+        if(!pages.isConnected) return;
+        const list = [...pages.children];
+        const index = currentPageIndex(pages);
+        [...tabs.children].forEach((tab,tabIndex) => tab.classList.toggle('active',tabIndex === index));
+        [...(dots?.children || [])].forEach((dot,dotIndex) => dot.classList.toggle('active',dotIndex === index));
+        if(list[index]?.matches(MAP_PAGE_SELECTOR)) void initializeEmbeddedMap(overlay,list[index]);
+      },100);
+    },{passive:true});
+  }
+}
+
 function ensureAdventureDisplay(overlay){
+  if(!overlay?.isConnected) return null;
   const pages = overlay.querySelector('#dashPages');
   const tabs = overlay.querySelector('#dashTabs');
   if(!pages || !tabs) return null;
@@ -132,7 +154,6 @@ function ensureAdventureDisplay(overlay){
     page.className = 'dashPage dashInjectedAdventurePage';
     page.dataset.fixedAdventurePage = 'true';
     page.innerHTML = mapPageMarkup();
-
     const insertAt = Math.min(2,pages.children.length);
     pages.insertBefore(page,pages.children[insertAt] || null);
 
@@ -143,9 +164,13 @@ function ensureAdventureDisplay(overlay){
     tabs.insertBefore(tab,tabs.children[insertAt] || null);
   }
 
-  reindexDisplays(overlay);
+  if(mapContainer && !page.contains(mapContainer)) clearMapInstance();
+  activeOverlay = overlay;
+  activePage = page;
+  overlay.dataset.mapPageV1 = 'ready';
+  overlay.dataset.mapPageV2 = 'ready';
   bindMapControls(overlay,page);
-  initializeEmbeddedMap(overlay,page);
+  syncNavigation(overlay,page);
   updateTelemetry(overlay,lastFix);
   return page;
 }
@@ -154,9 +179,7 @@ function switchLayer(){
   if(!map) return;
   const order = ['street','terrain','satellite'];
   activeLayer = order[(order.indexOf(activeLayer) + 1) % order.length];
-  Object.values(layers).forEach(layer => {
-    if(map.hasLayer(layer)) map.removeLayer(layer);
-  });
+  Object.values(layers).forEach(layer => { if(map.hasLayer(layer)) map.removeLayer(layer); });
   layers[activeLayer]?.addTo(map);
   const button = activeOverlay?.querySelector('#dashMapLayer');
   if(button) button.textContent = activeLayer.toUpperCase();
@@ -167,8 +190,7 @@ function orientationIsHeadingUp(){
 }
 
 function toggleOrientation(){
-  const next = orientationIsHeadingUp() ? 'north' : 'heading';
-  localStorage.setItem(ORIENTATION_STORE,next);
+  localStorage.setItem(ORIENTATION_STORE,orientationIsHeadingUp() ? 'north' : 'heading');
   syncOrientationButton();
   applyMapRotation();
 }
@@ -184,87 +206,70 @@ function bindMapControls(overlay,page){
   const centerButton = page.querySelector('#dashMapCenter');
   const layerButton = page.querySelector('#dashMapLayer');
   const orientationButton = page.querySelector('#dashMapOrientation');
-
   if(centerButton && !centerButton.dataset.bound){
     centerButton.dataset.bound = '1';
     centerButton.onclick = () => {
       follow = true;
-      if(lastFix && map) map.setView([lastFix.latitude,lastFix.longitude],Math.max(map.getZoom(),15),{animate:true});
+      if(lastFix && map) map.setView([lastFix.latitude,lastFix.longitude],Math.max(map.getZoom(),15),{animate:false});
+      else void initializeEmbeddedMap(overlay,page);
     };
   }
-
   if(layerButton && !layerButton.dataset.bound){
     layerButton.dataset.bound = '1';
-    layerButton.onclick = switchLayer;
+    layerButton.onclick = () => map ? switchLayer() : void initializeEmbeddedMap(overlay,page);
   }
-
   if(orientationButton && !orientationButton.dataset.bound){
     orientationButton.dataset.bound = '1';
     orientationButton.onclick = toggleOrientation;
   }
-
-  overlay.dataset.mapPageV2 = 'ready';
+  syncOrientationButton();
 }
 
 async function initializeEmbeddedMap(overlay,page){
-  const container = page.querySelector('#dashAdventureLiveMap');
-  if(!container) return;
-  if(map && mapContainer === container) return;
+  const container = page?.querySelector('#dashAdventureLiveMap');
+  if(!container || !overlay?.isConnected) return;
+  if(map && mapContainer === container){
+    requestAnimationFrame(() => map?.invalidateSize(false));
+    return;
+  }
+  if(map && mapContainer !== container) clearMapInstance();
+  if(mapStarting) return;
 
-  destroyEmbeddedMap();
+  mapStarting = true;
   activeOverlay = overlay;
+  activePage = page;
   mapContainer = container;
-  syncOrientationButton();
+  const status = page.querySelector('#dashMapGpsText');
+  if(status) status.textContent = 'LOADING MAP…';
 
-  try {
+  try{
     await ensureLeaflet();
     if(!overlay.isConnected || !container.isConnected || !window.L) return;
-
-    map = window.L.map(container,{
-      zoomControl:false,
-      attributionControl:false,
-      preferCanvas:true,
-      inertia:true
-    }).setView([31,-99],6);
-
-    layers.street = window.L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
-      maxZoom:20,
-      subdomains:'abcd'
-    });
-    layers.terrain = window.L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{maxZoom:17});
-    layers.satellite = window.L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19});
+    container.innerHTML = '';
+    map = window.L.map(container,{zoomControl:false,attributionControl:false,preferCanvas:true,inertia:true,fadeAnimation:false,zoomAnimation:false}).setView([31,-99],6);
+    layers.street = window.L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:20,subdomains:'abcd',updateWhenIdle:true,keepBuffer:2});
+    layers.terrain = window.L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{maxZoom:17,updateWhenIdle:true,keepBuffer:2});
+    layers.satellite = window.L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,updateWhenIdle:true,keepBuffer:2});
     layers.street.addTo(map);
-
-    trackLine = window.L.polyline([],{
-      color:getComputedStyle(overlay).getPropertyValue('--dash-accent').trim() || '#ef2b2d',
-      weight:5,
-      opacity:.9,
-      lineJoin:'round'
-    }).addTo(map);
-
+    trackLine = window.L.polyline(trackPoints,{color:getComputedStyle(overlay).getPropertyValue('--dash-accent').trim() || '#ef2b2d',weight:5,opacity:.9,lineJoin:'round'}).addTo(map);
     map.on('dragstart zoomstart',() => { follow = false; });
-    map.on('moveend',applyMapRotation);
-
-    const currentFix = window.MotoGPS;
-    if(isFiniteNumber(currentFix?.latitude) && isFiniteNumber(currentFix?.longitude)) useFix(currentFix);
-
-    requestAnimationFrame(() => {
-      map?.invalidateSize(true);
-      applyMapRotation();
-    });
-  } catch(error) {
-    const status = page.querySelector('#dashMapGpsText');
+    if(lastFix) useFix(lastFix);
+    requestAnimationFrame(() => { map?.invalidateSize(true); applyMapRotation(); });
+  }catch(error){
+    clearMapInstance();
     if(status) status.textContent = 'MAP UNAVAILABLE';
+    if(container.isConnected) container.innerHTML = '<div class="dashMapLoadPrompt"><strong>MAP UNAVAILABLE</strong><span>GPS recording continues normally. Check the connection and reopen this page.</span></div>';
     console.error('Ride Dash live map failed to initialize',error);
+  }finally{
+    mapStarting = false;
+    updateTelemetry(overlay,lastFix);
   }
 }
 
 function shouldAppendTrackPoint(fix){
   const previous = trackPoints.at(-1);
   if(!previous) return true;
-  const latitudeDelta = Math.abs(previous[0] - fix.latitude);
-  const longitudeDelta = Math.abs(previous[1] - fix.longitude);
-  return latitudeDelta + longitudeDelta > 0.00003;
+  return Math.abs(previous[0] - fix.latitude) + Math.abs(previous[1] - fix.longitude) > 0.00004;
 }
 
 function applyMapRotation(){
@@ -278,10 +283,8 @@ function applyMapRotation(){
 
 function useFix(detail){
   if(!isFiniteNumber(detail?.latitude) || !isFiniteNumber(detail?.longitude)) return;
-
   lastFix = {
-    latitude:Number(detail.latitude),
-    longitude:Number(detail.longitude),
+    latitude:Number(detail.latitude),longitude:Number(detail.longitude),
     heading:isFiniteNumber(detail.heading) ? Number(detail.heading) : null,
     altitude:isFiniteNumber(detail.altitude) ? Number(detail.altitude) : null,
     accuracy:isFiniteNumber(detail.accuracy) ? Number(detail.accuracy) : null,
@@ -291,90 +294,57 @@ function useFix(detail){
   if(map && window.L){
     const latLng = [lastFix.latitude,lastFix.longitude];
     if(!rider){
-      rider = window.L.marker(latLng,{
-        icon:window.L.divIcon({
-          className:'dashLiveRider',
-          html:'<span>▲</span>',
-          iconSize:[40,40],
-          iconAnchor:[20,20]
-        })
-      }).addTo(map);
-    } else {
-      rider.setLatLng(latLng);
-    }
-
+      rider = window.L.marker(latLng,{icon:window.L.divIcon({className:'dashLiveRider',html:'<span>▲</span>',iconSize:[40,40],iconAnchor:[20,20]})}).addTo(map);
+    }else rider.setLatLng(latLng);
     const arrow = rider.getElement()?.querySelector('span');
     if(arrow) arrow.style.transform = `rotate(${lastFix.heading ?? 0}deg)`;
-
     if(shouldAppendTrackPoint(lastFix)){
       trackPoints.push(latLng);
-      if(trackPoints.length > 1200) trackPoints.splice(0,trackPoints.length - 1200);
+      if(trackPoints.length > 600) trackPoints.splice(0,trackPoints.length - 600);
       trackLine?.setLatLngs(trackPoints);
     }
-
     if(follow){
       const zoom = map.getZoom() < 14 ? 16 : map.getZoom();
-      map.setView(latLng,zoom,{animate:false});
+      map.setView(latLng,zoom,{animate:false,noMoveStart:true});
     }
     applyMapRotation();
   }
-
   updateTelemetry(activeOverlay,lastFix);
 }
 
 function updateTelemetry(overlay,fix){
-  if(!overlay) return;
+  if(!overlay?.isConnected) return;
   const ride = window.MotoRide?.getState?.() || {};
   const heading = fix?.heading;
   const altitudeFeet = isFiniteNumber(fix?.altitude) ? Number(fix.altitude) * 3.28084 : null;
   const accuracyFeet = isFiniteNumber(fix?.accuracy) ? Number(fix.accuracy) * 3.28084 : null;
-
   const setText = (selector,value) => {
     const element = overlay.querySelector(selector);
     if(element && element.textContent !== value) element.textContent = value;
   };
-
   setText('#dashMapHeading',isFiniteNumber(heading) ? `${Math.round(Number(heading))}°` : '--°');
   setText('#dashMapCardinal',headingText(heading));
   setText('#dashMapAltitude',isFiniteNumber(altitudeFeet) ? String(Math.round(altitudeFeet)) : '--');
   setText('#dashMapAccuracy',isFiniteNumber(accuracyFeet) ? `±${Math.round(accuracyFeet)} FT` : '--');
   setText('#dashMapDistance',Number(ride.distanceMiles || 0).toFixed(2));
-  setText('#dashMapGpsText',fix ? `LOCKED · ${isFiniteNumber(accuracyFeet) ? `±${Math.round(accuracyFeet)} FT` : 'GPS'}` : 'WAITING FOR GPS');
+  setText('#dashMapGpsText',mapStarting ? 'LOADING MAP…' : fix ? `LOCKED · ${isFiniteNumber(accuracyFeet) ? `±${Math.round(accuracyFeet)} FT` : 'GPS'}` : map ? 'WAITING FOR GPS' : 'SWIPE HERE TO LOAD MAP');
   overlay.querySelector('#dashMapGpsDot')?.classList.toggle('locked',Boolean(fix));
 }
 
-function scan(){
-  cleanupDisconnectedMap();
-  const overlay = document.querySelector(DASH_SELECTOR);
+function onDashRender(event){
+  const overlay = event.detail?.overlay || document.querySelector(DASH_SELECTOR);
   if(!overlay) return;
-  if(overlay.dataset.headerControlsV2 !== 'ready') return;
-
-  overlay.dataset.mapPageV1 = 'ready';
+  if(activeOverlay && activeOverlay !== overlay) destroyEmbeddedMap();
   ensureAdventureDisplay(overlay);
 }
 
-function scheduleScan(){
-  if(scanQueued) return;
-  scanQueued = true;
-  requestAnimationFrame(() => {
-    scanQueued = false;
-    scan();
-  });
-}
-
+window.addEventListener('moto-ride-dash-rendered',onDashRender);
+window.addEventListener('moto-ride-dash-opened',onDashRender);
+window.addEventListener('moto-ride-dash-refreshed',event => updateTelemetry(event.detail?.overlay || activeOverlay,lastFix));
+window.addEventListener('moto-ride-dash-page',event => {
+  const page = event.detail?.page;
+  if(page?.matches?.(MAP_PAGE_SELECTOR)) void initializeEmbeddedMap(event.detail?.overlay || activeOverlay,page);
+});
+window.addEventListener('moto-ride-dash-closed',destroyEmbeddedMap);
 window.addEventListener('moto-gps-fix',event => useFix(event.detail));
 window.addEventListener('moto-ride-state',() => updateTelemetry(activeOverlay,lastFix));
-
-const observer = new MutationObserver(mutations => {
-  const relevant = mutations.some(mutation => {
-    const target = mutation.target instanceof Element ? mutation.target : mutation.target?.parentElement;
-    if(target?.closest?.('#dashAdventureLiveMap,.leaflet-container')) return false;
-    if(target?.matches?.(DASH_SELECTOR) || target?.closest?.(DASH_SELECTOR)) return true;
-    return [...mutation.addedNodes].some(node => node.nodeType === 1 && (
-      node.matches?.(DASH_SELECTOR) || node.querySelector?.(DASH_SELECTOR)
-    ));
-  });
-  if(relevant) scheduleScan();
-});
-observer.observe(document.body,{childList:true,subtree:true});
-scheduleScan();

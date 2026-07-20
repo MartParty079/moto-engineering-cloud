@@ -1,0 +1,150 @@
+/* Expanded unified Ride themes and stability-oriented UI additions. */
+
+#rideCenterOverlay{display:none!important}
+
+#rideDashOverlay[data-shape="square"]{--dash-radius:3px}
+#rideDashOverlay[data-shape="soft"]{--dash-radius:10px}
+#rideDashOverlay[data-shape="round"]{--dash-radius:20px}
+
+#rideDashOverlay[data-surface="flat"] .dashWidget,
+#rideDashOverlay[data-surface="flat"] .dashRideControl,
+#rideDashOverlay[data-surface="flat"] .rideDash>header{
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  background:var(--dash-panel-2)!important;
+}
+#rideDashOverlay[data-surface="flat"] .dashWidget::before,
+#rideDashOverlay[data-surface="flat"] .dashWidget::after{display:none}
+#rideDashOverlay[data-surface="glass"] .dashWidget{
+  background:linear-gradient(145deg,rgba(255,255,255,.07),rgba(255,255,255,.018) 34%),linear-gradient(160deg,var(--dash-panel),var(--dash-panel-2));
+  backdrop-filter:blur(18px) saturate(1.15);
+}
+#rideDashOverlay[data-surface="machined"] .dashWidget{
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.035),inset 0 1px rgba(255,255,255,.055),0 12px 30px rgba(0,0,0,.3);
+}
+
+/* Old-fashioned brass and cream. */
+#rideDashOverlay[data-theme="oldfashioned"]{
+  --dash-bg:#100d08;--dash-bg-2:#211a10;--dash-panel:rgba(45,36,22,.97);--dash-panel-2:rgba(18,15,10,.99);--dash-text:#f1e7ce;--dash-muted:#b8aa8d;--dash-border:rgba(var(--dash-accent-rgb),.38);
+  font-family:Georgia,"Times New Roman",serif;
+}
+#rideDashOverlay[data-theme="oldfashioned"]::before{background:radial-gradient(circle at 50% -12%,rgba(var(--dash-accent-rgb),.14),transparent 38%),linear-gradient(180deg,#281f12,#100d08 50%,#070604)}
+#rideDashOverlay[data-theme="oldfashioned"]::after{opacity:.18;background-image:repeating-linear-gradient(92deg,rgba(255,245,220,.025) 0 1px,transparent 1px 6px);background-size:auto}
+#rideDashOverlay[data-theme="oldfashioned"] .dashBrand h2,
+#rideDashOverlay[data-theme="oldfashioned"] .dashSpeedNumber{font-family:Georgia,"Times New Roman",serif;font-weight:500;letter-spacing:.02em}
+#rideDashOverlay[data-theme="oldfashioned"] .dashWidget::before,
+#rideDashOverlay[data-theme="oldfashioned"] .dashWidget::after{height:1px;box-shadow:none}
+
+/* Rustic leather and timber. */
+#rideDashOverlay[data-theme="rustic"]{
+  --dash-bg:#0d0906;--dash-bg-2:#21150d;--dash-panel:rgba(43,29,19,.97);--dash-panel-2:rgba(18,12,8,.99);--dash-text:#f1dfc6;--dash-muted:#aa9177;--dash-border:rgba(var(--dash-accent-rgb),.34);
+}
+#rideDashOverlay[data-theme="rustic"]::before{background:radial-gradient(ellipse at 52% -15%,rgba(var(--dash-accent-rgb),.13),transparent 42%),linear-gradient(180deg,#25170d,#0d0906 56%,#060403)}
+#rideDashOverlay[data-theme="rustic"]::after{opacity:.22;background-image:repeating-linear-gradient(8deg,rgba(214,168,111,.035) 0 1px,transparent 1px 7px),repeating-linear-gradient(97deg,rgba(0,0,0,.09) 0 2px,transparent 2px 17px);background-size:auto}
+#rideDashOverlay[data-theme="rustic"] .dashWidget{border-color:rgba(var(--dash-accent-rgb),.28);background:linear-gradient(145deg,rgba(201,138,75,.055),transparent 42%),linear-gradient(160deg,#2c1e14,#110c08)}
+
+/* Simple monochrome. */
+#rideDashOverlay[data-theme="simple"]{
+  --dash-bg:#090909;--dash-bg-2:#101010;--dash-panel:#171717;--dash-panel-2:#101010;--dash-text:#fafafa;--dash-muted:#a1a1aa;--dash-border:rgba(255,255,255,.14);
+}
+#rideDashOverlay[data-theme="simple"]::before{background:#090909}
+#rideDashOverlay[data-theme="simple"]::after{display:none}
+#rideDashOverlay[data-theme="simple"] .dashWidget{background:#121212;border-color:rgba(255,255,255,.13);box-shadow:none}
+#rideDashOverlay[data-theme="simple"] .dashWidget::before,
+#rideDashOverlay[data-theme="simple"] .dashWidget::after,
+#rideDashOverlay[data-theme="simple"] .rideDash>header::after{display:none}
+#rideDashOverlay[data-theme="simple"] .dashWidgetLabel{letter-spacing:.09em}
+#rideDashOverlay[data-theme="simple"] .dashSpeedNumber{font-variant-numeric:tabular-nums;text-shadow:none}
+
+/* Modern precision. */
+#rideDashOverlay[data-theme="modern"]{
+  --dash-bg:#080b10;--dash-bg-2:#101722;--dash-panel:rgba(22,30,42,.88);--dash-panel-2:rgba(11,16,24,.94);--dash-text:#f8fafc;--dash-muted:#94a3b8;--dash-border:rgba(var(--dash-accent-rgb),.26);
+}
+#rideDashOverlay[data-theme="modern"]::before{background:radial-gradient(circle at 60% -15%,rgba(var(--dash-accent-rgb),.17),transparent 36%),linear-gradient(180deg,#111925,#080b10 48%,#05070a)}
+#rideDashOverlay[data-theme="modern"]::after{opacity:.12;background-size:44px 44px}
+#rideDashOverlay[data-theme="modern"] .dashWidget{border-color:rgba(148,163,184,.17)}
+
+/* Brushed metal. */
+#rideDashOverlay[data-theme="metal"]{
+  --dash-bg:#090b0d;--dash-bg-2:#1b2024;--dash-panel:rgba(38,44,49,.97);--dash-panel-2:rgba(14,17,19,.99);--dash-text:#eef2f4;--dash-muted:#a6b0b7;--dash-border:rgba(var(--dash-accent-rgb),.36);
+}
+#rideDashOverlay[data-theme="metal"]::before{background:linear-gradient(180deg,#252b2f,#0b0d0f 45%,#050607)}
+#rideDashOverlay[data-theme="metal"]::after{opacity:.3;background-image:repeating-linear-gradient(90deg,rgba(255,255,255,.035) 0 1px,rgba(0,0,0,.025) 1px 3px,transparent 3px 6px);background-size:auto}
+#rideDashOverlay[data-theme="metal"] .dashWidget{background:linear-gradient(165deg,rgba(255,255,255,.07),transparent 28%),linear-gradient(180deg,#2a3034,#111416);border-color:rgba(210,220,228,.2)}
+#rideDashOverlay[data-theme="metal"] .dashWidget::before,
+#rideDashOverlay[data-theme="metal"] .dashWidget::after{background:linear-gradient(90deg,transparent,var(--dash-accent),transparent);box-shadow:none}
+
+/* Carbon fiber performance. */
+#rideDashOverlay[data-theme="carbon"]{
+  --dash-bg:#030303;--dash-bg-2:#0b0b0c;--dash-panel:rgba(16,16,17,.98);--dash-panel-2:rgba(5,5,6,.99);--dash-text:#fff;--dash-muted:#8e9399;--dash-border:rgba(var(--dash-accent-rgb),.43);
+}
+#rideDashOverlay[data-theme="carbon"]::before{background:radial-gradient(circle at 70% -10%,rgba(var(--dash-accent-rgb),.13),transparent 34%),#030303}
+#rideDashOverlay[data-theme="carbon"]::after{opacity:.34;background-image:linear-gradient(45deg,rgba(255,255,255,.035) 25%,transparent 25%,transparent 75%,rgba(255,255,255,.035) 75%),linear-gradient(-45deg,rgba(255,255,255,.022) 25%,transparent 25%,transparent 75%,rgba(255,255,255,.022) 75%);background-position:0 0,5px 5px;background-size:10px 10px;mask-image:none}
+#rideDashOverlay[data-theme="carbon"] .dashWidget{clip-path:polygon(0 9px,9px 0,calc(100% - 9px) 0,100% 9px,100% calc(100% - 9px),calc(100% - 9px) 100%,9px 100%,0 calc(100% - 9px));background:linear-gradient(130deg,rgba(var(--dash-accent-rgb),.075),transparent 28%),linear-gradient(160deg,#151516,#050506)}
+
+/* Rally equipment. */
+#rideDashOverlay[data-theme="rally"]{
+  --dash-bg:#090806;--dash-bg-2:#17130d;--dash-panel:rgba(29,26,20,.98);--dash-panel-2:rgba(10,9,7,.99);--dash-text:#fff7ed;--dash-muted:#b8aa98;--dash-border:rgba(var(--dash-accent-rgb),.46);
+}
+#rideDashOverlay[data-theme="rally"]::before{background:linear-gradient(122deg,rgba(var(--dash-accent-rgb),.13),transparent 24%),linear-gradient(180deg,#18130d,#080705 55%,#040403)}
+#rideDashOverlay[data-theme="rally"]::after{opacity:.2;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.045) 0 2px,transparent 2px 12px);background-size:auto}
+#rideDashOverlay[data-theme="rally"] .dashWidget{clip-path:polygon(0 8px,8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%)}
+#rideDashOverlay[data-theme="rally"] .dashSpeedNumber{font-style:italic}
+
+/* Stealth low-reflection mode. */
+#rideDashOverlay[data-theme="stealth"]{
+  --dash-bg:#010302;--dash-bg-2:#050806;--dash-panel:#080c09;--dash-panel-2:#030504;--dash-text:#dce7df;--dash-muted:#68766c;--dash-border:rgba(var(--dash-accent-rgb),.18);
+}
+#rideDashOverlay[data-theme="stealth"]::before{background:#010302}
+#rideDashOverlay[data-theme="stealth"]::after{display:none}
+#rideDashOverlay[data-theme="stealth"] .dashWidget{background:#050806;box-shadow:none}
+#rideDashOverlay[data-theme="stealth"] .dashWidget::before,
+#rideDashOverlay[data-theme="stealth"] .dashWidget::after{opacity:.32;box-shadow:none}
+#rideDashOverlay[data-theme="stealth"] .dashSpeedNumber{color:#d7e5da;text-shadow:none}
+
+/* Retro digital. */
+#rideDashOverlay[data-theme="retro"]{
+  --dash-bg:#08061a;--dash-bg-2:#15103a;--dash-panel:rgba(25,18,58,.95);--dash-panel-2:rgba(8,6,25,.99);--dash-text:#fff5e9;--dash-muted:#a7a2c8;--dash-border:rgba(var(--dash-accent-rgb),.4);
+}
+#rideDashOverlay[data-theme="retro"]::before{background:radial-gradient(circle at 75% -10%,rgba(34,211,238,.17),transparent 35%),radial-gradient(circle at 20% 5%,rgba(var(--dash-accent-rgb),.18),transparent 31%),linear-gradient(180deg,#17103b,#08061a 58%,#04030e)}
+#rideDashOverlay[data-theme="retro"]::after{opacity:.24;background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);background-size:24px 24px;transform:perspective(260px) rotateX(42deg) scale(1.45);transform-origin:bottom}
+#rideDashOverlay[data-theme="retro"] .dashSpeedNumber{font-family:"Courier New",monospace;font-weight:800;letter-spacing:-.04em}
+
+/* Theme picker previews. */
+.dashThemeCard i{border-color:color-mix(in srgb,var(--card-accent) 75%,#64748b)!important}
+.dashThemeCard.active i{background:var(--card-accent)!important;box-shadow:0 0 10px color-mix(in srgb,var(--card-accent) 70%,transparent)!important}
+.dashThemeCard::after{background:linear-gradient(90deg,transparent,var(--card-accent),transparent)!important;opacity:.42}
+.dashThemeCard.active::after{opacity:1}
+
+/* Unified history sheet. */
+.dashRideHistory{
+  position:fixed;inset:0;z-index:9920;display:flex;align-items:flex-end;justify-content:center;padding:10px;background:rgba(0,0,0,.74);backdrop-filter:blur(11px)
+}
+.dashRideHistory>section{
+  width:min(100%,620px);max-height:88dvh;overflow:auto;padding:14px 14px calc(14px + env(safe-area-inset-bottom));border:1px solid var(--dash-border);border-radius:20px;background:linear-gradient(160deg,var(--dash-panel),var(--dash-panel-2));box-shadow:0 22px 60px rgba(0,0,0,.55)
+}
+.dashRideHistory header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.dashRideHistory header small{display:block;color:var(--dash-accent);font-size:7px;font-weight:950;letter-spacing:.16em}
+.dashRideHistory h3{margin:2px 0 0;font-size:20px}
+.dashRideHistory header button{width:40px;height:40px;border:1px solid var(--dash-border);border-radius:10px;background:rgba(255,255,255,.05);color:#fff;font-size:20px}
+.dashHistoryList{display:grid;gap:8px}
+.dashHistoryList article{padding:12px;border:1px solid rgba(255,255,255,.09);border-radius:calc(var(--dash-radius) * .6 + 5px);background:rgba(255,255,255,.028)}
+.dashHistoryList article>div:first-child{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.dashHistoryList article strong{font-size:12px}
+.dashHistoryList article>div:first-child small{color:var(--dash-muted);font-size:8px;text-transform:uppercase}
+.dashHistoryMetrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin-top:10px}
+.dashHistoryMetrics span{display:block;padding:8px;border:1px solid rgba(255,255,255,.06);border-radius:7px;background:rgba(0,0,0,.18)}
+.dashHistoryMetrics small,.dashHistoryMetrics b{display:block}
+.dashHistoryMetrics small{color:var(--dash-muted);font-size:6px;letter-spacing:.1em}
+.dashHistoryMetrics b{margin-top:4px;font-size:10px}
+.dashHistoryLog{width:100%;min-height:43px;margin-top:10px;border:1px solid var(--dash-border);border-radius:10px;background:rgba(var(--dash-accent-rgb),.1);color:var(--dash-accent);font-size:8px;font-weight:950;letter-spacing:.1em}
+
+.dashMapLoadPrompt{position:absolute;inset:0;display:grid;place-content:center;gap:6px;padding:22px;color:#fff;text-align:center;background:radial-gradient(circle at center,rgba(var(--dash-accent-rgb),.11),transparent 45%),#071017}
+.dashMapLoadPrompt strong{font-size:13px;letter-spacing:.12em}
+.dashMapLoadPrompt span{color:var(--dash-muted);font-size:8px;line-height:1.45}
+
+@media(max-width:390px){
+  .dashHistoryMetrics{grid-template-columns:1fr 1fr}
+  .dashRideHistory{padding:5px}
+  .dashRideHistory>section{border-radius:16px}
+}

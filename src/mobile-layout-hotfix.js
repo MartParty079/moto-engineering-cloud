@@ -17,7 +17,15 @@ function scheduleSync(){
   });
 }
 
-const observer = new MutationObserver(scheduleSync);
+const observer = new MutationObserver(mutations => {
+  const relevant = mutations.some(mutation => {
+    if(mutation.target?.id === 'main') return true;
+    return [...mutation.addedNodes].some(node => node.nodeType === 1 && (
+      node.id === 'main' || node.querySelector?.('#main')
+    ));
+  });
+  if(relevant) scheduleSync();
+});
 observer.observe(document.querySelector('#app') || document.body,{childList:true,subtree:true});
 window.addEventListener('popstate',scheduleSync);
 scheduleSync();

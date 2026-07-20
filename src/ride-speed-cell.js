@@ -39,7 +39,9 @@
     panel = document.createElement('div');
     panel.className = 'dashInlineSpeedLimit';
     panel.setAttribute('aria-live','polite');
-    panel.innerHTML = '<div class="dashInlineLimitSign"><small>SPEED<br>LIMIT</small><strong>--</strong></div><div class="dashInlineLimitMeta"><b>SEARCHING</b><span>ROAD DATA</span></div>';
+    // Deliberately avoid strong/b/small tags here. Dashboard theme rules treat those
+    // as primary values and previously enlarged this compact panel into a text wall.
+    panel.innerHTML = '<div class="dashInlineLimitSign"><div class="dashInlineLimitWord">LIMIT</div><div class="dashInlineLimitNumber">--</div></div><div class="dashInlineLimitStatus">SEARCHING</div><div class="dashInlineLimitTolerance">ROAD DATA</div>';
     gauge.appendChild(panel);
     return panel;
   }
@@ -55,9 +57,9 @@
     const currentLimit = limit();
     const status = compliance();
     const panel = ensureLimitPanel(gauge);
-    const signNumber = panel.querySelector('.dashInlineLimitSign strong');
-    const label = panel.querySelector('.dashInlineLimitMeta b');
-    const sublabel = panel.querySelector('.dashInlineLimitMeta span');
+    const signNumber = panel.querySelector('.dashInlineLimitNumber');
+    const label = panel.querySelector('.dashInlineLimitStatus');
+    const sublabel = panel.querySelector('.dashInlineLimitTolerance');
 
     widget.dataset.speedState = status.state;
     widget.style.setProperty('--speed-cell-color',status.color);
@@ -66,7 +68,7 @@
 
     if (signNumber) signNumber.textContent = currentLimit ? String(Math.round(currentLimit)) : '--';
     if (label) label.textContent = status.label;
-    if (sublabel) sublabel.textContent = currentLimit ? `${tolerance()}% TOLERANCE` : 'ROAD DATA';
+    if (sublabel) sublabel.textContent = currentLimit ? `${tolerance()}% TOL` : 'ROAD DATA';
     panel.dataset.known = currentLimit ? 'true' : 'false';
     panel.dataset.state = status.state;
 

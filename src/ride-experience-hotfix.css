@@ -1,0 +1,183 @@
+/* Ride OS smart-strip regression fix.
+   This file loads statically so the status controls never render as unbounded SVG artwork. */
+
+#rideDashOverlay .rideXSmartStrip,
+#rideDashOverlay .rideXSmartStrip *{
+  box-sizing:border-box;
+}
+
+#rideDashOverlay svg.rideXIcon,
+#rideDashOverlay .rideXSmartStrip button svg.rideXIcon,
+.rideXSheet svg.rideXIcon,
+#adventureOverlay svg.rideXIcon{
+  display:block!important;
+  width:16px!important;
+  height:16px!important;
+  min-width:16px!important;
+  min-height:16px!important;
+  max-width:16px!important;
+  max-height:16px!important;
+  flex:0 0 16px!important;
+  overflow:visible!important;
+}
+
+#rideDashOverlay .rideXSmartStrip{
+  display:flex!important;
+  width:100%!important;
+  min-width:0!important;
+  min-height:0!important;
+  height:auto!important;
+  align-items:stretch!important;
+  gap:5px!important;
+  padding:5px 7px!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  scroll-snap-type:x proximity;
+  scrollbar-width:none;
+  overscroll-behavior-x:contain;
+  -webkit-overflow-scrolling:touch;
+  background:linear-gradient(180deg,rgba(3,7,12,.97),rgba(5,10,16,.94))!important;
+  border-top:0!important;
+  border-bottom:1px solid rgba(255,255,255,.075)!important;
+}
+
+#rideDashOverlay .rideXSmartStrip::-webkit-scrollbar{display:none}
+
+#rideDashOverlay .rideXSmartStrip>button{
+  display:flex!important;
+  flex:0 0 auto!important;
+  width:auto!important;
+  max-width:150px!important;
+  min-width:104px!important;
+  min-height:42px!important;
+  height:42px!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:7px!important;
+  margin:0!important;
+  padding:5px 8px!important;
+  overflow:hidden!important;
+  scroll-snap-align:start;
+  border:1px solid rgba(255,255,255,.105)!important;
+  border-radius:9px!important;
+  background:linear-gradient(145deg,rgba(255,255,255,.048),rgba(255,255,255,.014))!important;
+  color:#f8fafc!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.025),0 5px 14px rgba(0,0,0,.18)!important;
+  text-align:left!important;
+  appearance:none;
+}
+
+#rideDashOverlay .rideXSmartStrip>button:active{transform:scale(.985)}
+#rideDashOverlay .rideXSmartStrip .rideXModeSummary{min-width:122px!important;color:var(--ride-mode-accent)!important;border-color:color-mix(in srgb,var(--ride-mode-accent) 42%,transparent)!important}
+#rideDashOverlay .rideXSmartStrip .rideXCompliance{min-width:140px!important;border-color:color-mix(in srgb,var(--adaptive-speed) 48%,transparent)!important}
+#rideDashOverlay .rideXSmartStrip .rideXRoute{min-width:112px!important}
+#rideDashOverlay .rideXSmartStrip .rideXFuel{min-width:128px!important}
+
+#rideDashOverlay .rideXSmartStrip>button>span{
+  display:block!important;
+  min-width:0!important;
+  max-width:100%!important;
+  overflow:hidden!important;
+}
+
+#rideDashOverlay .rideXSmartStrip small,
+#rideDashOverlay .rideXSmartStrip strong{
+  display:block!important;
+  max-width:100%!important;
+  margin:0!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+  line-height:1.15!important;
+}
+
+#rideDashOverlay .rideXSmartStrip small{
+  color:#8494a7!important;
+  font-size:5.5px!important;
+  font-weight:900!important;
+  letter-spacing:.11em!important;
+}
+
+#rideDashOverlay .rideXSmartStrip strong{
+  margin-top:3px!important;
+  color:#f8fafc!important;
+  font-size:8px!important;
+  font-weight:900!important;
+  letter-spacing:.01em!important;
+}
+
+#rideDashOverlay .rideXSmartStrip .rideXCompliance>span:last-child strong{color:var(--adaptive-speed)!important}
+
+#rideDashOverlay .rideXComplianceRing{
+  display:grid!important;
+  width:30px!important;
+  height:30px!important;
+  min-width:30px!important;
+  min-height:30px!important;
+  max-width:30px!important;
+  max-height:30px!important;
+  flex:0 0 30px!important;
+  place-content:center!important;
+  border-radius:50%!important;
+  background:radial-gradient(circle,#070a0e 54%,transparent 56%),conic-gradient(var(--adaptive-speed) calc(var(--ratio,0) * 216deg),rgba(255,255,255,.09) 0)!important;
+  filter:drop-shadow(0 0 5px color-mix(in srgb,var(--adaptive-speed) 38%,transparent));
+  text-align:center!important;
+}
+
+#rideDashOverlay .rideXComplianceRing b{
+  display:block!important;
+  margin:0!important;
+  font-size:11px!important;
+  line-height:.9!important;
+}
+
+#rideDashOverlay .rideXComplianceRing small{
+  margin-top:2px!important;
+  color:#fff!important;
+  font-size:3.5px!important;
+  letter-spacing:.06em!important;
+}
+
+#rideDashOverlay[data-ride-active="false"] .rideXSmartStrip{
+  padding-block:4px!important;
+}
+
+#rideDashOverlay[data-ride-active="true"] .rideXSmartStrip>button{
+  min-height:38px!important;
+  height:38px!important;
+  padding-block:4px!important;
+}
+
+#rideDashOverlay[data-ride-active="true"] .rideXComplianceRing{
+  width:27px!important;
+  height:27px!important;
+  min-width:27px!important;
+  min-height:27px!important;
+  max-width:27px!important;
+  max-height:27px!important;
+  flex-basis:27px!important;
+}
+
+#rideDashOverlay[data-ride-active="true"] .rideXSmartStrip strong{font-size:7px!important}
+#rideDashOverlay[data-ride-active="true"] .rideXSmartStrip small{font-size:5px!important}
+
+@media(min-width:700px){
+  #rideDashOverlay .rideXSmartStrip{
+    display:grid!important;
+    grid-template-columns:minmax(0,1.05fr) minmax(0,1.25fr) minmax(0,1fr) minmax(0,1fr)!important;
+    overflow:visible!important;
+  }
+  #rideDashOverlay .rideXSmartStrip>button{
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+  }
+}
+
+@media(max-width:390px){
+  #rideDashOverlay .rideXSmartStrip{padding-inline:4px!important;gap:4px!important}
+  #rideDashOverlay .rideXSmartStrip>button{min-width:98px!important;max-width:136px!important;padding-inline:7px!important}
+  #rideDashOverlay .rideXSmartStrip .rideXModeSummary{min-width:116px!important}
+  #rideDashOverlay .rideXSmartStrip .rideXCompliance{min-width:132px!important}
+  #rideDashOverlay .rideXSmartStrip .rideXFuel{min-width:120px!important}
+}

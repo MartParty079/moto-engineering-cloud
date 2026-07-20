@@ -1,7 +1,7 @@
 const $=(q,r=document)=>r.querySelector(q);
-const $$=(q,r=document)=>[...r.querySelectorAll(q)];
 let activeRoute=null;
 let overlayObserver=null;
+let lastSignature='';
 
 const icon='<svg class="rideXIcon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18-6-6 6-6M3 12h13a5 5 0 0 1 5 5v2"/></svg>';
 
@@ -14,14 +14,18 @@ function routeFromUi(){
   const offRoute=$('#advOffRoute',overlay)?.textContent?.trim()||'—';
   const selected=$('#adventureRouteList .active',overlay);
   const name=(title&&title!=='Explore'?title:selected?.querySelector('strong')?.textContent?.trim())||null;
-  const detail={active:Boolean(name),name:name||'No active route',progress,remaining,offRoute,offRouteState:/ON TRACK/i.test(offRoute)?'on':offRoute==='—'?'unknown':'off',updatedAt:Date.now()};
-  if(JSON.stringify(detail)!==JSON.stringify(activeRoute)){activeRoute=detail;window.dispatchEvent(new CustomEvent('moto-route-update',{detail}));}
-  return detail;
+  const core={active:Boolean(name),name:name||'No active route',progress,remaining,offRoute,offRouteState:/ON TRACK/i.test(offRoute)?'on':offRoute==='—'?'unknown':'off'};
+  const signature=JSON.stringify(core);
+  if(signature!==lastSignature){lastSignature=signature;activeRoute={...core,updatedAt:Date.now()};window.dispatchEvent(new CustomEvent('moto-route-update',{detail:activeRoute}));}
+  return activeRoute||core;
 }
 
 function returnToRide(){
   $('#closeAdventure')?.click();
-  requestAnimationFrame(()=>window.MotoRideDash?.open?.()||window.MotoRide?.open?.());
+  requestAnimationFrame(()=>{
+    if(window.MotoRideDash?.open)window.MotoRideDash.open();
+    else window.MotoRide?.open?.();
+  });
 }
 function openAdventure(){
   const nav=$('#adventureNav');
@@ -30,7 +34,7 @@ function openAdventure(){
   nav.click();return true;
 }
 function openRoutes(){
-  if(!$('#adventureOverlay')){openAdventure();setTimeout(()=>$('#adventureOverlay [data-sheet="advGpxSheet"]')?.click(),500);return;}
+  if(!$('#adventureOverlay')){if(openAdventure())setTimeout(()=>$('#adventureOverlay [data-sheet="advGpxSheet"]')?.click(),500);return;}
   $('#adventureOverlay [data-sheet="advGpxSheet"]')?.click();
 }
 function openMap(){if(!$('#adventureOverlay'))openAdventure();}

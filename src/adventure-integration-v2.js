@@ -1,7 +1,8 @@
 const $=(q,r=document)=>r.querySelector(q);
-let activeRoute=null;
+const ROUTE_KEY='motoActiveRouteV2';
+let activeRoute=(()=>{try{return JSON.parse(localStorage.getItem(ROUTE_KEY)||'null')}catch{return null}})();
 let overlayObserver=null;
-let lastSignature='';
+let lastSignature=activeRoute?JSON.stringify({active:activeRoute.active,name:activeRoute.name,progress:activeRoute.progress,remaining:activeRoute.remaining,offRoute:activeRoute.offRoute,offRouteState:activeRoute.offRouteState}):'';
 
 const icon='<svg class="rideXIcon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18-6-6 6-6M3 12h13a5 5 0 0 1 5 5v2"/></svg>';
 
@@ -16,7 +17,12 @@ function routeFromUi(){
   const name=(title&&title!=='Explore'?title:selected?.querySelector('strong')?.textContent?.trim())||null;
   const core={active:Boolean(name),name:name||'No active route',progress,remaining,offRoute,offRouteState:/ON TRACK/i.test(offRoute)?'on':offRoute==='—'?'unknown':'off'};
   const signature=JSON.stringify(core);
-  if(signature!==lastSignature){lastSignature=signature;activeRoute={...core,updatedAt:Date.now()};window.dispatchEvent(new CustomEvent('moto-route-update',{detail:activeRoute}));}
+  if(signature!==lastSignature){
+    lastSignature=signature;
+    activeRoute={...core,updatedAt:Date.now()};
+    localStorage.setItem(ROUTE_KEY,JSON.stringify(activeRoute));
+    window.dispatchEvent(new CustomEvent('moto-route-update',{detail:activeRoute}));
+  }
   return activeRoute||core;
 }
 
@@ -30,7 +36,7 @@ function returnToRide(){
 function openAdventure(){
   const nav=$('#adventureNav');
   if(!nav)return false;
-  $('#rideDashOverlay')?.remove();
+  window.MotoRideDash?.close?.();
   nav.click();return true;
 }
 function openRoutes(){
@@ -72,4 +78,5 @@ function scan(){polishNav();bindOverlay($('#adventureOverlay'));}
 const observer=new MutationObserver(mutations=>{if(mutations.some(m=>[...m.addedNodes].some(n=>n.nodeType===1&&(n.matches?.('#adventureOverlay,#adventureNav')||n.querySelector?.('#adventureOverlay,#adventureNav')))))scan();});
 observer.observe(document.body,{childList:true,subtree:true});
 window.MotoAdventure={open:openAdventure,openMap,openRoutes,returnToRide,close:()=>$('#closeAdventure')?.click(),getState:()=>activeRoute||routeFromUi()||{active:false,name:'No active route'}};
+if(activeRoute)queueMicrotask(()=>window.dispatchEvent(new CustomEvent('moto-route-update',{detail:activeRoute})));
 scan();

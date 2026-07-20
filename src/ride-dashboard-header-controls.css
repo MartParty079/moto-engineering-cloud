@@ -1,0 +1,155 @@
+/* Ride Dash header controls v2
+   Moves the ride action into the command rail and keeps style inside Edit mode. */
+
+#rideDashOverlay[data-header-controls-v2="ready"] .rideDash>header{
+  gap:5px;
+  padding-right:6px;
+  padding-left:7px;
+}
+
+#rideDashOverlay[data-header-controls-v2="ready"] .dashBrand{
+  flex:1 1 auto;
+  min-width:64px;
+}
+
+#rideDashOverlay[data-header-controls-v2="ready"] .dashBrand h2{
+  font-size:13px;
+}
+
+#rideDashOverlay[data-header-controls-v2="ready"] .dashHeaderActions{
+  flex:0 0 auto;
+  gap:3px;
+}
+
+#rideDashOverlay[data-header-controls-v2="ready"] .dashHeaderActions #dashRideToggle{
+  min-width:82px;
+  height:34px;
+  padding:0 9px;
+  border-color:var(--dash-accent);
+  background:linear-gradient(135deg,rgba(var(--dash-accent-rgb),.34),rgba(var(--dash-accent-rgb),.11));
+  color:#fff;
+  font-size:7px;
+  font-weight:950;
+  letter-spacing:.07em;
+  white-space:nowrap;
+  box-shadow:inset 0 0 18px rgba(var(--dash-accent-rgb),.08),0 0 15px rgba(var(--dash-accent-rgb),.14);
+}
+
+#rideDashOverlay[data-header-controls-v2="ready"] .dashHeaderActions #dashRideToggle.recording{
+  border-color:#ef4444;
+  background:linear-gradient(135deg,#c51f2a,#711018);
+  box-shadow:0 0 16px rgba(239,68,68,.2);
+}
+
+#rideDashOverlay[data-header-controls-v2="ready"] .dashHeaderActions #dashRideToggle.starting{
+  opacity:.62;
+}
+
+/* Status remains visible, but no longer consumes a full control row. */
+#rideDashOverlay[data-header-controls-v2="ready"] .dashRideControl{
+  min-height:24px;
+  padding:2px 8px;
+  border-bottom-color:rgba(255,255,255,.055);
+}
+
+#rideDashOverlay[data-header-controls-v2="ready"] .dashRideIdentity{
+  width:100%;
+  gap:6px;
+}
+
+#rideDashOverlay[data-header-controls-v2="ready"] .dashRideIdentity>span{
+  width:7px;
+  height:7px;
+  flex-basis:7px;
+}
+
+#rideDashOverlay[data-header-controls-v2="ready"] .dashRideIdentity>div{
+  width:100%;
+  gap:6px;
+}
+
+#rideDashOverlay[data-header-controls-v2="ready"] .dashRideIdentity small{
+  font-size:5.5px;
+  letter-spacing:.09em;
+}
+
+#rideDashOverlay[data-header-controls-v2="ready"] .dashRideIdentity strong{
+  flex:1 1 auto;
+  font-size:9px;
+}
+
+/* STYLE now lives inside the edit-only floating toolbar. */
+#rideDashOverlay[data-header-controls-v2="ready"] #dashStyle{
+  min-width:52px;
+  color:var(--dash-accent);
+}
+
+#rideDashOverlay[data-header-controls-v2="ready"].editing .rideDash>footer{
+  grid-template-columns:32px 1fr auto auto 32px;
+}
+
+#rideDashOverlay[data-header-controls-v2="ready"].editing .rideDash>footer #dashStyle,
+#rideDashOverlay[data-header-controls-v2="ready"].editing .rideDash>footer #dashAddPage{
+  height:32px;
+  padding:0 8px;
+  font-size:7px;
+  letter-spacing:.07em;
+}
+
+@media(max-width:390px){
+  #rideDashOverlay[data-header-controls-v2="ready"] .rideDash>header{
+    gap:3px;
+    padding-right:5px;
+    padding-left:5px;
+  }
+
+  #rideDashOverlay[data-header-controls-v2="ready"] .dashBrand{
+    min-width:62px;
+  }
+
+  #rideDashOverlay[data-header-controls-v2="ready"] .dashBrand h2{
+    font-size:11px;
+  }
+
+  #rideDashOverlay[data-header-controls-v2="ready"] .dashHeaderActions #dashRideToggle{
+    min-width:76px;
+    height:32px;
+    padding:0 7px;
+    font-size:6px;
+  }
+
+  #rideDashOverlay[data-header-controls-v2="ready"] .dashRideControl{
+    min-height:22px;
+    padding-block:1px;
+  }
+
+  #rideDashOverlay[data-header-controls-v2="ready"] .dashRideIdentity small{
+    display:none;
+  }
+
+  #rideDashOverlay[data-header-controls-v2="ready"].editing .rideDash>footer{
+    grid-template-columns:30px 1fr auto auto 30px;
+  }
+
+  #rideDashOverlay[data-header-controls-v2="ready"].editing .rideDash>footer #dashStyle,
+  #rideDashOverlay[data-header-controls-v2="ready"].editing .rideDash>footer #dashAddPage{
+    padding-inline:6px;
+    font-size:6px;
+  }
+}
+
+@media(max-width:350px){
+  #rideDashOverlay[data-header-controls-v2="ready"] .dashBrand h2{
+    font-size:10px;
+  }
+
+  #rideDashOverlay[data-header-controls-v2="ready"] .dashHeaderActions #dashRideToggle{
+    min-width:68px;
+    padding-inline:5px;
+  }
+
+  #rideDashOverlay[data-header-controls-v2="ready"] .rideDash>header button{
+    min-width:29px;
+    padding-inline:5px;
+  }
+}

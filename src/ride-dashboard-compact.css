@@ -1,0 +1,254 @@
+/* Ride Dash compact chrome
+   Keeps ride controls reachable while returning vertical space to telemetry. */
+
+#rideDashOverlay .rideDash{
+  position:relative;
+}
+
+/* Compact top command rail. */
+#rideDashOverlay .rideDash>header{
+  min-height:42px;
+  gap:6px;
+  padding:calc(4px + env(safe-area-inset-top)) 8px 4px;
+}
+
+#rideDashOverlay .dashBrand small{
+  display:none;
+}
+
+#rideDashOverlay .dashBrand h2{
+  margin:0;
+  font-size:14px;
+  line-height:1;
+  letter-spacing:.07em;
+}
+
+#rideDashOverlay .dashHeaderActions{
+  gap:4px;
+}
+
+#rideDashOverlay .rideDash>header button{
+  min-width:34px;
+  height:34px;
+  padding:0 7px;
+  font-size:7px;
+  letter-spacing:.045em;
+}
+
+#rideDashOverlay #dashStyle{
+  min-width:43px;
+}
+
+#rideDashOverlay #dashEdit{
+  min-width:38px;
+}
+
+#rideDashOverlay #dashClose{
+  width:34px;
+  min-width:34px;
+  font-size:18px!important;
+}
+
+/* Put ride status and the primary action on one shallow rail. */
+#rideDashOverlay .dashRideControl{
+  min-height:42px;
+  gap:8px;
+  padding:4px 8px;
+}
+
+#rideDashOverlay .dashRideIdentity{
+  flex:1 1 auto;
+  gap:7px;
+}
+
+#rideDashOverlay .dashRideIdentity>span{
+  width:8px;
+  height:8px;
+  flex-basis:8px;
+  box-shadow:0 0 0 3px rgba(80,96,112,.13);
+}
+
+#rideDashOverlay .dashRideIdentity>span.live{
+  box-shadow:0 0 0 3px rgba(239,68,68,.15),0 0 12px rgba(239,68,68,.58);
+}
+
+#rideDashOverlay .dashRideIdentity>div{
+  display:flex;
+  min-width:0;
+  align-items:baseline;
+  gap:7px;
+}
+
+#rideDashOverlay .dashRideIdentity small{
+  flex:0 0 auto;
+  font-size:6px;
+  letter-spacing:.1em;
+}
+
+#rideDashOverlay .dashRideIdentity strong{
+  min-width:0;
+  margin:0;
+  font-size:10px;
+}
+
+#rideDashOverlay .dashRideControl>button{
+  min-width:90px;
+  height:34px;
+  padding:0 8px;
+  font-size:8px;
+}
+
+/* The display tabs are the page title; do not repeat that title below. */
+#rideDashOverlay .dashTabs{
+  min-height:32px;
+  gap:4px;
+  padding:4px 7px;
+}
+
+#rideDashOverlay .dashTabs button{
+  padding:5px 9px;
+  font-size:7px;
+}
+
+#rideDashOverlay:not(.editing) .dashPageHead{
+  display:none;
+}
+
+#rideDashOverlay.editing .dashPageHead{
+  min-height:30px;
+  justify-content:flex-end;
+  gap:4px;
+  margin-bottom:5px;
+}
+
+#rideDashOverlay.editing .dashPageHead>div:first-child{
+  display:none;
+}
+
+#rideDashOverlay.editing .dashPageHead>div:last-child{
+  gap:4px;
+}
+
+#rideDashOverlay.editing .dashPageHead button{
+  min-height:29px;
+  padding:0 7px;
+  font-size:6px;
+}
+
+#rideDashOverlay .dashPage{
+  padding:7px;
+}
+
+#rideDashOverlay[data-density="compact"] .dashPage{
+  padding:6px;
+}
+
+/* The footer is unnecessary while riding because pages are swipeable.
+   In edit mode it becomes a floating tool rail instead of consuming layout height. */
+#rideDashOverlay:not(.editing) .rideDash>footer{
+  display:none;
+}
+
+#rideDashOverlay.editing .rideDash>footer{
+  position:absolute;
+  right:7px;
+  bottom:calc(5px + env(safe-area-inset-bottom));
+  left:7px;
+  z-index:80;
+  display:grid;
+  grid-template-columns:32px 1fr auto 32px;
+  gap:4px;
+  padding:3px;
+  border:1px solid var(--dash-border);
+  border-radius:calc(var(--dash-radius) + 7px);
+  background:rgba(3,8,13,.88);
+  box-shadow:0 10px 28px rgba(0,0,0,.42);
+  backdrop-filter:blur(20px);
+}
+
+#rideDashOverlay.editing .rideDash>footer button{
+  height:32px;
+}
+
+#rideDashOverlay.editing .rideDash>footer #dashAddPage{
+  padding:0 9px;
+  font-size:7px;
+}
+
+#rideDashOverlay.editing .dashPage{
+  padding-bottom:50px;
+}
+
+/* Slightly tighter edit affordances leave the actual widget values unobstructed. */
+#rideDashOverlay .widgetEdit{
+  inset:auto 5px 5px;
+  gap:3px;
+  padding:3px;
+}
+
+#rideDashOverlay .widgetEdit button{
+  padding:5px 4px;
+  font-size:6px;
+}
+
+@media(max-width:390px){
+  #rideDashOverlay .rideDash>header{
+    padding-right:6px;
+    padding-left:6px;
+  }
+
+  #rideDashOverlay .dashBrand h2{
+    font-size:12px;
+  }
+
+  #rideDashOverlay .rideDash>header button{
+    min-width:31px;
+    height:32px;
+    padding:0 6px;
+    font-size:6px;
+  }
+
+  #rideDashOverlay #dashStyle{
+    min-width:40px;
+  }
+
+  #rideDashOverlay #dashEdit{
+    min-width:35px;
+  }
+
+  #rideDashOverlay #dashClose{
+    width:32px;
+    min-width:32px;
+  }
+
+  #rideDashOverlay .dashRideIdentity small{
+    display:none;
+  }
+
+  #rideDashOverlay .dashRideControl>button{
+    min-width:84px;
+  }
+}
+
+@media(max-height:720px){
+  #rideDashOverlay .dashBrand{
+    max-width:72px;
+  }
+
+  #rideDashOverlay .dashBrand h2{
+    font-size:11px;
+  }
+
+  #rideDashOverlay .dashTabs{
+    min-height:29px;
+    padding-block:3px;
+  }
+
+  #rideDashOverlay.editing .dashPageHead{
+    min-height:27px;
+  }
+
+  #rideDashOverlay.editing .dashPageHead button{
+    min-height:26px;
+  }
+}

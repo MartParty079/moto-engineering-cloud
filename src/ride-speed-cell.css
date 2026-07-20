@@ -17,29 +17,12 @@
     0 0 22px color-mix(in srgb,var(--speed-cell-color) 12%,transparent)!important;
 }
 
-#rideDashOverlay .widget-speed[data-speed-state="unknown"]{
-  --speed-cell-color:#3b82f6;
-}
-
-#rideDashOverlay .widget-speed[data-speed-state="clear"]{
-  --speed-cell-color:#22c55e;
-}
-
-#rideDashOverlay .widget-speed[data-speed-state="near"]{
-  --speed-cell-color:#f59e0b;
-}
-
-#rideDashOverlay .widget-speed[data-speed-state="grace"]{
-  --speed-cell-color:#f97316;
-}
-
-#rideDashOverlay .widget-speed[data-speed-state="over"]{
-  --speed-cell-color:#ef4444;
-}
-
-#rideDashOverlay .widget-speed[data-speed-state="critical"]{
-  --speed-cell-color:#e879f9;
-}
+#rideDashOverlay .widget-speed[data-speed-state="unknown"]{--speed-cell-color:#3b82f6}
+#rideDashOverlay .widget-speed[data-speed-state="clear"]{--speed-cell-color:#22c55e}
+#rideDashOverlay .widget-speed[data-speed-state="near"]{--speed-cell-color:#f59e0b}
+#rideDashOverlay .widget-speed[data-speed-state="grace"]{--speed-cell-color:#f97316}
+#rideDashOverlay .widget-speed[data-speed-state="over"]{--speed-cell-color:#ef4444}
+#rideDashOverlay .widget-speed[data-speed-state="critical"]{--speed-cell-color:#e879f9}
 
 #rideDashOverlay .widget-speed[data-speed-state="over"],
 #rideDashOverlay .widget-speed[data-speed-state="critical"]{
@@ -56,8 +39,9 @@
 }
 
 #rideDashOverlay .widget-speed .dashSpeedGauge{
-  position:relative;
+  position:relative!important;
   isolation:isolate;
+  overflow:visible!important;
 }
 
 #rideDashOverlay .widget-speed .dashSpeedNumber,
@@ -67,134 +51,154 @@
   z-index:3;
 }
 
-#rideDashOverlay .dashInlineSpeedLimit{
-  position:absolute;
-  top:50%;
-  right:7.5%;
-  z-index:6;
-  display:flex;
-  width:104px;
-  align-items:center;
-  gap:8px;
-  transform:translateY(-50%);
-  pointer-events:none;
+/* Compact roadside-sign badge. Every property is intentionally explicit so
+   material themes cannot reinterpret the badge as another primary value. */
+#rideDashOverlay .widget-speed .dashInlineSpeedLimit{
+  position:absolute!important;
+  top:50%!important;
+  right:clamp(10px,3.2vw,24px)!important;
+  bottom:auto!important;
+  left:auto!important;
+  z-index:12!important;
+  display:grid!important;
+  grid-template-columns:52px!important;
+  grid-template-rows:58px auto auto!important;
+  width:64px!important;
+  min-width:64px!important;
+  max-width:64px!important;
+  height:auto!important;
+  min-height:0!important;
+  align-items:center!important;
+  justify-items:center!important;
+  gap:3px!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  background:transparent!important;
+  color:#fff!important;
+  text-align:center!important;
+  line-height:1!important;
+  transform:translateY(-50%)!important;
+  pointer-events:none!important;
 }
 
-#rideDashOverlay .dashInlineLimitSign{
-  display:grid;
-  width:48px;
-  height:61px;
-  flex:0 0 48px;
-  box-sizing:border-box;
-  place-items:center;
-  padding:5px 3px 4px;
-  border:2px solid rgba(15,23,42,.92);
-  border-radius:7px;
-  background:linear-gradient(180deg,#f8fafc,#dce3e8);
-  color:#10151b;
-  box-shadow:0 8px 22px rgba(0,0,0,.38),0 0 0 1px rgba(255,255,255,.3);
-  text-align:center;
+#rideDashOverlay .widget-speed .dashInlineLimitSign{
+  display:grid!important;
+  grid-template-rows:13px 1fr!important;
+  width:50px!important;
+  min-width:50px!important;
+  max-width:50px!important;
+  height:58px!important;
+  min-height:58px!important;
+  max-height:58px!important;
+  box-sizing:border-box!important;
+  place-items:center!important;
+  padding:4px 3px 5px!important;
+  border:2px solid #10151b!important;
+  border-radius:7px!important;
+  background:linear-gradient(180deg,#fff,#dce3e8)!important;
+  color:#090d12!important;
+  box-shadow:0 8px 22px rgba(0,0,0,.4),0 0 0 1px rgba(255,255,255,.38)!important;
+  font-family:system-ui,-apple-system,sans-serif!important;
+  text-align:center!important;
+  transform:none!important;
 }
 
-#rideDashOverlay .dashInlineLimitSign small{
+#rideDashOverlay .widget-speed .dashInlineLimitWord{
+  display:block!important;
+  width:auto!important;
+  height:auto!important;
+  margin:0!important;
+  padding:0!important;
   color:#111827!important;
-  font-size:5px!important;
+  font:950 7px/.9 system-ui,-apple-system,sans-serif!important;
+  letter-spacing:.11em!important;
+  text-transform:uppercase!important;
+  white-space:nowrap!important;
+  transform:none!important;
+}
+
+#rideDashOverlay .widget-speed .dashInlineLimitNumber{
+  display:block!important;
+  width:auto!important;
+  height:auto!important;
+  margin:0!important;
+  padding:0!important;
+  color:#05080b!important;
+  font:950 27px/.82 system-ui,-apple-system,sans-serif!important;
+  letter-spacing:-.05em!important;
+  white-space:nowrap!important;
+  transform:none!important;
+}
+
+#rideDashOverlay .widget-speed .dashInlineLimitStatus,
+#rideDashOverlay .widget-speed .dashInlineLimitTolerance{
+  display:block!important;
+  width:76px!important;
+  max-width:76px!important;
+  height:auto!important;
+  margin:0!important;
+  padding:0!important;
+  overflow:hidden!important;
+  color:#fff!important;
+  font-family:system-ui,-apple-system,sans-serif!important;
+  font-style:normal!important;
   font-weight:950!important;
-  line-height:.95;
+  text-align:center!important;
+  text-overflow:ellipsis!important;
+  text-shadow:0 1px 3px #000!important;
+  text-transform:uppercase!important;
+  white-space:nowrap!important;
+  transform:none!important;
+}
+
+#rideDashOverlay .widget-speed .dashInlineLimitStatus{
+  color:var(--speed-cell-color)!important;
+  font-size:7px!important;
+  line-height:1.05!important;
+  letter-spacing:.07em!important;
+}
+
+#rideDashOverlay .widget-speed .dashInlineLimitTolerance{
+  color:rgba(255,255,255,.7)!important;
+  font-size:5px!important;
+  line-height:1!important;
   letter-spacing:.08em!important;
 }
 
-#rideDashOverlay .dashInlineLimitSign strong{
-  margin-top:1px;
-  color:#080b0f;
-  font-size:25px;
-  font-weight:950;
-  line-height:.86;
-}
-
-#rideDashOverlay .dashInlineLimitMeta{
-  min-width:0;
-  text-align:left;
-}
-
-#rideDashOverlay .dashInlineLimitMeta b,
-#rideDashOverlay .dashInlineLimitMeta span{
-  display:block;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-}
-
-#rideDashOverlay .dashInlineLimitMeta b{
-  color:var(--speed-cell-color);
-  font-size:7px;
-  font-weight:950;
-  letter-spacing:.1em;
-}
-
-#rideDashOverlay .dashInlineLimitMeta span{
-  margin-top:4px;
-  color:rgba(255,255,255,.62);
-  font-size:5px;
-  font-weight:850;
-  letter-spacing:.08em;
-}
-
-#rideDashOverlay .dashInlineSpeedLimit[data-known="false"] .dashInlineLimitSign{
-  opacity:.58;
-}
+#rideDashOverlay .widget-speed .dashInlineSpeedLimit[data-known="false"] .dashInlineLimitSign{opacity:.58!important}
 
 /* The separate speed/limit strip card is redundant now. */
-#rideDashOverlay .rideXSmartStrip .rideXCompliance{
-  display:none!important;
-}
-
-#rideDashOverlay .rideXSmartStrip{
-  grid-template-columns:minmax(128px,1.15fr) minmax(128px,1fr) minmax(128px,1fr)!important;
-}
-
-#rideDashOverlay[data-ride-active="true"] .rideXSmartStrip{
-  grid-template-columns:1.08fr 1fr 1fr!important;
-}
+#rideDashOverlay .rideXSmartStrip .rideXCompliance{display:none!important}
+#rideDashOverlay .rideXSmartStrip{grid-template-columns:minmax(128px,1.15fr) minmax(128px,1fr) minmax(128px,1fr)!important}
+#rideDashOverlay[data-ride-active="true"] .rideXSmartStrip{grid-template-columns:1.08fr 1fr 1fr!important}
 
 @media(max-width:430px){
-  #rideDashOverlay .dashInlineSpeedLimit{
-    right:5%;
-    width:91px;
-    gap:6px;
+  #rideDashOverlay .widget-speed .dashInlineSpeedLimit{
+    right:8px!important;
+    grid-template-columns:46px!important;
+    grid-template-rows:52px auto auto!important;
+    width:58px!important;
+    min-width:58px!important;
+    max-width:58px!important;
   }
-
-  #rideDashOverlay .dashInlineLimitSign{
-    width:43px;
-    height:56px;
-    flex-basis:43px;
+  #rideDashOverlay .widget-speed .dashInlineLimitSign{
+    width:44px!important;
+    min-width:44px!important;
+    max-width:44px!important;
+    height:52px!important;
+    min-height:52px!important;
+    max-height:52px!important;
   }
-
-  #rideDashOverlay .dashInlineLimitSign strong{
-    font-size:22px;
-  }
-
-  #rideDashOverlay .dashInlineLimitMeta b{
-    font-size:6px;
-  }
+  #rideDashOverlay .widget-speed .dashInlineLimitNumber{font-size:23px!important}
+  #rideDashOverlay .widget-speed .dashInlineLimitStatus{font-size:6px!important}
+  #rideDashOverlay .widget-speed .dashInlineLimitTolerance{font-size:4.5px!important}
 }
 
 @media(max-width:360px){
-  #rideDashOverlay .dashInlineSpeedLimit{
-    right:3.5%;
-    width:76px;
-    gap:4px;
-  }
-
-  #rideDashOverlay .dashInlineLimitSign{
-    width:38px;
-    height:50px;
-    flex-basis:38px;
-  }
-
-  #rideDashOverlay .dashInlineLimitMeta span{
-    display:none;
-  }
+  #rideDashOverlay .widget-speed .dashInlineSpeedLimit{right:5px!important;width:52px!important;min-width:52px!important;max-width:52px!important}
+  #rideDashOverlay .widget-speed .dashInlineLimitStatus,
+  #rideDashOverlay .widget-speed .dashInlineLimitTolerance{width:58px!important;max-width:58px!important}
 }
 
 @media(prefers-reduced-motion:reduce){

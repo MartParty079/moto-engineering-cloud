@@ -16,11 +16,11 @@ function loadRidePickerStability(){
   }
 }
 
-function loadRideV19Fixes(){
-  loadStyleOnce('/src/ride-speed-cell.css?v=2','rideSpeedCell');
+function loadRideV20Fixes(){
+  loadStyleOnce('/src/ride-speed-cell.css?v=3','rideSpeedCell');
   loadStyleOnce('/src/ride-layout-cleanup.css?v=1','rideLayoutCleanup');
   if(!window.__motoRideSpeedCellModule){
-    window.__motoRideSpeedCellModule=import('./ride-speed-cell.js?v=2').catch(error=>console.error('Adaptive speed cell failed to load',error));
+    window.__motoRideSpeedCellModule=import('./ride-speed-cell.js?v=3').catch(error=>console.error('Adaptive speed cell failed to load',error));
   }
   if(!window.__motoLeanRuntimeV2Module){
     window.__motoLeanRuntimeV2Module=import('./ride-lean-v2.js?v=1').catch(error=>console.error('Lean runtime v2 failed to load',error));
@@ -71,6 +71,6 @@ observer.observe(document.body,{childList:true,subtree:true});
 window.addEventListener('moto-ride-dash-opened',event=>secureRideUi(event.detail?.overlay||document));
 window.addEventListener('moto-ride-dash-rendered',event=>secureRideUi(event.detail?.overlay||document));
 loadRidePickerStability();
-loadRideV19Fixes();
+loadRideV20Fixes();
 loadPremiumVisibility();
 secureRideUi();

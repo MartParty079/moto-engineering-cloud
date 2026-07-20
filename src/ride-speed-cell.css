@@ -1,0 +1,202 @@
+/* Adaptive primary speed cell.
+   Speed-limit context lives beside the speed readout; the full card changes state color. */
+
+#rideDashOverlay .widget-speed{
+  --speed-cell-color:#3b82f6;
+  transition:border-color .22s ease,box-shadow .22s ease,background .22s ease;
+}
+
+#rideDashOverlay .widget-speed[data-speed-state]{
+  border-color:color-mix(in srgb,var(--speed-cell-color) 72%,rgba(255,255,255,.12))!important;
+  background:
+    radial-gradient(circle at 48% 50%,color-mix(in srgb,var(--speed-cell-color) 24%,transparent),transparent 46%),
+    linear-gradient(145deg,color-mix(in srgb,var(--speed-cell-color) 20%,#151b22),color-mix(in srgb,var(--speed-cell-color) 7%,#04070b) 66%,#030507)!important;
+  box-shadow:
+    inset 0 0 72px color-mix(in srgb,var(--speed-cell-color) 12%,transparent),
+    inset 0 1px rgba(255,255,255,.08),
+    0 0 22px color-mix(in srgb,var(--speed-cell-color) 12%,transparent)!important;
+}
+
+#rideDashOverlay .widget-speed[data-speed-state="unknown"]{
+  --speed-cell-color:#3b82f6;
+}
+
+#rideDashOverlay .widget-speed[data-speed-state="clear"]{
+  --speed-cell-color:#22c55e;
+}
+
+#rideDashOverlay .widget-speed[data-speed-state="near"]{
+  --speed-cell-color:#f59e0b;
+}
+
+#rideDashOverlay .widget-speed[data-speed-state="grace"]{
+  --speed-cell-color:#f97316;
+}
+
+#rideDashOverlay .widget-speed[data-speed-state="over"]{
+  --speed-cell-color:#ef4444;
+}
+
+#rideDashOverlay .widget-speed[data-speed-state="critical"]{
+  --speed-cell-color:#e879f9;
+}
+
+#rideDashOverlay .widget-speed[data-speed-state="over"],
+#rideDashOverlay .widget-speed[data-speed-state="critical"]{
+  animation:adaptiveSpeedCellAlert 1.25s ease-in-out infinite;
+}
+
+@keyframes adaptiveSpeedCellAlert{
+  50%{
+    box-shadow:
+      inset 0 0 88px color-mix(in srgb,var(--speed-cell-color) 20%,transparent),
+      inset 0 1px rgba(255,255,255,.1),
+      0 0 30px color-mix(in srgb,var(--speed-cell-color) 25%,transparent)!important;
+  }
+}
+
+#rideDashOverlay .widget-speed .dashSpeedGauge{
+  position:relative;
+  isolation:isolate;
+}
+
+#rideDashOverlay .widget-speed .dashSpeedNumber,
+#rideDashOverlay .widget-speed .dashSpeedGauge>span,
+#rideDashOverlay .widget-speed .dashSpeedGauge>i{
+  position:relative;
+  z-index:3;
+}
+
+#rideDashOverlay .dashInlineSpeedLimit{
+  position:absolute;
+  top:50%;
+  right:7.5%;
+  z-index:6;
+  display:flex;
+  width:104px;
+  align-items:center;
+  gap:8px;
+  transform:translateY(-50%);
+  pointer-events:none;
+}
+
+#rideDashOverlay .dashInlineLimitSign{
+  display:grid;
+  width:48px;
+  height:61px;
+  flex:0 0 48px;
+  box-sizing:border-box;
+  place-items:center;
+  padding:5px 3px 4px;
+  border:2px solid rgba(15,23,42,.92);
+  border-radius:7px;
+  background:linear-gradient(180deg,#f8fafc,#dce3e8);
+  color:#10151b;
+  box-shadow:0 8px 22px rgba(0,0,0,.38),0 0 0 1px rgba(255,255,255,.3);
+  text-align:center;
+}
+
+#rideDashOverlay .dashInlineLimitSign small{
+  color:#111827!important;
+  font-size:5px!important;
+  font-weight:950!important;
+  line-height:.95;
+  letter-spacing:.08em!important;
+}
+
+#rideDashOverlay .dashInlineLimitSign strong{
+  margin-top:1px;
+  color:#080b0f;
+  font-size:25px;
+  font-weight:950;
+  line-height:.86;
+}
+
+#rideDashOverlay .dashInlineLimitMeta{
+  min-width:0;
+  text-align:left;
+}
+
+#rideDashOverlay .dashInlineLimitMeta b,
+#rideDashOverlay .dashInlineLimitMeta span{
+  display:block;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+#rideDashOverlay .dashInlineLimitMeta b{
+  color:var(--speed-cell-color);
+  font-size:7px;
+  font-weight:950;
+  letter-spacing:.1em;
+}
+
+#rideDashOverlay .dashInlineLimitMeta span{
+  margin-top:4px;
+  color:rgba(255,255,255,.62);
+  font-size:5px;
+  font-weight:850;
+  letter-spacing:.08em;
+}
+
+#rideDashOverlay .dashInlineSpeedLimit[data-known="false"] .dashInlineLimitSign{
+  opacity:.58;
+}
+
+/* The separate speed/limit strip card is redundant now. */
+#rideDashOverlay .rideXSmartStrip .rideXCompliance{
+  display:none!important;
+}
+
+#rideDashOverlay .rideXSmartStrip{
+  grid-template-columns:minmax(128px,1.15fr) minmax(128px,1fr) minmax(128px,1fr)!important;
+}
+
+#rideDashOverlay[data-ride-active="true"] .rideXSmartStrip{
+  grid-template-columns:1.08fr 1fr 1fr!important;
+}
+
+@media(max-width:430px){
+  #rideDashOverlay .dashInlineSpeedLimit{
+    right:5%;
+    width:91px;
+    gap:6px;
+  }
+
+  #rideDashOverlay .dashInlineLimitSign{
+    width:43px;
+    height:56px;
+    flex-basis:43px;
+  }
+
+  #rideDashOverlay .dashInlineLimitSign strong{
+    font-size:22px;
+  }
+
+  #rideDashOverlay .dashInlineLimitMeta b{
+    font-size:6px;
+  }
+}
+
+@media(max-width:360px){
+  #rideDashOverlay .dashInlineSpeedLimit{
+    right:3.5%;
+    width:76px;
+    gap:4px;
+  }
+
+  #rideDashOverlay .dashInlineLimitSign{
+    width:38px;
+    height:50px;
+    flex-basis:38px;
+  }
+
+  #rideDashOverlay .dashInlineLimitMeta span{
+    display:none;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  #rideDashOverlay .widget-speed[data-speed-state]{animation:none!important}
+}

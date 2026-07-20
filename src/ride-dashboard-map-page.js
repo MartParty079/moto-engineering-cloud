@@ -13,6 +13,7 @@ let activeLayer = 'street';
 let follow = true;
 let lastFix = null;
 let leafletPromise = null;
+let scanQueued = false;
 
 function isFiniteNumber(value){
   return value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
@@ -208,10 +209,7 @@ function bindMapControls(overlay,page){
 async function initializeEmbeddedMap(overlay,page){
   const container = page.querySelector('#dashAdventureLiveMap');
   if(!container) return;
-  if(map && mapContainer === container){
-    requestAnimationFrame(() => map.invalidateSize(false));
-    return;
-  }
+  if(map && mapContainer === container) return;
 
   destroyEmbeddedMap();
   activeOverlay = overlay;
@@ -310,13 +308,13 @@ function useFix(detail){
 
     if(shouldAppendTrackPoint(lastFix)){
       trackPoints.push(latLng);
-      if(trackPoints.length > 1800) trackPoints.splice(0,trackPoints.length - 1800);
+      if(trackPoints.length > 1200) trackPoints.splice(0,trackPoints.length - 1200);
       trackLine?.setLatLngs(trackPoints);
     }
 
     if(follow){
       const zoom = map.getZoom() < 14 ? 16 : map.getZoom();
-      map.setView(latLng,zoom,{animate:true});
+      map.setView(latLng,zoom,{animate:false});
     }
     applyMapRotation();
   }
@@ -333,7 +331,7 @@ function updateTelemetry(overlay,fix){
 
   const setText = (selector,value) => {
     const element = overlay.querySelector(selector);
-    if(element) element.textContent = value;
+    if(element && element.textContent !== value) element.textContent = value;
   };
 
   setText('#dashMapHeading',isFiniteNumber(heading) ? `${Math.round(Number(heading))}°` : '--°');
@@ -355,9 +353,28 @@ function scan(){
   ensureAdventureDisplay(overlay);
 }
 
+function scheduleScan(){
+  if(scanQueued) return;
+  scanQueued = true;
+  requestAnimationFrame(() => {
+    scanQueued = false;
+    scan();
+  });
+}
+
 window.addEventListener('moto-gps-fix',event => useFix(event.detail));
 window.addEventListener('moto-ride-state',() => updateTelemetry(activeOverlay,lastFix));
 
-const observer = new MutationObserver(scan);
+const observer = new MutationObserver(mutations => {
+  const relevant = mutations.some(mutation => {
+    const target = mutation.target instanceof Element ? mutation.target : mutation.target?.parentElement;
+    if(target?.closest?.('#dashAdventureLiveMap,.leaflet-container')) return false;
+    if(target?.matches?.(DASH_SELECTOR) || target?.closest?.(DASH_SELECTOR)) return true;
+    return [...mutation.addedNodes].some(node => node.nodeType === 1 && (
+      node.matches?.(DASH_SELECTOR) || node.querySelector?.(DASH_SELECTOR)
+    ));
+  });
+  if(relevant) scheduleScan();
+});
 observer.observe(document.body,{childList:true,subtree:true});
-scan();
+scheduleScan();

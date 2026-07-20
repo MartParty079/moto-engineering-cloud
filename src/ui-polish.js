@@ -4,6 +4,30 @@ let polishQueued = false;
 let observedNav = null;
 let navObserver = null;
 
+function loadRideExperience(){
+  if(!document.querySelector('link[data-ride-experience-v2]')){
+    const link=document.createElement('link');
+    link.rel='stylesheet';
+    link.href='/src/ride-experience-v2.css?v=1';
+    link.dataset.rideExperienceV2='1';
+    document.head.appendChild(link);
+  }
+  if(!window.__motoRideExperienceLoading){
+    window.__motoRideExperienceLoading=Promise.all([
+      import('./adventure-integration-v2.js?v=1'),
+      import('./ride-experience-v2.js?v=1')
+    ]).catch(error=>console.error('Ride OS experience failed to load',error));
+  }
+}
+
+const navIcon={
+  home:'<svg viewBox="0 0 24 24"><path d="m3 11 9-8 9 8v10h-6v-6H9v6H3V11Z"/></svg>',
+  ride:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 12 17 7M6 16h12"/></svg>',
+  maps:'<svg viewBox="0 0 24 24"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Zm6-3v15m6-12v15"/></svg>',
+  garage:'<svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v11H3V10Zm4 11v-8h10v8M8 16h8"/></svg>',
+  menu:'<svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>'
+};
+
 function cleanRideTabs(){
   const tabs = $('.ridePageTabs');
   if(!tabs) return;
@@ -34,6 +58,10 @@ function cleanNav(){
 
   const adventure = $('#adventureNav');
   if(adventure){
+    const label=adventure.querySelector('span:nth-of-type(2)');
+    if(label) label.textContent='Maps & Routes';
+    const badge=adventure.querySelector('em');
+    if(badge) badge.textContent='GPX';
     const group = [...nav.querySelectorAll('.navGroup')].find(item => item.querySelector('.navLabel')?.textContent.trim() === 'Operations');
     if(group && !group.contains(adventure)) group.appendChild(adventure);
   }
@@ -56,11 +84,14 @@ function bottomNav(){
     bar = document.createElement('nav');
     bar.id = 'motoBottomNav';
     bar.className = 'motoBottomNav';
-    bar.innerHTML = `<button data-go="home"><b>⌂</b><span>Home</span></button><button data-go="ride"><b>◉</b><span>Ride</span></button><button data-go="adv"><b>△</b><span>Adventure</span></button><button data-go="garage"><b>◇</b><span>Garage</span></button><button data-go="menu"><b>☰</b><span>Menu</span></button>`;
+    bar.innerHTML = `<button data-go="home">${navIcon.home}<span>Home</span></button><button data-go="ride">${navIcon.ride}<span>Ride</span></button><button data-go="maps">${navIcon.maps}<span>Maps</span></button><button data-go="garage">${navIcon.garage}<span>Garage</span></button><button data-go="menu">${navIcon.menu}<span>Menu</span></button>`;
     document.body.appendChild(bar);
+  }else if(!bar.querySelector('[data-go="maps"]')){
+    const old=bar.querySelector('[data-go="adv"]');
+    if(old){old.dataset.go='maps';old.innerHTML=`${navIcon.maps}<span>Maps</span>`;}
   }
-  if(bar.dataset.bound === '1') return;
-  bar.dataset.bound = '1';
+  if(bar.dataset.bound === '2') return;
+  bar.dataset.bound = '2';
   bar.onclick = event => {
     const button = event.target.closest('button');
     if(!button) return;
@@ -68,7 +99,7 @@ function bottomNav(){
     setBottomActive(go);
     if(go === 'home') document.querySelector('[data-v="dashboard"]')?.click();
     if(go === 'ride') $('#rideCenterNav')?.click();
-    if(go === 'adv') $('#adventureNav')?.click();
+    if(go === 'maps') window.MotoAdventure?.openMap?.() || $('#adventureNav')?.click();
     if(go === 'garage') document.querySelector('[data-v="garage"]')?.click();
     if(go === 'menu') $('#nav')?.classList.toggle('open');
   };
@@ -93,6 +124,7 @@ function observeCurrentNav(){
 }
 
 function polish(){
+  loadRideExperience();
   cleanRideTabs();
   cleanNav();
   bottomNav();
@@ -114,4 +146,5 @@ if(appRoot) new MutationObserver(schedulePolish).observe(appRoot,{childList:true
 new MutationObserver(schedulePolish).observe(document.body,{childList:true,subtree:false});
 window.addEventListener('moto-ride-dash-opened',() => setBottomActive('ride'));
 window.addEventListener('moto-ride-dash-closed',schedulePolish);
+window.addEventListener('moto-route-update',()=>setBottomActive(document.querySelector('#adventureOverlay')?'maps':'ride'));
 polish();

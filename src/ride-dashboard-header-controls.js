@@ -5,6 +5,7 @@ function rideIsActive(control){
 }
 
 function syncRideDashState(overlay){
+  if(!overlay?.isConnected) return;
   const control = overlay.querySelector('#dashRideControl');
   const rideButton = overlay.querySelector('#dashRideToggle');
   const adventureButton = overlay.querySelector('#dashAdventure');
@@ -13,59 +14,46 @@ function syncRideDashState(overlay){
 
   const active = rideIsActive(control);
   const editing = overlay.classList.contains('editing');
-
   overlay.dataset.rideActive = active ? 'true' : 'false';
-  rideButton.classList.toggle('recording', active);
-  rideButton.classList.toggle('starting', control.classList.contains('starting'));
-
+  rideButton.classList.toggle('recording',active);
+  rideButton.classList.toggle('starting',control.classList.contains('starting'));
   if(!editing) editButton.textContent = active ? 'SET' : 'EDIT';
-  adventureButton.textContent = active ? 'MAP' : 'ADV';
-  adventureButton.title = active ? 'Open map and Adventure Mode' : 'Open Adventure Mode';
-
+  adventureButton.textContent = 'ADV';
+  adventureButton.title = 'Open full Adventure Mode';
   if(!active) overlay.querySelector('#dashRideQuickSettings')?.remove();
 }
 
-function openRideQuickSettings(overlay, controls){
+function openRideQuickSettings(overlay,controls){
   overlay.querySelector('#dashRideQuickSettings')?.remove();
-
   const modal = document.createElement('div');
   modal.id = 'dashRideQuickSettings';
   modal.className = 'dashRideQuickSettings';
   modal.innerHTML = `<section role="dialog" aria-modal="true" aria-label="Ride settings">
-    <header>
-      <div><small>LIVE RIDE</small><h3>Settings</h3></div>
-      <button id="dashRideSettingsClose" type="button" aria-label="Close settings">×</button>
-    </header>
+    <header><div><small>LIVE RIDE</small><h3>Settings</h3></div><button id="dashRideSettingsClose" type="button" aria-label="Close settings">×</button></header>
     <div class="dashRideSettingsGrid">
-      <button id="dashRideSettingsStyle" type="button"><span>STYLE</span><small>Vibe, color and gauges</small></button>
+      <button id="dashRideSettingsStyle" type="button"><span>STYLE</span><small>Themes, colors and gauges</small></button>
       <button id="dashRideSettingsLayout" type="button"><span>LAYOUT</span><small>Widgets and displays</small></button>
+      <button id="dashRideSettingsHistory" type="button"><span>HISTORY</span><small>Completed rides and statistics</small></button>
       <button id="dashRideSettingsStop" class="danger" type="button"><span>STOP & SAVE</span><small>Finish the current ride</small></button>
     </div>
   </section>`;
-
   overlay.appendChild(modal);
 
   const close = () => modal.remove();
-  modal.addEventListener('click', event => { if(event.target === modal) close(); });
+  modal.addEventListener('click',event => { if(event.target === modal) close(); });
   modal.querySelector('#dashRideSettingsClose').onclick = close;
-  modal.querySelector('#dashRideSettingsStyle').onclick = () => {
-    close();
-    controls.styleButton.click();
-  };
+  modal.querySelector('#dashRideSettingsStyle').onclick = () => { close(); controls.styleButton.click(); };
   modal.querySelector('#dashRideSettingsLayout').onclick = () => {
     close();
     controls.originalEditHandler?.call(controls.editButton);
     requestAnimationFrame(() => syncRideDashState(overlay));
   };
-  modal.querySelector('#dashRideSettingsStop').onclick = () => {
-    close();
-    controls.rideButton.click();
-  };
+  modal.querySelector('#dashRideSettingsHistory').onclick = () => { close(); window.MotoRideDash?.openHistory?.(); };
+  modal.querySelector('#dashRideSettingsStop').onclick = () => { close(); controls.rideButton.click(); };
 }
 
 function enhanceRideDash(overlay){
-  if(!overlay || overlay.dataset.headerControlsV2 === 'ready') return;
-
+  if(!overlay || overlay.dataset.headerControlsV3 === 'ready') return;
   const headerActions = overlay.querySelector('.dashHeaderActions');
   const rideButton = overlay.querySelector('#dashRideToggle');
   const adventureButton = overlay.querySelector('#dashAdventure');
@@ -74,49 +62,41 @@ function enhanceRideDash(overlay){
   const footer = overlay.querySelector('.rideDash>footer');
   const addDisplayButton = overlay.querySelector('#dashAddPage');
   const rideControl = overlay.querySelector('#dashRideControl');
-
   if(!headerActions || !rideButton || !footer || !styleButton || !editButton || !rideControl) return;
 
   overlay.dataset.headerControlsV2 = 'ready';
-
+  overlay.dataset.headerControlsV3 = 'ready';
   rideButton.classList.add('dashHeaderRideToggle');
   rideButton.title = 'Start or stop the current ride';
-  rideButton.setAttribute('aria-label', 'Start or stop ride');
-  headerActions.insertBefore(rideButton, adventureButton || headerActions.firstChild);
+  rideButton.setAttribute('aria-label','Start or stop ride');
+  headerActions.insertBefore(rideButton,adventureButton || headerActions.firstChild);
 
   styleButton.classList.add('dashEditStyleButton');
   styleButton.textContent = 'STYLE';
-  styleButton.title = 'Change dashboard vibe, color and display settings';
-  styleButton.setAttribute('aria-label', 'Edit dashboard style');
-  footer.insertBefore(styleButton, addDisplayButton || footer.lastElementChild);
+  styleButton.title = 'Change themes, colors and display settings';
+  styleButton.setAttribute('aria-label','Edit dashboard style');
+  footer.insertBefore(styleButton,addDisplayButton || footer.lastElementChild);
 
   const originalEditHandler = editButton.onclick;
   editButton.onclick = event => {
     const active = rideIsActive(rideControl);
     const editing = overlay.classList.contains('editing');
-
     if(active && !editing){
-      openRideQuickSettings(overlay, {rideButton, styleButton, editButton, originalEditHandler});
+      openRideQuickSettings(overlay,{rideButton,styleButton,editButton,originalEditHandler});
       return;
     }
-
-    const result = originalEditHandler?.call(editButton, event);
+    const result = originalEditHandler?.call(editButton,event);
     requestAnimationFrame(() => syncRideDashState(overlay));
     return result;
   };
-  editButton.title = 'Dashboard settings';
-  editButton.setAttribute('aria-label', 'Dashboard settings');
-
-  const stateObserver = new MutationObserver(() => syncRideDashState(overlay));
-  stateObserver.observe(rideControl, {attributes:true, attributeFilter:['class']});
-  stateObserver.observe(overlay, {attributes:true, attributeFilter:['class']});
+  editButton.title = 'Ride settings';
+  editButton.setAttribute('aria-label','Ride settings');
   syncRideDashState(overlay);
 }
 
-function scanForRideDash(){
-  enhanceRideDash(document.querySelector(OVERLAY_SELECTOR));
-}
-
-const observer = new MutationObserver(scanForRideDash);
-observer.observe(document.body, {childList:true, subtree:true});
-scanForRideDash();
+function scan(){ enhanceRideDash(document.querySelector(OVERLAY_SELECTOR)); }
+window.addEventListener('moto-ride-dash-opened',event => enhanceRideDash(event.detail?.overlay || document.querySelector(OVERLAY_SELECTOR)));
+window.addEventListener('moto-ride-dash-rendered',event => enhanceRideDash(event.detail?.overlay || document.querySelector(OVERLAY_SELECTOR)));
+window.addEventListener('moto-ride-dash-refreshed',event => syncRideDashState(event.detail?.overlay || document.querySelector(OVERLAY_SELECTOR)));
+window.addEventListener('moto-ride-dash-closed',event => event.detail?.overlay?.querySelector('#dashRideQuickSettings')?.remove());
+scan();

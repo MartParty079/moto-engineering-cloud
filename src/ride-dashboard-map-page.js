@@ -1,6 +1,5 @@
 const DASH_SELECTOR = '#rideDashOverlay';
 const MAP_PAGE_SELECTOR = '[data-fixed-adventure-page="true"]';
-const MAP_TAB_SELECTOR = '[data-fixed-adventure-tab="true"]';
 const ORIENTATION_STORE = 'motoAdventureOrientationV1';
 
 let activeOverlay = null;
@@ -16,19 +15,13 @@ let lastFix = null;
 let leafletPromise = null;
 
 function isFiniteNumber(value){
-  return Number.isFinite(Number(value));
+  return value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
 }
 
 function headingText(degrees){
   if(!isFiniteNumber(degrees)) return '--';
   const value = ((Number(degrees) % 360) + 360) % 360;
   return ['N','NE','E','SE','S','SW','W','NW'][Math.round(value / 45) % 8];
-}
-
-function escapeHtml(value = ''){
-  return String(value ?? '').replace(/[&<>"']/g, character => ({
-    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'
-  }[character]));
 }
 
 function ensureLeaflet(){
@@ -209,7 +202,6 @@ function bindMapControls(overlay,page){
     orientationButton.onclick = toggleOrientation;
   }
 
-  syncOrientationButton();
   overlay.dataset.mapPageV2 = 'ready';
 }
 
@@ -224,6 +216,7 @@ async function initializeEmbeddedMap(overlay,page){
   destroyEmbeddedMap();
   activeOverlay = overlay;
   mapContainer = container;
+  syncOrientationButton();
 
   try {
     await ensureLeaflet();

@@ -26,6 +26,13 @@ function loadRideV17Fixes(){
   }
 }
 
+function loadPremiumVisibility(){
+  loadStyleOnce('/src/premium-visibility.css?v=1','premiumVisibility');
+  if(!window.__motoPremiumVisibilityModule){
+    window.__motoPremiumVisibilityModule=import('./premium-visibility.js?v=1').catch(error=>console.error('Premium visibility controls failed to load',error));
+  }
+}
+
 function boundIcon(icon){
   if(!icon||icon.dataset.rideSizeSafe==='1')return;
   icon.dataset.rideSizeSafe='1';
@@ -61,4 +68,5 @@ window.addEventListener('moto-ride-dash-opened',event=>secureRideUi(event.detail
 window.addEventListener('moto-ride-dash-rendered',event=>secureRideUi(event.detail?.overlay||document));
 loadRidePickerStability();
 loadRideV17Fixes();
+loadPremiumVisibility();
 secureRideUi();

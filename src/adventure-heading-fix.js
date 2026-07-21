@@ -2,7 +2,9 @@ const $=q=>document.querySelector(q);
 let lastHeading=null;
 let queued=false;
 
-function headingEnabled(){return $('#advHeading')?.classList.contains('active')===true}
+function headingEnabled(){
+  return $('[data-orientation="heading"]')?.checked===true||localStorage.getItem('motoAdventureOrientationV1')==='heading'
+}
 
 function overscanScale(width,height,degrees){
   if(!width||!height||!Number.isFinite(degrees))return 1;
@@ -23,23 +25,23 @@ function applyHeadingCoverage(){
   pane.style.transformOrigin='50% 50%';
   pane.style.scale=String(scale);
   pane.style.willChange=active?'transform, rotate, scale':'';
-  map.style.overflow='hidden';
+  map.style.overflow='hidden'
 }
 
 function queueCoverage(){
   if(queued)return;
   queued=true;
-  requestAnimationFrame(()=>requestAnimationFrame(applyHeadingCoverage));
+  requestAnimationFrame(()=>requestAnimationFrame(applyHeadingCoverage))
 }
 
 window.addEventListener('moto-gps-fix',event=>{
   const heading=Number(event.detail?.heading);
   if(Number.isFinite(heading))lastHeading=heading;
-  queueCoverage();
+  queueCoverage()
 });
 
 document.addEventListener('click',event=>{
-  if(event.target.closest('#advHeading,[data-orientation],#advFull'))queueCoverage();
+  if(event.target.closest('[data-orientation],#advFull'))queueCoverage()
 },true);
 
 window.addEventListener('resize',queueCoverage);
@@ -47,7 +49,7 @@ window.addEventListener('orientationchange',()=>setTimeout(queueCoverage,120));
 window.visualViewport?.addEventListener('resize',queueCoverage);
 
 const observer=new MutationObserver(mutations=>{
-  if(mutations.some(m=>[...m.addedNodes].some(node=>node.nodeType===1&&(node.id==='adventureOverlay'||node.querySelector?.('#adventureMap')))))queueCoverage();
+  if(mutations.some(m=>[...m.addedNodes].some(node=>node.nodeType===1&&(node.id==='adventureOverlay'||node.querySelector?.('#adventureMap')))))queueCoverage()
 });
 observer.observe(document.body,{childList:true,subtree:true});
 queueCoverage();

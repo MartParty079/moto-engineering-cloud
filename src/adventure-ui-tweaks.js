@@ -1,3 +1,13 @@
+import './adventure-route-popup-hotfix.js?v=1';
+
+if(!document.querySelector('link[data-adventure-route-hotfix]')){
+  const link=document.createElement('link');
+  link.rel='stylesheet';
+  link.href='/src/adventure-route-popup-hotfix.css?v=1';
+  link.dataset.adventureRouteHotfix='1';
+  document.head.appendChild(link);
+}
+
 const $=q=>document.querySelector(q);
 let hiddenRole=[];
 let activeOverlay=null;

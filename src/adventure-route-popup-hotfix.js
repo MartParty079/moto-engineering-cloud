@@ -21,10 +21,11 @@ function removeLegacyRouteCards(overlay){
 function fixExitButton(overlay){
   const exit=overlay.querySelector('#advRideReturn');
   if(!exit)return;
+
   exit.classList.add('advExitButton');
-  exit.textContent='×';
-  exit.setAttribute('aria-label','Exit Adventure mode');
-  exit.setAttribute('title','Exit Adventure mode');
+  if(exit.textContent!=='×')exit.textContent='×';
+  if(exit.getAttribute('aria-label')!=='Exit Adventure mode')exit.setAttribute('aria-label','Exit Adventure mode');
+  if(exit.getAttribute('title')!=='Exit Adventure mode')exit.setAttribute('title','Exit Adventure mode');
 }
 
 function polishOverlay(overlay){

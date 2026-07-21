@@ -30,23 +30,44 @@ function removeLegacyRouteCards(overlay){
   leafCandidates.forEach(element=>element.remove());
 }
 
-function fixExitButton(overlay){
-  const exit=overlay.querySelector('#advRideReturn');
-  if(!exit)return;
+function returnHome(overlay){
+  const closeButton=overlay.querySelector('#closeAdventure');
+  if(closeButton)closeButton.click();
+  else overlay.remove();
 
-  exit.classList.add('advExitButton');
-  if(exit.textContent!=='×')exit.textContent='×';
-  if(exit.getAttribute('aria-label')!=='Exit Adventure mode')exit.setAttribute('aria-label','Exit Adventure mode');
-  if(exit.getAttribute('title')!=='Exit Adventure mode')exit.setAttribute('title','Exit Adventure mode');
+  requestAnimationFrame(()=>{
+    const home=document.querySelector('#nav [data-v="dashboard"]');
+    if(home)home.click();
+    else location.hash='dashboard';
+  });
+}
+
+function fixHomeButton(overlay){
+  const home=overlay.querySelector('#advRideReturn');
+  if(!home)return;
+
+  home.classList.remove('advExitButton');
+  home.classList.add('advHomeButton');
+
+  if(!home.querySelector('.advHomeLabel')){
+    home.innerHTML='<svg class="advHomeIcon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10.5 9-7.5 9 7.5"/><path d="M5.5 9.5V21h13V9.5"/><path d="M9.5 21v-7h5v7"/></svg><span class="advHomeLabel">HOME</span>';
+  }
+
+  if(home.getAttribute('aria-label')!=='Go to Home')home.setAttribute('aria-label','Go to Home');
+  if(home.getAttribute('title')!=='Go to Home')home.setAttribute('title','Go to Home');
+  if(home.dataset.homeBound!=='1'){
+    home.dataset.homeBound='1';
+    home.onclick=()=>returnHome(overlay);
+  }
 }
 
 function polishOverlay(overlay){
-  fixExitButton(overlay);
+  fixHomeButton(overlay);
   removeLegacyRouteCards(overlay);
 
   overlayObserver?.disconnect();
   overlayObserver=new MutationObserver(()=>{
-    fixExitButton(overlay);
+    fixHomeButton(overlay);
     removeLegacyRouteCards(overlay);
   });
   overlayObserver.observe(overlay,{childList:true,subtree:true});

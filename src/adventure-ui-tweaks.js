@@ -1,9 +1,9 @@
-import './adventure-route-popup-hotfix.js?v=3';
+import './adventure-route-popup-hotfix.js?v=4';
 
 if(!document.querySelector('link[data-adventure-route-hotfix]')){
   const link=document.createElement('link');
   link.rel='stylesheet';
-  link.href='/src/adventure-route-popup-hotfix.css?v=3';
+  link.href='/src/adventure-route-popup-hotfix.css?v=4';
   link.dataset.adventureRouteHotfix='1';
   document.head.appendChild(link);
 }

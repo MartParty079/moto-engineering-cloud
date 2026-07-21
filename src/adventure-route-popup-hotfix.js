@@ -3,8 +3,31 @@ const $=selector=>document.querySelector(selector);
 let currentOverlay=null;
 let overlayObserver=null;
 
+function normalizedText(element){
+  return (element?.textContent||'').replace(/\s+/g,' ').trim().toUpperCase();
+}
+
+function looksLikeLegacyRouteCard(element){
+  if(!(element instanceof HTMLElement))return false;
+  if(element.matches('.adventureShell,#adventureOverlay,.advSheet,.advBottomBar,.advTopBar'))return false;
+  if(element.closest('#advRoutesSheet,.advBottomBar,.advTopBar'))return false;
+
+  const text=normalizedText(element);
+  if(!text.includes('ACTIVE ROUTE'))return false;
+
+  const hasRoutesButton=[...element.querySelectorAll('button')].some(button=>normalizedText(button)==='ROUTES');
+  if(!hasRoutesButton)return false;
+
+  const rect=element.getBoundingClientRect();
+  return rect.width>=180&&rect.height>=60&&rect.height<=340;
+}
+
 function removeLegacyRouteCards(overlay){
-  overlay.querySelectorAll('#adventureNavPanel,.adventureNavPanel').forEach(element=>element.remove());
+  overlay.querySelectorAll('#adventureNavPanel,.adventureNavPanel,.advLegacyRoutePopup,[data-adventure-route-card]').forEach(element=>element.remove());
+
+  const candidates=[...overlay.querySelectorAll('section,article,div')].filter(looksLikeLegacyRouteCard);
+  const leafCandidates=candidates.filter(element=>![...element.children].some(child=>looksLikeLegacyRouteCard(child)));
+  leafCandidates.forEach(element=>element.remove());
 }
 
 function fixExitButton(overlay){

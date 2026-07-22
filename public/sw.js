@@ -1,4 +1,4 @@
-const VERSION='v29';
+const VERSION='v30';
 const APP_CACHE=`motocloud-app-${VERSION}`;
 const RUNTIME_CACHE=`motocloud-runtime-${VERSION}`;
 const IMAGE_CACHE=`motocloud-images-${VERSION}`;
@@ -50,10 +50,11 @@ const CORE_URLS=[
   '/src/cirkit-link.js',
   '/src/access-control.js?v=3',
   '/src/access-bootstrap.js?v=3',
-  '/src/pwa.js?v=29',
+  '/src/pwa.js?v=30',
   '/src/gps-shared.js?v=5',
   '/src/startup-permissions.js?v=2',
   '/src/ride-center.js?v=22',
+  '/src/ride-start-guard.js?v=1',
   '/src/provider-auth-fix.js?v=2',
   '/src/offline-cache.js?v=1',
   '/src/ride-safe-enhancements.js?v=13',

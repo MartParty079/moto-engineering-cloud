@@ -4,7 +4,6 @@
   window.__motoRideStartGuardInstalled = true;
 
   const STORE = 'moto-startup-permissions-v1';
-  const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
   const deadline = (promise, ms, label) => Promise.race([
     Promise.resolve(promise),
     new Promise((_, reject) => setTimeout(() => reject(new Error(`${label} timed out. Please try again.`)), ms))
@@ -48,10 +47,10 @@
     const known = {...remembered(), ...(window.MotoPermissions || {})};
     const controller = window.MotoPermissionController;
 
-    // Start both requests synchronously from the motorcycle-selection tap. This preserves
-    // the direct user gesture required by iOS motion permission dialogs.
+    // Only wait for an iOS permission decision when access has not already been granted.
+    // A granted location permission does not need a fresh GPS fix before the ride session starts.
     const locationPromise = known.location === 'granted'
-      ? requestLocationFallback()
+      ? Promise.resolve('granted')
       : (controller?.requestLocation?.() || requestLocationFallback());
     const motionPromise = known.motion === 'granted'
       ? Promise.resolve('granted')
@@ -62,7 +61,7 @@
     if (location !== 'granted') throw new Error('Location permission is required to start Ride Mode. Enable Precise Location in iPhone Settings, then try again.');
 
     if (motion === 'granted') {
-      // Sensor startup must never hold the ride logger open indefinitely.
+      // Sensor startup runs independently and can never hold Ride Mode in a loading state.
       deadline(
         window.MotoRideTools?.enableSensors?.({requestPermission:false,autoCalibrate:true,resetMax:true,reason:'ride-start'}) || Promise.resolve(),
         3500,

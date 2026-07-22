@@ -44,6 +44,7 @@ let lean = null;
 let pitch = null;
 let roll = null;
 let accelG = null;
+let accelFilter = [];
 let maxLean = 0;
 let maxAccel = 0;
 let maxBrake = 0;
@@ -145,7 +146,7 @@ function publishMotion(){
 }
 
 function resetRideMotionState(){
-  rawLean = null; lean = null; pitch = null; roll = null; accelG = null;
+  rawLean = null; lean = null; pitch = null; roll = null; accelG = null; accelFilter = [];
   maxLean = 0; maxAccel = 0; maxBrake = 0;
   calibrationSamples = []; lastCalibrationSample = null; leanFilter = []; lastScreenAngle = screenAngle(); lastMotionSave = 0;
   if(motionEnabled) startLeanCalibration(true,'ride-start');
@@ -294,8 +295,12 @@ function onMotion(event){
   const acceleration = event.accelerationIncludingGravity || event.acceleration || {};
   const x = finite(acceleration.x), y = finite(acceleration.y), z = finite(acceleration.z);
   if([x,y,z].every(Number.isFinite)){
-    accelG = Math.sqrt(x*x+y*y+z*z)/9.80665;
-    maxAccel = Math.max(maxAccel,accelG);
+    const sampleG = Math.sqrt(x*x+y*y+z*z)/9.80665;
+    const now = Date.now();
+    accelFilter.push({value:sampleG,at:now});
+    accelFilter = accelFilter.filter(row=>now-row.at <= 500).slice(-30);
+    accelG = median(accelFilter.map(row=>row.value));
+    maxAccel = Math.max(maxAccel,sampleG);
     maxBrake = Math.max(maxBrake,Math.max(0,-y/9.80665));
   }
   if(Date.now()-lastMotionSave >= 500) queueMotionSample({x,y,z});
@@ -544,6 +549,8 @@ window.addEventListener('moto-permissions-change',event=>{
   if(event.detail?.motion === 'granted' && !motionEnabled) void enableSensors({requestPermission:false,autoCalibrate:true,reason:'permission-granted'}).catch(()=>{});
 });
 window.addEventListener('pagehide',()=>{void flushMotion();removeSensorListeners();});
+window.addEventListener('pageshow',()=>{if(rememberedMotionGranted()&&!motionEnabled)void enableSensors({requestPermission:false,autoCalibrate:true,reason:'app-resumed'}).catch(()=>{});});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&rememberedMotionGranted()&&!motionEnabled)void enableSensors({requestPermission:false,autoCalibrate:true,reason:'app-visible'}).catch(()=>{});});
 
 syncRuntime(window.MotoRide?.getState?.() || window.MotoRideState);
 if(rememberedMotionGranted()) void enableSensors({requestPermission:false,autoCalibrate:true,reason:'remembered-permission'}).catch(()=>{});

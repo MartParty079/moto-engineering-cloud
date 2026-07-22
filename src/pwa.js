@@ -1,7 +1,7 @@
 const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
 const isStandalone=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
-const PWA_BUILD='sensor-startup-auto-cal-v29';
-const ACTIVE_CACHES=['motocloud-app-v29','motocloud-runtime-v29','motocloud-images-v29'];
+const PWA_BUILD='ride-start-loading-fix-v30';
+const ACTIVE_CACHES=['motocloud-app-v30','motocloud-runtime-v30','motocloud-images-v30'];
 
 function loadOfflineCache(){
   if(!document.querySelector('link[data-offline-cache]')){const link=document.createElement('link');link.rel='stylesheet';link.href='/src/offline-cache.css?v=1';link.dataset.offlineCache='1';document.head.appendChild(link)}
@@ -21,11 +21,11 @@ if('serviceWorker'in navigator){
   navigator.serviceWorker.addEventListener('controllerchange',()=>window.dispatchEvent(new CustomEvent('moto-app-cache-updated')));
   window.addEventListener('load',async()=>{
     try{
-      const registration=await navigator.serviceWorker.register('/sw.js?v=29',{updateViaCache:'none'});
+      const registration=await navigator.serviceWorker.register('/sw.js?v=30',{updateViaCache:'none'});
       await registration.update();
       registration.addEventListener('updatefound',()=>{
         const worker=registration.installing;if(!worker)return;
-        worker.addEventListener('statechange',()=>{if(worker.state==='activated'){void clearLegacyMotoCaches();console.info('Moto Mission sensor startup and automatic calibration v29 installed.');window.dispatchEvent(new CustomEvent('moto-app-cache-updated'))}})
+        worker.addEventListener('statechange',()=>{if(worker.state==='activated'){void clearLegacyMotoCaches();console.info('Moto Mission ride start recovery v30 installed.');window.dispatchEvent(new CustomEvent('moto-app-cache-updated'))}})
       });
     }catch(error){console.error(error)}
   });

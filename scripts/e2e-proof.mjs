@@ -1,13 +1,15 @@
-import { chromium } from 'playwright';
+import { chromium, webkit } from 'playwright';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
 const baseURL=process.env.E2E_BASE_URL||'http://127.0.0.1:4173';
-const out=path.resolve('test-results/proof');
+const engine=String(process.env.E2E_BROWSER||'chromium').toLowerCase();
+const browserType=engine==='webkit'?webkit:chromium;
+const out=path.resolve('test-results/proof',engine);
 await fs.rm(out,{recursive:true,force:true});
 await fs.mkdir(out,{recursive:true});
 
-const browser=await chromium.launch({headless:true});
+const browser=await browserType.launch({headless:true});
 const context=await browser.newContext({
   viewport:{width:430,height:932},
   deviceScaleFactor:1,
@@ -57,7 +59,7 @@ async function waitFor(fn,label,timeout=15000){
 }
 async function clickIf(selector){const item=page.locator(selector).first();if(await item.count()){await item.click();return true}return false}
 
-const evidence={startedAt:new Date().toISOString(),baseURL,checks:[],screenshots:[],pageErrors,consoleErrors,skippedViews:[]};
+const evidence={engine,startedAt:new Date().toISOString(),baseURL,checks:[],screenshots:[],pageErrors,consoleErrors,skippedViews:[]};
 function pass(name,detail={}){evidence.checks.push({name,status:'PASS',...detail})}
 function fail(name,detail={}){evidence.checks.push({name,status:'FAIL',...detail})}
 
@@ -215,10 +217,10 @@ try{
 }finally{
   await fs.writeFile(path.join(out,'evidence.json'),JSON.stringify(evidence,null,2));
   const rows=evidence.checks.map(item=>`| ${item.status} | ${item.name} | ${item.error||item.value||item.maxLagMs||item.domGrowth||item.presses||''} |`).join('\n');
-  const markdown=`# Moto Mission browser evidence\n\nGenerated: ${evidence.completedAt||new Date().toISOString()}\n\n| Result | Check | Evidence |\n|---|---|---|\n${rows}\n\n## Recording diagnostics\n\n\`\`\`json\n${JSON.stringify(evidence.recordingDiagnostics||{},null,2)}\n\`\`\`\n\n## UI audit\n\n\`\`\`json\n${JSON.stringify(evidence.uiAudit||{},null,2)}\n\`\`\`\n\n## Browser errors\n\nPage errors: ${pageErrors.length}\n\nConsole errors: ${consoleErrors.length}\n\nSkipped/conditional views: ${evidence.skippedViews.join(', ')||'none'}\n`;
+  const markdown=`# Moto Mission browser evidence — ${engine}\n\nGenerated: ${evidence.completedAt||new Date().toISOString()}\n\n| Result | Check | Evidence |\n|---|---|---|\n${rows}\n\n## Recording diagnostics\n\n\`\`\`json\n${JSON.stringify(evidence.recordingDiagnostics||{},null,2)}\n\`\`\`\n\n## UI audit\n\n\`\`\`json\n${JSON.stringify(evidence.uiAudit||{},null,2)}\n\`\`\`\n\n## Browser errors\n\nPage errors: ${pageErrors.length}\n\nConsole errors: ${consoleErrors.length}\n\nSkipped/conditional views: ${evidence.skippedViews.join(', ')||'none'}\n`;
   await fs.writeFile(path.join(out,'REPORT.md'),markdown);
   await browser.close();
 }
 
 if(pageErrors.length)throw new Error(`Browser page errors detected: ${pageErrors.join('\n')}`);
-console.log(`E2E evidence complete: ${evidence.checks.filter(item=>item.status==='PASS').length} checks passed.`);
+console.log(`${engine} E2E evidence complete: ${evidence.checks.filter(item=>item.status==='PASS').length} checks passed.`);

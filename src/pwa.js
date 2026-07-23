@@ -7,7 +7,12 @@ function loadOfflineCache(){
   if(!document.querySelector('link[data-offline-cache]')){const link=document.createElement('link');link.rel='stylesheet';link.href='/src/offline-cache.css?v=1';link.dataset.offlineCache='1';document.head.appendChild(link)}
   import('/src/offline-cache.js?v=1').catch(error=>console.error('Offline cache module failed to load',error));
 }
+function loadIPhoneCleanup(){
+  if(!isIOS||document.querySelector('link[data-iphone-ui-cleanup]'))return;
+  const link=document.createElement('link');link.rel='stylesheet';link.href='/src/iphone-ui-cleanup.css?v=1';link.dataset.iphoneUiCleanup='1';document.head.appendChild(link);
+}
 loadOfflineCache();
+loadIPhoneCleanup();
 import('/src/ride-performance-guard.js?v=1').catch(error=>console.error('Ride visual stability module failed to load',error));
 
 async function clearLegacyMotoCaches(){

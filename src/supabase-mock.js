@@ -58,12 +58,23 @@ class Query{
   then(resolve,reject){return this.execute().then(resolve,reject)}
 }
 
+const assurance=async()=>({data:{currentLevel:'aal1',nextLevel:'aal1',currentAuthenticationMethods:[]},error:null});
 const auth={
   getSession:async()=>({data:{session},error:null}),
+  getUser:async()=>({data:{user},error:null}),
+  getAuthenticatorAssuranceLevel:assurance,
   signInWithPassword:async()=>({data:{session},error:null}),
   signUp:async()=>({data:{session},error:null}),
   signOut:async()=>({error:null}),
-  onAuthStateChange(callback){queueMicrotask(()=>callback?.('SIGNED_IN',session));return{data:{subscription:{unsubscribe(){}}}}}
+  onAuthStateChange(callback){queueMicrotask(()=>callback?.('SIGNED_IN',session));return{data:{subscription:{unsubscribe(){}}}}},
+  mfa:{
+    getAuthenticatorAssuranceLevel:assurance,
+    listFactors:async()=>({data:{all:[],totp:[],phone:[]},error:null}),
+    enroll:async()=>({data:null,error:null}),
+    challenge:async()=>({data:null,error:null}),
+    verify:async()=>({data:null,error:null}),
+    unenroll:async()=>({data:null,error:null})
+  }
 };
 
 const storage={

@@ -8,8 +8,9 @@
     "build": "vite build",
     "preview": "vite preview",
     "check:syntax": "node scripts/check-syntax.mjs",
+    "check:interactions": "node scripts/check-interactions.mjs",
     "check:providers": "node scripts/provider-check.mjs",
-    "audit": "npm run check:syntax && npm run build"
+    "audit": "npm run check:syntax && npm run check:interactions && npm run build"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",

@@ -27,6 +27,10 @@
   isolation:isolate;
 }
 
+html[data-iphone-motion="disabled"] #rideDashOverlay .widget-lean .dashValue > *,
+html[data-iphone-motion="disabled"] #rideDashOverlay .widget-maxLean .dashValue > *,
+html[data-iphone-motion="disabled"] #rideDashOverlay .widget-cornerSpeed .dashValue > *,
+html[data-iphone-motion="disabled"] #rideDashOverlay .widget-accel .dashValue > *,
 html[data-iphone-motion="disabled"] #rideDashOverlay .widget-lean .leanCalibrationStatus,
 html[data-iphone-motion="disabled"] #rideDashOverlay .widget-lean [data-lean-calibration-status]{
   display:none!important;

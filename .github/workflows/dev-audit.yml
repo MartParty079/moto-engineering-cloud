@@ -36,6 +36,11 @@ jobs:
         run: |
           set -o pipefail
           npm run check:interactions 2>&1 | tee interaction-audit.log
+      - name: Audit recording architecture
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/recording-static-audit.mjs 2>&1 | tee recording-static-audit.log
       - name: Build production bundle
         shell: bash
         run: |
@@ -49,6 +54,9 @@ jobs:
           path: |
             audit.log
             interaction-audit.log
+            recording-static-audit.log
+            recording-static-audit.json
+            recording-static-audit.md
             build.log
           if-no-files-found: ignore
           retention-days: 7

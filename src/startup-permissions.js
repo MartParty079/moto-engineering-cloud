@@ -5,7 +5,7 @@
   window.__motoStartupPermissionsInstalled = true;
 
   const STORAGE_KEY = 'moto-startup-permissions-v1';
-  const state = { location: 'unknown', motion: 'unknown' };
+  const state = { location: 'unknown', motion: 'unknown', gpsFix: 'unknown' };
   let sensorActivationPending = false;
 
   const publish = () => {
@@ -22,6 +22,7 @@
   const requestLocation = () => new Promise(resolve => {
     if (!navigator.geolocation) {
       state.location = 'unsupported';
+      state.gpsFix = 'unsupported';
       resolve(state.location);
       return;
     }
@@ -29,14 +30,26 @@
     navigator.geolocation.getCurrentPosition(
       position => {
         state.location = 'granted';
+        state.gpsFix = 'ready';
         window.__motoGpsPublish?.(position);
         resolve(state.location);
       },
       error => {
-        state.location = error?.code === 1 ? 'denied' : 'unavailable';
+        if (error?.code === 1) {
+          state.location = 'denied';
+          state.gpsFix = 'denied';
+        } else {
+          // TIMEOUT and POSITION_UNAVAILABLE indicate a missing fix, not a denied
+          // permission. Keep permission granted and let watchPosition continue later.
+          state.location = 'granted';
+          state.gpsFix = 'pending';
+          window.dispatchEvent(new CustomEvent('moto-gps-waiting',{
+            detail:{reason:'permission-check',errorCode:error?.code || null}
+          }));
+        }
         resolve(state.location);
       },
-      { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 }
+      { enableHighAccuracy: true, maximumAge: 15000, timeout: 8000 }
     );
   });
 
@@ -138,7 +151,7 @@
       skip.disabled = true;
       status.textContent = 'Requesting location and motion access…';
 
-      // Both permission calls begin inside this click handler so iOS accepts them.
+      // Both calls begin inside this click handler so iOS accepts them.
       const locationPromise = requestLocation();
       const motionPromise = requestMotion();
       const [location, motion] = await Promise.all([locationPromise, motionPromise]);
@@ -146,9 +159,10 @@
       save();
       publish();
       if (motion === 'granted') await activateSensors('initial-app-open');
+      const gpsText = state.gpsFix === 'pending' ? ' GPS signal will connect when available.' : '';
       status.textContent = motion === 'granted'
-        ? `Location: ${location}. Sensors ready; calibration begins while moving.`
-        : `Location: ${location}. Sensors: ${motion}.`;
+        ? `Location: ${location}. Sensors ready.${gpsText}`
+        : `Location: ${location}. Sensors: ${motion}.${gpsText}`;
       setTimeout(removePrompt, 900);
     });
 
@@ -169,6 +183,7 @@
 
     if (remembered?.location) state.location = remembered.location;
     if (remembered?.motion) state.motion = remembered.motion;
+    if (remembered?.gpsFix) state.gpsFix = remembered.gpsFix;
     publish();
 
     if (state.location === 'granted') {

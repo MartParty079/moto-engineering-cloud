@@ -1,10 +1,13 @@
-const MIN_VISIBLE_MS=180;
-const MAX_VISIBLE_MS=1600;
+const MIN_VISIBLE_MS=120;
+const MAX_VISIBLE_MS=1400;
 let shownAt=0;
 let awaitingContent=false;
 let hideTimer=null;
 let failsafeTimer=null;
 let themePinned=false;
+let refreshFrame=0;
+let observedMain=null;
+let mainObserver=null;
 
 function ensureThemeLast(){
   if(themePinned)return;
@@ -77,9 +80,20 @@ function regroupNavigation(){
   }
 }
 
+function observeMain(){
+  const main=document.querySelector('#main');
+  if(main===observedMain)return;
+  mainObserver?.disconnect();
+  observedMain=main;
+  if(!main)return;
+  mainObserver=new MutationObserver(scheduleRefresh);
+  mainObserver.observe(main,{childList:true});
+}
+
 function refresh(){
   ensureThemeLast();
   regroupNavigation();
+  observeMain();
   if(!document.querySelector('#main')){
     hideSkeleton();
     return;
@@ -87,20 +101,31 @@ function refresh(){
   hideSkeletonWhenReady();
 }
 
+function scheduleRefresh(){
+  if(refreshFrame)return;
+  refreshFrame=requestAnimationFrame(()=>{
+    refreshFrame=0;
+    refresh();
+  });
+}
+
+/* Local page navigation renders synchronously. Do not flash a full-screen loader on every tap. */
 document.addEventListener('click',event=>{
-  if(event.target.closest('#nav [data-v]'))showSkeleton();
+  if(event.target.closest('#nav [data-v]'))hideSkeleton();
 },true);
 
-const observer=new MutationObserver(()=>queueMicrotask(refresh));
-observer.observe(document.body,{childList:true,subtree:true});
+const appRoot=document.querySelector('#app');
+if(appRoot)new MutationObserver(scheduleRefresh).observe(appRoot,{childList:true});
 
 window.MotoPageSkeleton={show:showSkeleton,hide:hideSkeleton};
 window.addEventListener('moto-page-loading',showSkeleton);
 window.addEventListener('moto-page-ready',hideSkeleton);
-window.addEventListener('pageshow',()=>setTimeout(hideSkeleton,0));
+window.addEventListener('pageshow',()=>setTimeout(()=>{hideSkeleton();scheduleRefresh()},0));
 window.addEventListener('error',hideSkeleton);
 window.addEventListener('unhandledrejection',hideSkeleton);
+window.addEventListener('pagehide',()=>mainObserver?.disconnect());
 
 ensureThemeLast();
 regroupNavigation();
+observeMain();
 hideSkeleton();

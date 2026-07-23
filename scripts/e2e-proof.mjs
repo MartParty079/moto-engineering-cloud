@@ -57,7 +57,7 @@ async function waitFor(fn,label,timeout=15000){
 }
 async function clickIf(selector){const item=page.locator(selector).first();if(await item.count()){await item.click();return true}return false}
 
-const evidence={startedAt:new Date().toISOString(),baseURL,checks:[],screenshots:[],pageErrors,consoleErrors};
+const evidence={startedAt:new Date().toISOString(),baseURL,checks:[],screenshots:[],pageErrors,consoleErrors,skippedViews:[]};
 function pass(name,detail={}){evidence.checks.push({name,status:'PASS',...detail})}
 function fail(name,detail={}){evidence.checks.push({name,status:'FAIL',...detail})}
 
@@ -69,14 +69,29 @@ try{
 
   await page.evaluate(()=>window.MotoRideDash.open());
   await page.waitForSelector('#rideDashOverlay',{state:'visible'});
+  await page.waitForSelector('.dashSpeedSplit',{state:'visible',timeout:10000});
+  const speedCardText=(await page.locator('.dashSpeedSplit').first().innerText()).replace(/\s+/g,' ').trim();
+  if(!speedCardText.includes('SPEED')||!speedCardText.includes('LIMIT'))throw new Error(`Split speed card did not render: ${speedCardText}`);
+  pass('Speed is left and limit is right',{value:speedCardText});
   await shot('02-ride-dashboard');
   pass('Ride dashboard opens');
 
+  const uiAudit=await page.evaluate(()=>{
+    const result=window.MotoUIAudit?.run?.();
+    return result?{interactiveCount:result.interactiveCount,unnamedCount:result.unnamedCount,duplicateIdCount:result.duplicateIdCount,nestedInteractiveCount:result.nestedInteractiveCount,smallTargetCount:result.smallTargetCount}:null;
+  });
+  evidence.uiAudit=uiAudit;
+  if(uiAudit?.unnamedCount||uiAudit?.duplicateIdCount||uiAudit?.nestedInteractiveCount)throw new Error(`UI audit failed: ${JSON.stringify(uiAudit)}`);
+  pass('Runtime control audit has no unnamed, duplicate, or nested controls',uiAudit||{});
+
+  await page.click('#dashEdit');
+  await page.waitForFunction(()=>document.querySelector('#dashStyle')&&getComputedStyle(document.querySelector('#dashStyle')).display!=='none');
   await page.click('#dashStyle');
   await page.waitForSelector('#dashStylePicker',{state:'visible'});
   await shot('03-style-configurator');
   pass('Ride style configurator opens');
   await page.click('#dashStyleClose');
+  if((await page.locator('#dashEdit').innerText()).trim()==='DONE')await page.click('#dashEdit');
 
   await page.click('#dashRideToggle');
   await page.waitForSelector('#dashRidePicker',{state:'visible'});
@@ -146,19 +161,23 @@ try{
   await page.click('#recStop');
   await page.waitForSelector('#motoRecordingIsolation',{state:'detached',timeout:15000});
   await page.waitForSelector('#rideDashOverlay',{state:'visible',timeout:15000});
+  await page.waitForSelector('.dashSpeedSplit',{state:'visible',timeout:10000});
   await shot('09-ride-saved');
   pass('Stop & Save completes and dashboard restores');
 
-  const routeViews=['dashboard','garageMode','roadmap','engineering','pcb','garage','parts','maintenance','rides','notes'];
+  const routeViews=['dashboard','garageMode','roadmap','engineering','pcb','firmware','garage','parts','maintenance','rides','notes','media','ai'];
   for(const view of routeViews){
     const selector=`#nav [data-v="${view}"]`;
-    if(await page.locator(selector).count()){
-      await page.click(selector);
-      await page.waitForTimeout(120);
-      const mainText=(await page.locator('#main').innerText()).trim();
-      if(!mainText)throw new Error(`View ${view} rendered empty`);
-      pass(`Navigation view renders: ${view}`);
+    const route=page.locator(selector).first();
+    if(!await route.count()||!await route.isVisible()){
+      evidence.skippedViews.push(view);
+      continue;
     }
+    await route.click();
+    await page.waitForTimeout(160);
+    const mainText=(await page.locator('#main').innerText()).trim();
+    if(!mainText)throw new Error(`View ${view} rendered empty`);
+    pass(`Navigation view renders: ${view}`);
   }
   await shot('10-app-navigation-smoke',true);
 
@@ -172,6 +191,8 @@ try{
       await shot('11-adventure-mode');
       pass('Adventure Mode opens');
       await clickIf('#closeAdventure');
+    }else{
+      evidence.skippedViews.push('adventure-overlay-selector');
     }
   }
 
@@ -186,7 +207,7 @@ try{
 }finally{
   await fs.writeFile(path.join(out,'evidence.json'),JSON.stringify(evidence,null,2));
   const rows=evidence.checks.map(item=>`| ${item.status} | ${item.name} | ${item.error||item.value||item.maxLagMs||item.domGrowth||item.presses||''} |`).join('\n');
-  const markdown=`# Moto Mission browser evidence\n\nGenerated: ${evidence.completedAt||new Date().toISOString()}\n\n| Result | Check | Evidence |\n|---|---|---|\n${rows}\n\n## Recording diagnostics\n\n\`\`\`json\n${JSON.stringify(evidence.recordingDiagnostics||{},null,2)}\n\`\`\`\n\n## Browser errors\n\nPage errors: ${pageErrors.length}\n\nConsole errors: ${consoleErrors.length}\n`;
+  const markdown=`# Moto Mission browser evidence\n\nGenerated: ${evidence.completedAt||new Date().toISOString()}\n\n| Result | Check | Evidence |\n|---|---|---|\n${rows}\n\n## Recording diagnostics\n\n\`\`\`json\n${JSON.stringify(evidence.recordingDiagnostics||{},null,2)}\n\`\`\`\n\n## UI audit\n\n\`\`\`json\n${JSON.stringify(evidence.uiAudit||{},null,2)}\n\`\`\`\n\n## Browser errors\n\nPage errors: ${pageErrors.length}\n\nConsole errors: ${consoleErrors.length}\n\nSkipped/conditional views: ${evidence.skippedViews.join(', ')||'none'}\n`;
   await fs.writeFile(path.join(out,'REPORT.md'),markdown);
   await browser.close();
 }

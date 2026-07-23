@@ -32,6 +32,21 @@
     });
   }
 
+  function cleanDisabledWidgets() {
+    document.querySelectorAll('#rideDashOverlay .widget-lean,#rideDashOverlay .widget-maxLean,#rideDashOverlay .widget-cornerSpeed,#rideDashOverlay .widget-accel').forEach(widget => {
+      widget.removeAttribute('role');
+      widget.removeAttribute('tabindex');
+      widget.title = 'iPhone motion sensors are temporarily disabled.';
+      widget.setAttribute('aria-label','iPhone motion sensors temporarily disabled');
+      widget.querySelectorAll('.leanCalibrationStatus,.leanCalibrationHint,.leanPermissionHint,.dashLeanHint,[data-lean-calibration-status]').forEach(node => node.remove());
+      widget.querySelectorAll('*').forEach(node => {
+        if(node.children.length) return;
+        const text=String(node.textContent||'').trim();
+        if(/tap\s+to\s+(enable|recalibrate)|sensor\s+permission\s+required|enable\s+motion\s+sensors/i.test(text)) node.remove();
+      });
+    });
+  }
+
   function publishDisabledMotion() {
     window.dispatchEvent(new CustomEvent('moto-motion-update', {
       detail: {
@@ -51,11 +66,15 @@
         maxLean: 0
       }
     }));
+    queueMicrotask(cleanDisabledWidgets);
   }
 
   function lockSensorTools() {
     const tools = window.MotoRideTools;
-    if (!tools) return false;
+    if (!tools) {
+      cleanDisabledWidgets();
+      return false;
+    }
 
     try { tools.disableSensors?.(); } catch {}
     tools.enableSensors = disabledSensorResult;
@@ -79,6 +98,7 @@
 
     persistDisabledState();
     publishDisabledMotion();
+    cleanDisabledWidgets();
     window.dispatchEvent(new CustomEvent('moto-iphone-motion-disabled', {
       detail: { disabled: true, reason: 'iphone-stability' }
     }));
@@ -105,6 +125,9 @@
 
   persistDisabledState();
   window.addEventListener('moto-ride-tools-ready', lockSensorTools);
+  window.addEventListener('moto-ride-dash-opened', () => queueMicrotask(lockSensorTools));
+  window.addEventListener('moto-ride-dash-rendered', () => queueMicrotask(cleanDisabledWidgets));
+  window.addEventListener('moto-ride-dash-refreshed', () => queueMicrotask(cleanDisabledWidgets));
   window.addEventListener('pageshow', lockSensorTools);
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') lockSensorTools();

@@ -1,168 +1,218 @@
-// Single iOS geolocation broker. Ride Center owns the live watch; optional modules reuse its latest fix.
-const geo = navigator.geolocation;
-
-if (geo && !window.__motoGpsBrokerInstalled) {
+// Single native geolocation authority for Moto Mission.
+// Every legacy watchPosition subscriber is multiplexed through one iOS GPS watch.
+(() => {
+  const geo = navigator.geolocation;
+  if (!geo || window.__motoGpsBrokerInstalled) return;
   window.__motoGpsBrokerInstalled = true;
-  window.__motoLatestPosition = null;
 
-  const originalWatch = geo.watchPosition.bind(geo);
-  const originalCurrent = geo.getCurrentPosition.bind(geo);
-  const watchers = new Map();
+  const nativeWatch = geo.watchPosition.bind(geo);
+  const nativeClear = geo.clearWatch.bind(geo);
+  const nativeCurrent = geo.getCurrentPosition.bind(geo);
+  const subscribers = new Map();
+  let virtualId = 100000;
+  let nativeWatchId = null;
+  let nativeOptions = null;
   let previousFix = null;
+  let latestPosition = null;
+  let latestDetail = null;
   let lastPublishedAt = 0;
-  let pendingDetail = null;
-  let pendingTimer = 0;
+  let nativeCallbacks = 0;
+  let publishedEvents = 0;
+  let nativeStarts = 0;
+  let nativeErrors = 0;
+  let suspendedCallbacks = 0;
 
-  const bearingBetween = (a, b) => {
-    if (!a || !b) return null;
-    const toRad = value => value * Math.PI / 180;
-    const toDeg = value => value * 180 / Math.PI;
-    const lat1 = toRad(a.latitude);
-    const lat2 = toRad(b.latitude);
-    const dLon = toRad(b.longitude - a.longitude);
-    const y = Math.sin(dLon) * Math.cos(lat2);
-    const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
-    return (toDeg(Math.atan2(y, x)) + 360) % 360;
-  };
+  const finite = value => value !== null && value !== undefined && Number.isFinite(Number(value)) ? Number(value) : null;
+  const toRad = value => value * Math.PI / 180;
+  const recordingActive = () => Boolean(window.__motoRecordingActive || window.__motoRecordingIsolation);
 
-  const distanceFeet = (a, b) => {
-    if (!a || !b) return 0;
+  function distanceFeet(a,b){
+    if(!a || !b) return 0;
     const r = 20902231;
-    const toRad = value => value * Math.PI / 180;
-    const dLat = toRad(b.latitude - a.latitude);
-    const dLon = toRad(b.longitude - a.longitude);
-    const q = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a.latitude)) * Math.cos(toRad(b.latitude)) * Math.sin(dLon / 2) ** 2;
-    return 2 * r * Math.asin(Math.sqrt(q));
-  };
-
-  const ensureDiagnostics = () => {
-    const metrics = document.querySelector('.rideMetrics');
-    if (!metrics) return;
-    if (!document.querySelector('#rideLatitude')) {
-      metrics.insertAdjacentHTML('beforeend', '<article><small>LATITUDE</small><strong id="rideLatitude">--</strong></article><article><small>LONGITUDE</small><strong id="rideLongitude">--</strong></article><article><small>GPS FIX AGE</small><strong id="rideFixAge">--</strong></article><article><small>HEADING SOURCE</small><strong id="rideHeadingSource">Waiting</strong></article>');
-    }
-  };
-
-  const updateDiagnostics = detail => {
-    ensureDiagnostics();
-    const values = {
-      rideLatitude: Number.isFinite(detail.latitude) ? detail.latitude.toFixed(6) : '--',
-      rideLongitude: Number.isFinite(detail.longitude) ? detail.longitude.toFixed(6) : '--',
-      rideFixAge: '0 sec',
-      rideHeadingSource: detail.headingSource || 'Unavailable'
-    };
-    for (const [id, value] of Object.entries(values)) {
-      const element = document.getElementById(id);
-      if (element) element.textContent = value;
-    }
-    const heading = document.getElementById('rideHeading');
-    if (heading && Number.isFinite(detail.heading)) heading.textContent = `${Math.round(detail.heading)}°`;
-  };
-
-  const publishDetail = detail => {
-    pendingDetail = null;
-    lastPublishedAt = Date.now();
-    updateDiagnostics(detail);
-    window.dispatchEvent(new CustomEvent('moto-gps-fix', { detail }));
-  };
-
-  const scheduleDetail = detail => {
-    const minimumInterval = window.__motoRecordingActive ? 1000 : 150;
-    const elapsed = Date.now() - lastPublishedAt;
-    if (elapsed >= minimumInterval) {
-      clearTimeout(pendingTimer);
-      pendingTimer = 0;
-      publishDetail(detail);
-      return;
-    }
-    pendingDetail = detail;
-    if (pendingTimer) return;
-    pendingTimer = setTimeout(() => {
-      pendingTimer = 0;
-      if (pendingDetail) publishDetail(pendingDetail);
-    }, Math.max(0, minimumInterval - elapsed));
-  };
-
-  const remember = position => {
-    if (!position?.coords) return position;
-    window.__motoLatestPosition = position;
-    const current = {
-      latitude: position.coords.latitude,
-      longitude: position.coords.longitude
-    };
-    let heading = Number.isFinite(position.coords.heading) ? position.coords.heading : null;
-    let headingSource = Number.isFinite(heading) ? 'iPhone GPS' : 'Stationary';
-    const movedFeet = distanceFeet(previousFix, current);
-    if (!Number.isFinite(heading) && previousFix && movedFeet >= 12) {
-      heading = bearingBetween(previousFix, current);
-      headingSource = 'Calculated course';
-    }
-    if (!previousFix || movedFeet >= 5) previousFix = current;
-
-    const detail = {
-      latitude: current.latitude,
-      longitude: current.longitude,
-      altitude: position.coords.altitude,
-      accuracy: position.coords.accuracy,
-      speed: Number.isFinite(position.coords.speed) ? position.coords.speed * 2.236936 : null,
-      speedMps: Number.isFinite(position.coords.speed) ? position.coords.speed : null,
-      heading,
-      headingSource,
-      timestamp: position.timestamp || Date.now()
-    };
-    window.MotoGPS = detail;
-    window.__motoLatestGpsFix = detail;
-    scheduleDetail(detail);
-    return position;
-  };
-
-  window.__motoGpsPublish = remember;
-  window.__motoGpsGetLatest = () => window.__motoLatestPosition;
-  window.__motoGpsWaitForFix = (timeoutMs = 20000) => new Promise((resolve, reject) => {
-    const cached = window.__motoLatestPosition;
-    if (cached) return resolve(cached);
-    const timer = setTimeout(() => {
-      window.removeEventListener('moto-gps-fix', onFix);
-      reject(new Error('Waiting for Ride Center GPS fix'));
-    }, timeoutMs);
-    const onFix = () => {
-      clearTimeout(timer);
-      window.removeEventListener('moto-gps-fix', onFix);
-      resolve(window.__motoLatestPosition);
-    };
-    window.addEventListener('moto-gps-fix', onFix, { once: true });
-  });
-
-  const wrappedWatch = (success, error, options) => {
-    const id = originalWatch(position => success?.(remember(position)), error, options);
-    watchers.set(id, true);
-    return id;
-  };
-
-  const wrappedCurrent = (success, error, options = {}) => {
-    const cached = window.__motoLatestPosition;
-    const age = cached ? Date.now() - Number(cached.timestamp || 0) : Infinity;
-    const requestedAge = Number.isFinite(options.maximumAge) ? options.maximumAge : 15000;
-    if (cached && age <= Math.max(requestedAge, 60000)) {
-      queueMicrotask(() => success?.(cached));
-      return;
-    }
-    originalCurrent(position => success?.(remember(position)), error, options);
-  };
-
-  try {
-    Object.defineProperty(geo, 'watchPosition', { configurable: true, value: wrappedWatch });
-    Object.defineProperty(geo, 'getCurrentPosition', { configurable: true, value: wrappedCurrent });
-  } catch (error) {
-    console.warn('GPS broker method wrapping unavailable', error);
+    const dLat = toRad(b.latitude-a.latitude);
+    const dLon = toRad(b.longitude-a.longitude);
+    const q = Math.sin(dLat/2)**2 + Math.cos(toRad(a.latitude))*Math.cos(toRad(b.latitude))*Math.sin(dLon/2)**2;
+    return 2*r*Math.asin(Math.sqrt(q));
   }
 
-  setInterval(() => {
-    const element = document.getElementById('rideFixAge');
-    if (!element) return;
-    const age = window.MotoGPS?.timestamp ? Math.max(0, Math.round((Date.now() - window.MotoGPS.timestamp) / 1000)) : null;
-    element.textContent = age === null ? '--' : `${age} sec`;
-  }, 1000);
+  function bearingBetween(a,b){
+    if(!a || !b) return null;
+    const lat1=toRad(a.latitude),lat2=toRad(b.latitude),dLon=toRad(b.longitude-a.longitude);
+    const y=Math.sin(dLon)*Math.cos(lat2);
+    const x=Math.cos(lat1)*Math.sin(lat2)-Math.sin(lat1)*Math.cos(lat2)*Math.cos(dLon);
+    return (Math.atan2(y,x)*180/Math.PI+360)%360;
+  }
 
-  originalCurrent(remember, () => {}, { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 });
-}
+  function normalizedOptions(options={}){
+    return {
+      enableHighAccuracy: options.enableHighAccuracy !== false,
+      maximumAge: Number.isFinite(options.maximumAge) ? Math.max(0,options.maximumAge) : 1500,
+      timeout: Number.isFinite(options.timeout) ? Math.max(1000,options.timeout) : 20000
+    };
+  }
+
+  function combinedOptions(){
+    const candidates=[...subscribers.values()].filter(item=>!recordingActive()||item.recordingOwner);
+    const all=(candidates.length?candidates:[...subscribers.values()]).map(item=>item.options);
+    if(!all.length) return normalizedOptions();
+    return {
+      enableHighAccuracy: all.some(item=>item.enableHighAccuracy),
+      maximumAge: Math.min(...all.map(item=>item.maximumAge)),
+      timeout: Math.max(...all.map(item=>item.timeout))
+    };
+  }
+
+  function sameOptions(a,b){
+    return Boolean(a&&b&&a.enableHighAccuracy===b.enableHighAccuracy&&a.maximumAge===b.maximumAge&&a.timeout===b.timeout);
+  }
+
+  function dispatchFix(detail){
+    const minInterval = recordingActive() ? 1000 : 250;
+    const now = performance.now();
+    if(now-lastPublishedAt < minInterval) return;
+    lastPublishedAt = now;
+    publishedEvents += 1;
+    window.dispatchEvent(new CustomEvent('moto-gps-fix',{detail}));
+  }
+
+  function remember(position){
+    if(!position?.coords) return position;
+    nativeCallbacks += 1;
+    latestPosition = position;
+    window.__motoLatestPosition = position;
+    const current={latitude:Number(position.coords.latitude),longitude:Number(position.coords.longitude)};
+    let heading=finite(position.coords.heading);
+    let headingSource=heading===null?'Stationary':'iPhone GPS';
+    const movedFeet=distanceFeet(previousFix,current);
+    if(heading===null&&previousFix&&movedFeet>=12){
+      heading=bearingBetween(previousFix,current);
+      headingSource='Calculated course';
+    }
+    if(!previousFix||movedFeet>=5) previousFix=current;
+    latestDetail={
+      latitude:current.latitude,
+      longitude:current.longitude,
+      altitude:finite(position.coords.altitude),
+      accuracy:finite(position.coords.accuracy),
+      speed:finite(position.coords.speed)===null?null:Number(position.coords.speed)*2.236936,
+      speedMps:finite(position.coords.speed),
+      heading,
+      headingSource,
+      timestamp:Number(position.timestamp||Date.now())
+    };
+    window.MotoGPS=latestDetail;
+    window.__motoLatestGpsFix=latestDetail;
+    dispatchFix(latestDetail);
+    return position;
+  }
+
+  function subscriberAllowed(subscriber){
+    if(!recordingActive()) return true;
+    if(subscriber.recordingOwner) return true;
+    suspendedCallbacks += 1;
+    return false;
+  }
+
+  function fanOutPosition(position){
+    const remembered=remember(position);
+    for(const subscriber of subscribers.values()){
+      if(!subscriberAllowed(subscriber))continue;
+      try{subscriber.success?.(remembered)}catch(error){console.error('GPS subscriber failed',error)}
+    }
+  }
+
+  function fanOutError(error){
+    nativeErrors += 1;
+    for(const subscriber of subscribers.values()){
+      if(!subscriberAllowed(subscriber))continue;
+      try{subscriber.error?.(error)}catch(callbackError){console.error('GPS error subscriber failed',callbackError)}
+    }
+  }
+
+  function stopNative(){
+    if(nativeWatchId===null) return;
+    try{nativeClear(nativeWatchId)}catch{}
+    nativeWatchId=null;
+    nativeOptions=null;
+  }
+
+  function ensureNative(){
+    if(!subscribers.size){stopNative();return}
+    const next=combinedOptions();
+    if(nativeWatchId!==null&&sameOptions(nativeOptions,next)) return;
+    stopNative();
+    nativeOptions=next;
+    nativeStarts += 1;
+    nativeWatchId=nativeWatch(fanOutPosition,fanOutError,next);
+  }
+
+  function wrappedWatch(success,error,options={}){
+    const id=++virtualId;
+    const recordingOwner=Boolean(window.__motoRecordingActive);
+    subscribers.set(id,{success,error,options:normalizedOptions(options),recordingOwner,createdAt:Date.now()});
+    ensureNative();
+    if(latestPosition){
+      const age=Date.now()-Number(latestPosition.timestamp||0);
+      const allowed=subscribers.get(id)?.options.maximumAge??0;
+      if(age<=allowed) queueMicrotask(()=>{const subscriber=subscribers.get(id);if(subscriber&&subscriberAllowed(subscriber))success?.(latestPosition)});
+    }
+    return id;
+  }
+
+  function wrappedClear(id){
+    if(subscribers.delete(id)){
+      ensureNative();
+      return;
+    }
+    try{nativeClear(id)}catch{}
+  }
+
+  function wrappedCurrent(success,error,options={}){
+    const normalized=normalizedOptions(options);
+    const age=latestPosition?Date.now()-Number(latestPosition.timestamp||0):Infinity;
+    if(latestPosition&&age<=Math.max(normalized.maximumAge,1000)){
+      queueMicrotask(()=>success?.(latestPosition));
+      return;
+    }
+    nativeCurrent(position=>success?.(remember(position)),error,normalized);
+  }
+
+  window.__motoGpsPublish=remember;
+  window.__motoGpsGetLatest=()=>latestPosition;
+  window.__motoGpsWaitForFix=(timeoutMs=20000)=>new Promise((resolve,reject)=>{
+    if(latestPosition){resolve(latestPosition);return}
+    const timer=setTimeout(()=>{window.removeEventListener('moto-gps-fix',onFix);reject(new Error('Waiting for GPS fix'))},timeoutMs);
+    const onFix=()=>{clearTimeout(timer);window.removeEventListener('moto-gps-fix',onFix);resolve(latestPosition)};
+    window.addEventListener('moto-gps-fix',onFix,{once:true});
+  });
+
+  window.MotoGPSBroker={
+    getLatest:()=>latestDetail?{...latestDetail}:null,
+    getDiagnostics:()=>({
+      nativeWatchActive:nativeWatchId!==null,
+      nativeWatchStarts:nativeStarts,
+      virtualSubscribers:subscribers.size,
+      activeSubscribers:[...subscribers.values()].filter(subscriber=>subscriberAllowed(subscriber)).length,
+      recorderSubscribers:[...subscribers.values()].filter(subscriber=>subscriber.recordingOwner).length,
+      nativeCallbacks,
+      publishedEvents,
+      nativeErrors,
+      suspendedCallbacks,
+      recording:recordingActive()
+    }),
+    refresh:ensureNative,
+    stop:()=>{subscribers.clear();stopNative()}
+  };
+
+  window.addEventListener('moto-recording-isolation-change',ensureNative);
+
+  try{
+    Object.defineProperty(geo,'watchPosition',{configurable:true,value:wrappedWatch});
+    Object.defineProperty(geo,'clearWatch',{configurable:true,value:wrappedClear});
+    Object.defineProperty(geo,'getCurrentPosition',{configurable:true,value:wrappedCurrent});
+  }catch(error){
+    console.warn('GPS broker method wrapping unavailable',error);
+  }
+
+  nativeCurrent(remember,()=>{},normalizedOptions({maximumAge:10000}));
+})();

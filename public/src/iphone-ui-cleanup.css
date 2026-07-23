@@ -1,0 +1,61 @@
+/* iPhone-specific formatting cleanup after the interaction audit. */
+@media (hover:none) and (pointer:coarse){
+  button:focus,a[href]:focus,[role="button"]:focus,summary:focus{
+    outline:none!important;
+    outline-offset:0!important;
+  }
+  button:focus-visible,a[href]:focus-visible,[role="button"]:focus-visible,summary:focus-visible{
+    outline:none!important;
+    box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--dash-accent,var(--accent,#f4512c)) 55%,transparent)!important;
+  }
+  #rideDashOverlay .dashHeaderActions button,
+  #rideDashOverlay .rideV3ModeRibbon button,
+  #rideDashOverlay #rideV3Studio,
+  #rideDashOverlay #dashAdventure,
+  #rideDashOverlay #dashEdit,
+  #rideDashOverlay #dashClose{
+    text-shadow:none!important;
+    -webkit-text-stroke:0!important;
+  }
+  #rideDashOverlay .dashHeaderActions button::before,
+  #rideDashOverlay .dashHeaderActions button::after{
+    pointer-events:none;
+  }
+}
+
+#rideDashOverlay .dashHeaderActions button{
+  isolation:isolate;
+}
+
+html[data-iphone-motion="disabled"] #rideDashOverlay .widget-lean .dashValue *,
+html[data-iphone-motion="disabled"] #rideDashOverlay .widget-maxLean .dashValue *,
+html[data-iphone-motion="disabled"] #rideDashOverlay .widget-cornerSpeed .dashValue *,
+html[data-iphone-motion="disabled"] #rideDashOverlay .widget-accel .dashValue *,
+html[data-iphone-motion="disabled"] #rideDashOverlay .widget-lean .leanCalibrationStatus,
+html[data-iphone-motion="disabled"] #rideDashOverlay .widget-lean .leanCalibrationHint,
+html[data-iphone-motion="disabled"] #rideDashOverlay .widget-lean .leanPermissionHint,
+html[data-iphone-motion="disabled"] #rideDashOverlay .widget-lean .dashLeanHint,
+html[data-iphone-motion="disabled"] #rideDashOverlay .widget-lean [data-lean-calibration-status]{
+  display:none!important;
+}
+
+html[data-iphone-motion="disabled"] #rideDashOverlay .widget-lean::after,
+html[data-iphone-motion="disabled"] #rideDashOverlay .widget-lean .dashValue::before,
+html[data-iphone-motion="disabled"] #rideDashOverlay .widget-lean .dashLeanGauge::before,
+html[data-iphone-motion="disabled"] #rideDashOverlay .widget-lean .dashLeanGauge::after{
+  display:none!important;
+  content:none!important;
+}
+
+#motoRecordingIsolation #recTime{
+  font-size:clamp(31px,9.2vw,40px)!important;
+  letter-spacing:-.055em!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+}
+
+#motoRecordingIsolation button:focus,
+#motoRecordingIsolation button:focus-visible{
+  outline:none!important;
+  box-shadow:inset 0 0 0 1px rgba(94,234,212,.55)!important;
+}

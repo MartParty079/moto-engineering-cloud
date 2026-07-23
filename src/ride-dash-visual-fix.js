@@ -126,3 +126,4 @@ new MutationObserver(mutations=>{
 }).observe(document.body,{childList:true,subtree:false});
 
 schedulePatch();
+import('./ride-performance-guard.js?v=1').catch(error=>console.error('Ride performance guard failed to load',error));

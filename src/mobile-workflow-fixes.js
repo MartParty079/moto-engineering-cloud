@@ -1,5 +1,6 @@
 const $=q=>document.querySelector(q);
 let queued=false;
+let frame=0;
 
 function closeMenu(){
   const nav=$('#nav');
@@ -10,11 +11,6 @@ function closeMenu(){
 
 function removeAdminBadge(){
   document.querySelectorAll('#accessQuickButton,#accessRoleBadge,.accessRoleBadge,[title*="View the app as another role"],[title^="Access level:"]').forEach(el=>el.remove());
-  document.querySelectorAll('button').forEach(button=>{
-    const label=(button.textContent||'').replace(/\s+/g,' ').trim().toLowerCase();
-    const aria=(button.getAttribute('aria-label')||'').toLowerCase();
-    if(label==='administrator'||label==='admin'||aria.includes('administrator access')||aria.includes('admin access'))button.remove();
-  });
 }
 
 function removeRedundantGarageSummary(){
@@ -58,7 +54,7 @@ function openAdventureFromRideCenter(){
   requestAnimationFrame(()=>{
     const adventure=$('#adventureNav');
     if(adventure){adventure.click();return}
-    document.querySelector('.motoBottomNav button:nth-child(3)')?.click();
+    document.querySelector('.motoBottomNav [data-go="maps"],.motoBottomNav button:nth-child(3)')?.click();
   });
 }
 
@@ -88,17 +84,26 @@ function sync(){
 function queueSync(){
   if(queued)return;
   queued=true;
-  requestAnimationFrame(()=>{queued=false;sync()});
+  frame=requestAnimationFrame(()=>{
+    queued=false;
+    frame=0;
+    sync();
+  });
 }
 
 document.addEventListener('click',event=>{
-  const trigger=event.target.closest('#adventureNav,[data-open-adventure],.motoBottomNav button');
-  if(trigger&&(trigger.id==='adventureNav'||/adventure/i.test(trigger.textContent||'')))closeMenu();
+  const route=event.target.closest('#nav [data-v],#adventureNav,[data-open-adventure],.motoBottomNav button');
+  if(route&&!route.matches('[data-go="menu"]'))closeMenu();
   queueSync();
 },true);
 
-const observer=new MutationObserver(queueSync);
-observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class','title','aria-label']});
+const appRoot=document.querySelector('#app');
+if(appRoot)new MutationObserver(queueSync).observe(appRoot,{childList:true});
+new MutationObserver(queueSync).observe(document.body,{childList:true});
+
 window.addEventListener('pageshow',queueSync);
 window.addEventListener('moto-page-ready',queueSync);
+window.addEventListener('moto-ride-dash-opened',queueSync);
+window.addEventListener('moto-ride-dash-closed',queueSync);
+window.addEventListener('pagehide',()=>{if(frame)cancelAnimationFrame(frame)});
 queueSync();

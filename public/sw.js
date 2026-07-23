@@ -1,4 +1,4 @@
-const VERSION='v30';
+const VERSION='v31';
 const APP_CACHE=`motocloud-app-${VERSION}`;
 const RUNTIME_CACHE=`motocloud-runtime-${VERSION}`;
 const IMAGE_CACHE=`motocloud-images-${VERSION}`;
@@ -50,11 +50,11 @@ const CORE_URLS=[
   '/src/cirkit-link.js',
   '/src/access-control.js?v=3',
   '/src/access-bootstrap.js?v=3',
-  '/src/pwa.js?v=30',
+  '/src/pwa.js?v=31',
   '/src/gps-shared.js?v=5',
-  '/src/startup-permissions.js?v=2',
+  '/src/startup-permissions.js?v=3',
   '/src/ride-center.js?v=22',
-  '/src/ride-start-guard.js?v=1',
+  '/src/ride-start-guard.js?v=2',
   '/src/provider-auth-fix.js?v=2',
   '/src/offline-cache.js?v=1',
   '/src/ride-safe-enhancements.js?v=13',
@@ -123,14 +123,21 @@ async function cacheFirst(request,cacheName=IMAGE_CACHE){
   return response;
 }
 
-async function navigationResponse(request,event){
-  const cache=await caches.open(APP_CACHE),cached=await cache.match('/');
-  const update=fetch(request,{cache:'no-store'}).then(async response=>{
+async function navigationResponse(request){
+  const cache=await caches.open(APP_CACHE);
+  const cached=await cache.match('/');
+  const network=fetch(request,{cache:'no-store'}).then(async response=>{
     if(response.ok)await cache.put('/',response.clone());
     return response;
   });
-  event.waitUntil(update.catch(()=>undefined));
-  return cached||update.catch(()=>new Response('<!doctype html><title>Moto Mission Offline</title><main style="font-family:system-ui;background:#07090f;color:white;min-height:100vh;padding:40px"><h1>Moto Mission</h1><p>The app shell is not cached yet. Reconnect once, open the app, then try again.</p></main>',{headers:{'content-type':'text/html'}}));
+  const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error('navigation timeout')),2500));
+  try{
+    return await Promise.race([network,timeout]);
+  }catch{
+    if(cached)return cached;
+    try{return await network;}catch{}
+    return new Response('<!doctype html><title>Moto Mission Offline</title><main style="font-family:system-ui;background:#07090f;color:white;min-height:100vh;padding:40px"><h1>Moto Mission</h1><p>The app shell is not cached yet. Reconnect once, open the app, then try again.</p></main>',{headers:{'content-type':'text/html'}});
+  }
 }
 
 self.addEventListener('install',event=>{event.waitUntil(cacheCore());self.skipWaiting()});
@@ -141,7 +148,7 @@ self.addEventListener('fetch',event=>{
   const url=new URL(request.url);
   if(url.origin!==location.origin)return;
   if(url.pathname.startsWith('/api/'))return;
-  if(request.mode==='navigate'){event.respondWith(navigationResponse(request,event));return}
+  if(request.mode==='navigate'){event.respondWith(navigationResponse(request));return}
   if(['script','style','worker'].includes(request.destination)){event.respondWith(staleWhileRevalidate(request,event));return}
   if(['image','font'].includes(request.destination)){event.respondWith(cacheFirst(request));return}
   if(url.pathname.startsWith('/src/')||url.pathname==='/manifest.webmanifest'||url.pathname==='/app-icon.svg'){event.respondWith(staleWhileRevalidate(request,event));return}

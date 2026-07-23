@@ -1,0 +1,89 @@
+/* Live Ride Dash stability overrides.
+   Loaded last so the three-button ride header cannot be expanded by later Ride OS styles. */
+#rideDashOverlay[data-header-controls-v2="ready"][data-ride-active="true"] .rideDash>header{
+  min-height:0!important;
+  padding:calc(5px + env(safe-area-inset-top)) 10px 6px!important;
+}
+
+#rideDashOverlay[data-header-controls-v2="ready"][data-ride-active="true"] .dashHeaderActions{
+  display:grid!important;
+  grid-template-columns:42px minmax(92px,116px) 42px!important;
+  grid-auto-rows:38px!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:10px!important;
+  width:100%!important;
+  min-width:0!important;
+}
+
+#rideDashOverlay[data-header-controls-v2="ready"][data-ride-active="true"] .dashHeaderActions>#rideV3Studio,
+#rideDashOverlay[data-header-controls-v2="ready"][data-ride-active="true"] .dashHeaderActions>#dashRideToggle{
+  display:none!important;
+}
+
+#rideDashOverlay[data-header-controls-v2="ready"][data-ride-active="true"] .dashHeaderActions>#dashEdit,
+#rideDashOverlay[data-header-controls-v2="ready"][data-ride-active="true"] .dashHeaderActions>#dashAdventure,
+#rideDashOverlay[data-header-controls-v2="ready"][data-ride-active="true"] .dashHeaderActions>#dashClose{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  box-sizing:border-box!important;
+  height:38px!important;
+  min-height:38px!important;
+  margin:0!important;
+  padding:0 8px!important;
+}
+
+#rideDashOverlay[data-header-controls-v2="ready"][data-ride-active="true"] .dashHeaderActions>#dashEdit{
+  grid-column:1!important;
+  grid-row:1!important;
+  width:42px!important;
+  min-width:42px!important;
+  justify-self:start!important;
+}
+
+#rideDashOverlay[data-header-controls-v2="ready"][data-ride-active="true"] .dashHeaderActions>#dashAdventure{
+  grid-column:2!important;
+  grid-row:1!important;
+  width:100%!important;
+  min-width:92px!important;
+  justify-self:stretch!important;
+}
+
+#rideDashOverlay[data-header-controls-v2="ready"][data-ride-active="true"] .dashHeaderActions>#dashClose{
+  grid-column:3!important;
+  grid-row:1!important;
+  width:42px!important;
+  min-width:42px!important;
+  justify-self:end!important;
+}
+
+#rideDashOverlay[data-ride-os-dedicated-page="ready"] .dashPages{
+  overscroll-behavior-x:contain;
+}
+
+@media(max-width:390px){
+  #rideDashOverlay[data-header-controls-v2="ready"][data-ride-active="true"] .rideDash>header{
+    padding-right:7px!important;
+    padding-left:7px!important;
+  }
+  #rideDashOverlay[data-header-controls-v2="ready"][data-ride-active="true"] .dashHeaderActions{
+    grid-template-columns:38px minmax(82px,108px) 38px!important;
+    grid-auto-rows:35px!important;
+    gap:7px!important;
+  }
+  #rideDashOverlay[data-header-controls-v2="ready"][data-ride-active="true"] .dashHeaderActions>#dashEdit,
+  #rideDashOverlay[data-header-controls-v2="ready"][data-ride-active="true"] .dashHeaderActions>#dashAdventure,
+  #rideDashOverlay[data-header-controls-v2="ready"][data-ride-active="true"] .dashHeaderActions>#dashClose{
+    height:35px!important;
+    min-height:35px!important;
+  }
+  #rideDashOverlay[data-header-controls-v2="ready"][data-ride-active="true"] .dashHeaderActions>#dashEdit,
+  #rideDashOverlay[data-header-controls-v2="ready"][data-ride-active="true"] .dashHeaderActions>#dashClose{
+    width:38px!important;
+    min-width:38px!important;
+  }
+  #rideDashOverlay[data-header-controls-v2="ready"][data-ride-active="true"] .dashHeaderActions>#dashAdventure{
+    min-width:82px!important;
+  }
+}

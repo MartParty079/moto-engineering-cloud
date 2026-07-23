@@ -1,4 +1,4 @@
-const VERSION='v32';
+const VERSION='v33';
 const APP_CACHE=`motocloud-app-${VERSION}`;
 const RUNTIME_CACHE=`motocloud-runtime-${VERSION}`;
 const IMAGE_CACHE=`motocloud-images-${VERSION}`;
@@ -44,6 +44,7 @@ const CORE_URLS=[
   '/src/security-center.css?v=1',
   '/src/mobile-layout-hotfix.css?v=1',
   '/src/ride-dash-live-hotfix.css?v=1',
+  '/src/ride-dash-visual-fix.css?v=1',
   '/src/adaptive-layout.js?v=1',
   '/src/road-provider-default.js?v=1',
   '/src/main.js',
@@ -51,7 +52,7 @@ const CORE_URLS=[
   '/src/cirkit-link.js',
   '/src/access-control.js?v=3',
   '/src/access-bootstrap.js?v=3',
-  '/src/pwa.js?v=32',
+  '/src/pwa.js?v=33',
   '/src/gps-shared.js?v=5',
   '/src/startup-permissions.js?v=3',
   '/src/ride-center.js?v=22',
@@ -88,7 +89,8 @@ const CORE_URLS=[
   '/src/garage-center.js?v=2',
   '/src/security-center.js?v=1',
   '/src/security-admin-guard.js?v=1',
-  '/src/mobile-layout-hotfix.js?v=1'
+  '/src/mobile-layout-hotfix.js?v=1',
+  '/src/ride-dash-visual-fix.js?v=1'
 ];
 
 async function cacheCore(){

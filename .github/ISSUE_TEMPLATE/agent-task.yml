@@ -1,0 +1,104 @@
+name: Agent work package
+description: Create a bounded task for a Moto Mission engineering worker
+title: "[Agent]: "
+labels:
+  - agent-task
+body:
+  - type: dropdown
+    id: worker
+    attributes:
+      label: Primary worker
+      options:
+        - Software
+        - Firmware
+        - Test
+        - Research
+        - Documentation
+        - Security
+    validations:
+      required: true
+
+  - type: dropdown
+    id: risk
+    attributes:
+      label: Risk class
+      options:
+        - Low
+        - Medium
+        - High
+        - Vehicle safety
+    validations:
+      required: true
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: State one measurable outcome.
+      placeholder: Implement, investigate, validate, or document...
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Authorized scope
+      description: Identify the subsystem, files, hardware, or research boundary.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Use objective checks that determine whether the task is complete.
+      placeholder: |
+        - [ ] Requirement one
+        - [ ] Requirement two
+    validations:
+      required: true
+
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints and safety rules
+      description: Include compatibility, fail-safe, privacy, security, and architecture constraints.
+    validations:
+      required: true
+
+  - type: textarea
+    id: excluded
+    attributes:
+      label: Excluded actions
+      description: List actions the worker is not authorized to perform.
+      placeholder: No merge, deployment, production migration, secret access, or hardware actuation.
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Required evidence
+      description: Specify commands, logs, screenshots, citations, measurements, or test results.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: approvals
+    attributes:
+      label: Protected actions potentially required
+      options:
+        - label: Merge approval
+        - label: Deployment approval
+        - label: Database migration approval
+        - label: Secret or production access approval
+        - label: Vehicle-output or hardware-actuation approval
+        - label: Destructive-action approval
+
+  - type: textarea
+    id: rollback
+    attributes:
+      label: Expected rollback
+      description: Describe how the change can be reversed or safely disabled.
+    validations:
+      required: true

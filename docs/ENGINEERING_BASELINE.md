@@ -2,7 +2,7 @@
 
 **Baseline:** V1 stabilization  
 **Owner:** Chief Engineer  
-**Last reviewed:** 2026-07-16
+**Last reviewed:** 2026-07-17
 
 ## Mission
 
@@ -21,6 +21,7 @@ Build a safe, reliable motorcycle engineering platform that records rides, organ
 - PCB and connector planning
 - PWA installation and mobile-first field use
 - Supabase-backed storage and synchronization
+- GitHub-native, human-approved agent work packages for bounded engineering tasks
 
 ### Deferred or experimental
 
@@ -31,6 +32,7 @@ Build a safe, reliable motorcycle engineering platform that records rides, organ
 - CarPlay integration
 - Automated emergency dispatch
 - Any diagnostic write operation to a motorcycle ECU
+- Autonomous agent merge, deployment, production migration, secret access, or vehicle actuation
 
 Experimental features must display an explicit unavailable, disconnected, or beta state. They must not fabricate successful data.
 
@@ -48,6 +50,17 @@ Supabase Auth / Postgres / Storage
         ^
         |
 Browser PWA deployed by Vercel
+
+Project owner
+        |
+        v
+Chief-engineer orchestrator
+        |
+        v
+Bounded GitHub work package -> worker branch / PR / evidence
+        |
+        v
+Human approval for merge, deployment, migrations, secrets, or hardware outputs
 ```
 
 ## Safety principles
@@ -58,6 +71,7 @@ Browser PWA deployed by Vercel
 4. **Data provenance:** derived values must identify their source and confidence.
 5. **Recoverability:** interrupted rides and failed uploads must preserve local data where feasible.
 6. **Honest states:** disconnected hardware is shown as disconnected.
+7. **Bounded automation:** agents receive explicit scope and cannot autonomously merge, deploy, access production secrets, destroy data, or actuate motorcycle hardware.
 
 ## Data domains
 
@@ -69,6 +83,7 @@ Browser PWA deployed by Vercel
 - Ride sessions, samples, notes, and alerts
 - Provider settings and usage accounting
 - Telemetry sources and samples
+- Agent work packages, approvals, results, and audit evidence
 
 ## Current technical risks
 
@@ -81,6 +96,7 @@ Browser PWA deployed by Vercel
 | R-005 | Public storage listing can expose object inventory | Medium | Remove broad listing policy; use object URLs or scoped policies |
 | R-006 | Provider APIs can fail or return uncertain data | Medium | Timeouts, fallback providers, confidence labels, bounded usage |
 | R-007 | Live telemetry backend is incomplete | High | Keep feature gated and report disconnected state |
+| R-008 | Agent automation could exceed scope or perform an unsafe external write | High | Structured work packages, least privilege, branch/PR evidence, protected-action approvals, and no autonomous merge/deploy/actuation |
 
 ## Release gates
 
@@ -113,6 +129,14 @@ Browser PWA deployed by Vercel
 - Supabase project is `ACTIVE_HEALTHY`
 - Security and performance advisors are reviewed
 
+### Gate E — Agent-assisted work
+
+- The work package defines goal, scope, acceptance criteria, exclusions, risk, and evidence
+- Worker changes are isolated to a task branch and reviewable pull request
+- Reported tests include exact commands and outcomes
+- Protected actions have explicit project-owner approval
+- The worker did not merge, deploy, access production secrets, destroy data, or actuate hardware without authorization
+
 ## Next architecture work
 
 1. Inventory every `src/` module and classify it as core, active feature, compatibility patch, or obsolete.
@@ -120,3 +144,4 @@ Browser PWA deployed by Vercel
 3. Consolidate ride modules behind one ride-state service.
 4. Introduce a small automated smoke-test suite for shell load, auth, and API validation.
 5. Define the ESP32 telemetry protocol and offline synchronization contract before firmware implementation.
+6. Add worker/risk labels and validate the GitHub-native agent work-package workflow before building a dispatcher service.

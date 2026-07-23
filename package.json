@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "check:syntax": "node scripts/check-syntax.mjs",
     "check:providers": "node scripts/provider-check.mjs",
-    "audit": "npm run check:syntax && npm run build"
+    "check:agents": "node scripts/check-agent-dispatch.mjs",
+    "audit": "npm run check:syntax && npm run check:agents && npm run build"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",

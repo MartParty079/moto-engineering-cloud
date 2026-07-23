@@ -27,6 +27,18 @@
   isolation:isolate;
 }
 
+html[data-iphone-motion="disabled"] #rideDashOverlay .widget-lean .leanCalibrationStatus,
+html[data-iphone-motion="disabled"] #rideDashOverlay .widget-lean [data-lean-calibration-status]{
+  display:none!important;
+}
+
+#motoRecordingIsolation #recTime{
+  font-size:clamp(31px,9.2vw,40px)!important;
+  letter-spacing:-.055em!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+}
+
 #motoRecordingIsolation button:focus,
 #motoRecordingIsolation button:focus-visible{
   outline:none!important;

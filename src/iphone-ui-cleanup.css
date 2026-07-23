@@ -1,0 +1,34 @@
+/* iPhone-specific formatting cleanup after the interaction audit. */
+@media (hover:none) and (pointer:coarse){
+  button:focus,a[href]:focus,[role="button"]:focus,summary:focus{
+    outline:none!important;
+    outline-offset:0!important;
+  }
+  button:focus-visible,a[href]:focus-visible,[role="button"]:focus-visible,summary:focus-visible{
+    outline:none!important;
+    box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--dash-accent,var(--accent,#f4512c)) 55%,transparent)!important;
+  }
+  #rideDashOverlay .dashHeaderActions button,
+  #rideDashOverlay .rideV3ModeRibbon button,
+  #rideDashOverlay #rideV3Studio,
+  #rideDashOverlay #dashAdventure,
+  #rideDashOverlay #dashEdit,
+  #rideDashOverlay #dashClose{
+    text-shadow:none!important;
+    -webkit-text-stroke:0!important;
+  }
+  #rideDashOverlay .dashHeaderActions button::before,
+  #rideDashOverlay .dashHeaderActions button::after{
+    pointer-events:none;
+  }
+}
+
+#rideDashOverlay .dashHeaderActions button{
+  isolation:isolate;
+}
+
+#motoRecordingIsolation button:focus,
+#motoRecordingIsolation button:focus-visible{
+  outline:none!important;
+  box-shadow:inset 0 0 0 1px rgba(94,234,212,.55)!important;
+}

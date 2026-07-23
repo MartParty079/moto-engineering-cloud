@@ -1,7 +1,7 @@
 const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
 const isStandalone=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
-const PWA_BUILD='ride-dash-visuals-v33';
-const ACTIVE_CACHES=['motocloud-app-v33','motocloud-runtime-v33','motocloud-images-v33'];
+const PWA_BUILD='app-interaction-audit-v34';
+const ACTIVE_CACHES=['motocloud-app-v34','motocloud-runtime-v34','motocloud-images-v34'];
 
 function loadOfflineCache(){
   if(!document.querySelector('link[data-offline-cache]')){const link=document.createElement('link');link.rel='stylesheet';link.href='/src/offline-cache.css?v=1';link.dataset.offlineCache='1';document.head.appendChild(link)}
@@ -21,16 +21,16 @@ if('serviceWorker'in navigator){
   navigator.serviceWorker.addEventListener('controllerchange',()=>window.dispatchEvent(new CustomEvent('moto-app-cache-updated')));
   window.addEventListener('load',async()=>{
     try{
-      const registration=await navigator.serviceWorker.register('/sw.js?v=33',{updateViaCache:'none'});
+      const registration=await navigator.serviceWorker.register('/sw.js?v=34',{updateViaCache:'none'});
       await registration.update();
       registration.addEventListener('updatefound',()=>{
         const worker=registration.installing;if(!worker)return;
-        worker.addEventListener('statechange',()=>{if(worker.state==='activated'){void clearLegacyMotoCaches();console.info('Moto Mission Ride Dash visuals v33 installed.');window.dispatchEvent(new CustomEvent('moto-app-cache-updated'))}})
+        worker.addEventListener('statechange',()=>{if(worker.state==='activated'){void clearLegacyMotoCaches();console.info('Moto Mission interaction audit v34 installed.');window.dispatchEvent(new CustomEvent('moto-app-cache-updated'))}})
       });
     }catch(error){console.error(error)}
   });
 }
-function installGuide(){document.querySelector('#iosInstallOverlay')?.remove();const overlay=document.createElement('div');overlay.id='iosInstallOverlay';overlay.innerHTML=`<section class="iosInstallCard"><button class="iosInstallClose" aria-label="Close">×</button><img src="/app-icon.svg" alt="Moto Mission icon"><div><small>INSTALL ON IPHONE</small><h2>Add Moto Mission to your Home Screen</h2><ol><li>Tap the <b>Share</b> button in Safari.</li><li>Scroll down and tap <b>Add to Home Screen</b>.</li><li>Tap <b>Add</b>. Moto Mission will launch like a normal app.</li></ol><p>Core dashboards, scripts and styles are stored after the first successful load. Route data can be downloaded separately from the Offline manager.</p></div></section>`;document.body.appendChild(overlay);overlay.querySelector('.iosInstallClose').onclick=()=>overlay.remove();overlay.onclick=event=>{if(event.target===overlay)overlay.remove()}}
+function installGuide(){document.querySelector('#iosInstallOverlay')?.remove();const overlay=document.createElement('div');overlay.id='iosInstallOverlay';overlay.innerHTML=`<section class="iosInstallCard"><button type="button" class="iosInstallClose" aria-label="Close">×</button><img src="/app-icon.svg" alt="Moto Mission icon"><div><small>INSTALL ON IPHONE</small><h2>Add Moto Mission to your Home Screen</h2><ol><li>Tap the <b>Share</b> button in Safari.</li><li>Scroll down and tap <b>Add to Home Screen</b>.</li><li>Tap <b>Add</b>. Moto Mission will launch like a normal app.</li></ol><p>Core dashboards, scripts and styles are stored after the first successful load. Route data can be downloaded separately from the Offline manager.</p></div></section>`;document.body.appendChild(overlay);overlay.querySelector('.iosInstallClose').onclick=()=>overlay.remove();overlay.onclick=event=>{if(event.target===overlay)overlay.remove()}}
 function addInstallButton(){if(isStandalone||document.querySelector('#installMotoCloud'))return;const button=document.createElement('button');button.id='installMotoCloud';button.type='button';button.innerHTML='<span>⇩</span><b>Install App</b>';button.onclick=installGuide;document.body.appendChild(button)}
 const observer=new MutationObserver(addInstallButton);observer.observe(document.querySelector('#app')||document.body,{childList:true,subtree:false});addInstallButton();
 if(isIOS&&!isStandalone&&!localStorage.getItem('motocloud-install-seen'))setTimeout(()=>{installGuide();localStorage.setItem('motocloud-install-seen','1')},1800);

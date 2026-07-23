@@ -1,0 +1,124 @@
+/* App-wide interaction and formatting safeguards.
+   Loaded last so iOS touch behavior stays consistent across dynamically injected pages. */
+
+:root{
+  --ui-control-min:40px;
+  --ui-control-compact:34px;
+  --ui-focus-ring:0 0 0 3px color-mix(in srgb,var(--accent,var(--blue,#f4512c)) 28%,transparent);
+}
+
+html{overflow-x:hidden;-webkit-text-size-adjust:100%}
+body{min-width:320px;overflow-x:hidden;overscroll-behavior-x:none}
+
+button,a[href],[role="button"],summary,label[for],label:has(input[type="file"]){
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+}
+button,[role="button"],summary{user-select:none;-webkit-user-select:none}
+button,a[href],[role="button"]{min-width:0;max-width:100%}
+button{line-height:1.15;text-wrap:balance}
+button svg,a[href] svg,[role="button"] svg{flex:0 0 auto;pointer-events:none}
+
+button:focus-visible,a[href]:focus-visible,[role="button"]:focus-visible,summary:focus-visible,
+input:focus-visible,select:focus-visible,textarea:focus-visible{
+  outline:2px solid var(--accent,var(--blue,#f4512c));
+  outline-offset:2px;
+  box-shadow:var(--ui-focus-ring);
+}
+
+button.ui-press-active,a[href].ui-press-active,[role="button"].ui-press-active,
+summary.ui-press-active,label.ui-press-active{
+  translate:0 1px;
+  scale:.985;
+  filter:brightness(.94);
+}
+
+button,a[href],[role="button"],summary,label[for]{
+  transition:translate 90ms ease,scale 90ms ease,filter 90ms ease,opacity 120ms ease,border-color 140ms ease,background-color 140ms ease;
+}
+
+button:disabled,button[aria-disabled="true"],a[aria-disabled="true"],[role="button"][aria-disabled="true"]{
+  cursor:not-allowed!important;
+  pointer-events:none!important;
+  opacity:.5!important;
+  filter:saturate(.55)!important;
+  translate:none!important;
+  scale:1!important;
+}
+
+.hidden,[hidden],[aria-hidden="true"],[data-ui-nested-interactive="true"]{pointer-events:none!important}
+
+/* Prevent flex and grid children from forcing a page wider than the viewport. */
+.layout,#main,main,.card,.item,.section,.rowtop,.actions,.metrics,.grid,.two,.stack,.formgrid,
+.dashGrid,.dashPage,.dashWidget,.garageCenter,.adventureSheet{min-width:0}
+.section>*,.rowtop>*,.actions>*,.card>*,.item>*{min-width:0}
+.section h1,.section h2,.section h3,.card h1,.card h2,.card h3,.item h1,.item h2,.item h3,
+button span,button strong,button small{overflow-wrap:break-word}
+
+.actions,.formactions,.section>.actions,.rowtop>.actions{flex-wrap:wrap;align-items:center}
+.actions>button,.formactions>button{flex:0 1 auto}
+input,select,textarea{max-width:100%;min-width:0}
+
+.modal,.rideModal,.garageModal,.dashRideQuickSettings,.rideXSheet,[role="dialog"],[aria-modal="true"],[id$="Modal"],[id$="Picker"]{
+  overscroll-behavior:contain;
+}
+.modalCard,.rideModal>section,.garageModal>section,.dashRideQuickSettings>section,.rideXSheet>section,
+[role="dialog"]>section,[id$="Modal"]>section,[id$="Picker"]>section{
+  max-width:min(100%,720px);
+  max-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 20px);
+  overflow:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+}
+body.has-ui-dialog{overscroll-behavior:none}
+
+#searchResults,.searchResults{
+  max-width:calc(100vw - 28px);
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+}
+
+#nav,.nav,.motoBottomNav,.advBottomNav,.dashTabs,.dashPages,.rideXSmartStrip{-webkit-overflow-scrolling:touch}
+#nav button,.motoBottomNav button,.tabs button,.dashTabs button,.advBottomNav button{white-space:normal}
+.toast,.advToast{max-width:min(420px,calc(100vw - 24px));pointer-events:none}
+
+@media (hover:none) and (pointer:coarse){
+  button,a[href].button,[role="button"],summary{min-height:var(--ui-control-min)}
+  button.mini,button.icon,.nav button,.motoBottomNav button,.dashTabs button,.advBottomNav button,
+  #rideDashOverlay[data-ride-active="true"] button,.leaflet-control button,.leaflet-control a{min-height:var(--ui-control-compact)}
+  input,select,textarea{min-height:44px;font-size:16px}
+  input[type="checkbox"],input[type="radio"],input[type="range"],input[type="file"]{min-height:initial}
+}
+
+@media(max-width:780px){
+  .section,.rowtop{align-items:flex-start}
+  .section{gap:10px}
+  .section>.actions,.rowtop>.actions{justify-content:flex-start}
+  .formactions{
+    position:sticky;
+    bottom:0;
+    z-index:3;
+    margin:14px -2px -2px;
+    padding:10px 2px calc(2px + env(safe-area-inset-bottom));
+    background:linear-gradient(180deg,transparent,rgba(8,11,15,.96) 24%);
+  }
+  .formactions>button{flex:1 1 120px}
+  .modal,.rideModal,.garageModal{align-items:flex-end;padding:8px}
+  .modalCard,.rideModal>section,.garageModal>section,.dashRideQuickSettings>section,.rideXSheet>section,
+  [role="dialog"]>section,[id$="Modal"]>section,[id$="Picker"]>section{
+    width:100%;
+    border-bottom-left-radius:max(10px,env(safe-area-inset-bottom));
+    border-bottom-right-radius:max(10px,env(safe-area-inset-bottom));
+  }
+  .actions>button:not(.icon):not(.mini){min-width:min(100%,112px)}
+}
+
+@media(max-width:390px){
+  .actions,.formactions{gap:7px}
+  button{letter-spacing:min(.12em,1.2px)}
+  .section>.actions>button,.rowtop>.actions>button{flex:1 1 105px}
+}
+
+@media(prefers-reduced-motion:reduce){
+  button,a[href],[role="button"],summary,label[for]{transition-duration:1ms!important}
+}

@@ -1,11 +1,4 @@
-// Prevent the Garage DOM observer from recursively scheduling itself after the Garage has rendered.
-// The legacy Garage observer calls queueMicrotask(() => render()) for every body mutation.
-// Rendering/hiding the legacy cards creates more mutations, which can starve taps on iOS.
-const nativeQueueMicrotask = window.queueMicrotask.bind(window);
-window.queueMicrotask = callback => {
-  try {
-    const source = Function.prototype.toString.call(callback);
-    if (document.querySelector('#garageIntelligence') && /\brender\s*\(\s*\)/.test(source)) return;
-  } catch (_) {}
-  nativeQueueMicrotask(callback);
-};
+// Garage observers are now frame-throttled and scoped by their owning modules.
+// Keep this compatibility marker so older cached modules do not reinstall a global queueMicrotask shim.
+window.__motoGarageObserverGuardInstalled=true;
+window.dispatchEvent(new CustomEvent('moto-garage-observer-guard-ready'));

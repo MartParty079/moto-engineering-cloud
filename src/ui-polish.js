@@ -18,12 +18,7 @@ function loadRideExperience(){
     style.textContent=`.motoBottomNav button>svg{display:block;width:18px;height:18px;margin:0 auto 2px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.motoBottomNav button.active>svg{color:var(--accent,#f4512c)}.rideXComplianceRing{background:radial-gradient(circle,#070a0e 54%,transparent 56%),conic-gradient(var(--adaptive) 0 62%,rgba(255,255,255,.08) 62% 75%,transparent 75%)!important}@media(max-width:720px){#rideDashOverlay[data-ride-experience="v2"][data-ride-active="true"] .rideXSmartStrip{display:flex;overflow-x:auto;scrollbar-width:none;padding:3px 4px}#rideDashOverlay[data-ride-experience="v2"][data-ride-active="true"] .rideXSmartStrip::-webkit-scrollbar{display:none}#rideDashOverlay[data-ride-experience="v2"][data-ride-active="true"] .rideXSmartStrip button{flex:0 0 132px;min-height:40px}#rideDashOverlay[data-ride-experience="v2"][data-ride-active="true"] .rideXCompliance{flex-basis:155px}#rideDashOverlay[data-ride-experience="v2"][data-ride-active="false"] #rideXModeButton{display:none!important}}`;
     document.head.appendChild(style);
   }
-  if(!window.__motoRideRefreshGuard){
-    window.__motoRideRefreshGuard=true;
-    window.addEventListener('moto-ride-dash-refreshed',event=>{
-      if(event.detail?.overlay?.dataset?.rideExperience==='v2')event.stopImmediatePropagation();
-    });
-  }
+  /* Do not stop moto-ride-dash-refreshed. Later Ride OS and accessibility listeners rely on it. */
   if(!window.__motoRideExperienceLoading){
     window.__motoRideExperienceLoading=Promise.all([
       import('./adventure-integration-v2.js?v=1'),
@@ -97,7 +92,8 @@ function bottomNav(){
     bar = document.createElement('nav');
     bar.id = 'motoBottomNav';
     bar.className = 'motoBottomNav';
-    bar.innerHTML = `<button data-go="home">${navIcon.home}<span>Home</span></button><button data-go="ride">${navIcon.ride}<span>Ride</span></button><button data-go="maps">${navIcon.maps}<span>Maps</span></button><button data-go="garage">${navIcon.garage}<span>Garage</span></button><button data-go="menu">${navIcon.menu}<span>Menu</span></button>`;
+    bar.setAttribute('aria-label','Primary navigation');
+    bar.innerHTML = `<button type="button" data-go="home">${navIcon.home}<span>Home</span></button><button type="button" data-go="ride">${navIcon.ride}<span>Ride</span></button><button type="button" data-go="maps">${navIcon.maps}<span>Maps</span></button><button type="button" data-go="garage">${navIcon.garage}<span>Garage</span></button><button type="button" data-go="menu">${navIcon.menu}<span>Menu</span></button>`;
     document.body.appendChild(bar);
   }else if(!bar.querySelector('[data-go="maps"]')){
     const old=bar.querySelector('[data-go="adv"]');
@@ -107,7 +103,7 @@ function bottomNav(){
   bar.dataset.bound = '2';
   bar.onclick = event => {
     const button = event.target.closest('button');
-    if(!button) return;
+    if(!button || button.disabled) return;
     const go = button.dataset.go;
     setBottomActive(go);
     if(go === 'home') document.querySelector('[data-v="dashboard"]')?.click();
@@ -117,7 +113,11 @@ function bottomNav(){
       else $('#adventureNav')?.click();
     }
     if(go === 'garage') document.querySelector('[data-v="garage"]')?.click();
-    if(go === 'menu') $('#nav')?.classList.toggle('open');
+    if(go === 'menu'){
+      const nav=$('#nav');
+      nav?.classList.toggle('open');
+      document.querySelector('.menuButton')?.setAttribute('aria-expanded',String(Boolean(nav?.classList.contains('open'))));
+    }
   };
 }
 
@@ -126,7 +126,7 @@ function closeMenuOnChoice(){
   if(!nav || nav.dataset.polished === '1') return;
   nav.dataset.polished = '1';
   nav.addEventListener('click',event => {
-    if(event.target.closest('button') && innerWidth < 781 && !event.target.closest('#adventureNav')) setTimeout(() => nav.classList.remove('open'),80);
+    if(event.target.closest('button') && innerWidth < 781 && !event.target.closest('[data-go="menu"]')) queueMicrotask(() => nav.classList.remove('open'));
   });
 }
 

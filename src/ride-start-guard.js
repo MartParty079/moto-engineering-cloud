@@ -1,10 +1,11 @@
 // Permission-aware ride start guard. Permission decisions may gate a ride; a weak or
-// unavailable GPS fix must not. The logger can start and wait for its live watch.
+// unavailable GPS fix must not. iPhone motion sensors are temporarily disabled.
 (() => {
   if (window.__motoRideStartGuardInstalled) return;
   window.__motoRideStartGuardInstalled = true;
 
   const STORE = 'moto-startup-permissions-v1';
+  const IPHONE_MOTION_DISABLED = Boolean(window.__motoIphoneMotionDisabled) || /iphone|ipod/i.test(navigator.userAgent);
   const deadline = (promise, ms, label) => Promise.race([
     Promise.resolve(promise),
     new Promise((_, reject) => setTimeout(() => reject(new Error(`${label} timed out. Please try again.`)), ms))
@@ -16,7 +17,12 @@
   }
 
   function persist(patch){
-    const next = {...remembered(), ...patch, updatedAt:Date.now()};
+    const next = {
+      ...remembered(),
+      ...patch,
+      ...(IPHONE_MOTION_DISABLED ? {motion:'disabled',motionDisabledReason:'iphone-stability'} : {}),
+      updatedAt:Date.now()
+    };
     try { localStorage.setItem(STORE, JSON.stringify(next)); } catch {}
     window.MotoPermissions = {...(window.MotoPermissions || {}), ...next};
     window.dispatchEvent(new CustomEvent('moto-permissions-change',{
@@ -48,10 +54,8 @@
       const result = await controller.requestLocation();
       if (result === 'denied') return {permission:'denied',fix:'denied'};
       if (result === 'unsupported') return {permission:'unsupported',fix:'unsupported'};
-      // Position unavailable and timeout mean the prompt was not denied. Ride Mode can
-      // start and its watchPosition call will continue looking for a fix.
       if (result === 'unavailable') return {permission:'granted',fix:'pending'};
-      return {permission:'granted',fix:'ready'};
+      return {permission:'granted',fix:window.MotoGPS ? 'ready' : 'pending'};
     } catch (error) {
       console.warn('Location preflight failed; starting with a pending GPS fix.',error);
       return {permission:'granted',fix:'pending'};
@@ -59,6 +63,7 @@
   }
 
   async function requestMotionFallback(){
+    if (IPHONE_MOTION_DISABLED) return 'disabled';
     try {
       const requests = [];
       if (typeof window.DeviceMotionEvent?.requestPermission === 'function') requests.push(window.DeviceMotionEvent.requestPermission());
@@ -72,14 +77,15 @@
     const known = {...remembered(), ...(window.MotoPermissions || {})};
     const controller = window.MotoPermissionController;
 
-    // Start missing permission requests immediately from the motorcycle-selection tap.
-    // Do not add a short artificial timeout around an iOS permission dialog.
     const locationPromise = known.location === 'granted'
       ? Promise.resolve({permission:'granted',fix:window.MotoGPS ? 'ready' : 'pending'})
       : requestLocation(controller);
-    const motionPromise = known.motion === 'granted'
-      ? Promise.resolve('granted')
-      : (controller?.requestMotion?.() || requestMotionFallback());
+
+    const motionPromise = IPHONE_MOTION_DISABLED
+      ? Promise.resolve('disabled')
+      : known.motion === 'granted'
+        ? Promise.resolve('granted')
+        : (controller?.requestMotion?.() || requestMotionFallback());
 
     const [locationResult,motion] = await Promise.all([locationPromise,motionPromise]);
     persist({location:locationResult.permission,motion,gpsFix:locationResult.fix});
@@ -97,14 +103,17 @@
       }));
     }
 
-    if (motion === 'granted') {
-      // Motion setup is deliberately detached from ride-session startup.
+    if (!IPHONE_MOTION_DISABLED && motion === 'granted') {
+      // Motion setup is detached from ride-session startup on supported platforms.
       deadline(
         window.MotoRideTools?.enableSensors?.({requestPermission:false,autoCalibrate:true,resetMax:true,reason:'ride-start'}) || Promise.resolve(),
         4000,
         'Sensor startup'
       ).catch(error => console.warn('Ride started without motion sensors',error));
+    } else if (IPHONE_MOTION_DISABLED) {
+      try { window.MotoRideTools?.disableSensors?.(); } catch {}
     }
+
     return {location:locationResult.permission,motion,gpsFix:locationResult.fix};
   }
 
@@ -117,7 +126,7 @@
     if (toggle) {
       const busy = !['ready','failed'].includes(phase);
       toggle.disabled = busy;
-      if (busy) toggle.textContent = phase === 'permissions' ? 'CHECKING ACCESS…' : 'STARTING…';
+      if (busy) toggle.textContent = phase === 'permissions' ? 'CHECKING LOCATION…' : 'STARTING…';
     }
   }
 
@@ -126,7 +135,7 @@
     if (!ride?.start || ride.start.__motoGuarded) return false;
     const original = ride.start.bind(ride);
     const guarded = async bikeId => {
-      progress('permissions','CHECKING RIDE ACCESS');
+      progress('permissions','CHECKING RIDE LOCATION');
       try {
         await ensurePermissions();
         progress('starting','STARTING RIDE');

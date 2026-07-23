@@ -11,7 +11,8 @@
   let ride = window.MotoRide?.getState?.() || {};
   let gps = window.MotoGPS || {};
   let road = {};
-  let updateFrame = 0;
+  let updateTimer = 0;
+  let lastUpdateAt = 0;
   let wasApplied = false;
 
   function installStyles(){
@@ -69,13 +70,14 @@
         <article><small>RIDE TIME</small><strong id="recordingSafeTime">0:00</strong><span>ELAPSED</span></article>
         <article class="recordingSafeWide"><small>GPS STATUS</small><strong id="recordingSafeGps">WAITING FOR GPS</strong><span id="recordingSafeRoad">ROAD CONTEXT SEARCHING</span></article>
       </div>
-      <p class="recordingSafeNote">iPhone motion sensors and advanced animated cockpit updates are temporarily disabled. GPS ride recording and Stop & Save remain active.</p>`;
+      <p class="recordingSafeNote">GPS points are buffered on the phone while riding and uploaded only after Stop & Save. Motion sensors and advanced cockpit updates remain disabled.</p>`;
     const control = overlay.querySelector('#dashRideControl');
     (control || overlay.querySelector('.rideDash>header'))?.insertAdjacentElement('afterend',panel);
     return panel;
   }
 
   function removeHeavyRideDom(overlay){
+    if (wasApplied) return;
     overlay.querySelectorAll('.rideV3Scene,.rideV3ModeRibbon,#rideV3Hero').forEach(node => node.remove());
     const tabs = overlay.querySelector('#dashTabs');
     const pages = overlay.querySelector('#dashPages');
@@ -84,10 +86,11 @@
   }
 
   function updatePanel(){
-    updateFrame = 0;
+    updateTimer = 0;
     if (!recording) return;
     const overlay = document.querySelector('#rideDashOverlay');
     if (!overlay) return;
+    lastUpdateAt = Date.now();
     installStyles();
     overlay.dataset.recordingSafe = '1';
     document.documentElement.dataset.iphoneRecordingSafe = '1';
@@ -108,18 +111,21 @@
     const status = overlay.querySelector('#dashRideStatus');
     const bike = overlay.querySelector('#dashRideBike');
     const toggle = overlay.querySelector('#dashRideToggle');
-    if (status) status.textContent = gpsLocked ? 'RECORDING' : 'RECORDING · WAITING FOR GPS';
+    if (status) status.textContent = ride.stopping ? 'SAVING RIDE' : gpsLocked ? 'RECORDING' : 'RECORDING · WAITING FOR GPS';
     if (bike) bike.textContent = ride.bikeName || 'Motorcycle';
-    if (toggle){toggle.disabled=false;toggle.textContent='STOP & SAVE'}
+    if (toggle){toggle.disabled=Boolean(ride.stopping);toggle.textContent=ride.stopping?'SAVING…':'STOP & SAVE'}
     wasApplied = true;
   }
 
-  function scheduleUpdate(){
-    if (updateFrame) return;
-    updateFrame = requestAnimationFrame(updatePanel);
+  function scheduleUpdate(force = false){
+    if (updateTimer) return;
+    const wait = force ? 0 : Math.max(0,1000 - (Date.now() - lastUpdateAt));
+    updateTimer = setTimeout(updatePanel,wait);
   }
 
   function restoreFullDashboard(){
+    clearTimeout(updateTimer);
+    updateTimer = 0;
     delete document.documentElement.dataset.iphoneRecordingSafe;
     const overlay = document.querySelector('#rideDashOverlay');
     if (!overlay){wasApplied=false;return}
@@ -140,9 +146,9 @@
   });
   window.addEventListener('moto-gps-fix',event=>{gps={...gps,...(event.detail||{})};if(recording)scheduleUpdate()});
   window.addEventListener('moto-road-update',event=>{road=event.detail||{};if(recording)scheduleUpdate()});
-  window.addEventListener('moto-ride-dash-rendered',()=>{if(recording)scheduleUpdate()});
-  window.addEventListener('moto-ride-dash-opened',()=>{if(recording)scheduleUpdate()});
-  window.addEventListener('pagehide',()=>{if(updateFrame)cancelAnimationFrame(updateFrame)});
+  window.addEventListener('moto-ride-dash-rendered',()=>{if(recording)scheduleUpdate(true)});
+  window.addEventListener('moto-ride-dash-opened',()=>{if(recording)scheduleUpdate(true)});
+  window.addEventListener('pagehide',()=>clearTimeout(updateTimer));
 
-  if (recording) scheduleUpdate();
+  if (recording) scheduleUpdate(true);
 })();

@@ -1,4 +1,4 @@
-const VERSION='v35';
+const VERSION='v36';
 const APP_CACHE=`motocloud-app-${VERSION}`;
 const RUNTIME_CACHE=`motocloud-runtime-${VERSION}`;
 const IMAGE_CACHE=`motocloud-images-${VERSION}`;
@@ -93,6 +93,7 @@ const CORE_URLS=[
   '/src/security-admin-guard.js?v=1',
   '/src/mobile-layout-hotfix.js?v=1',
   '/src/ride-dash-visual-fix.js?v=1',
+  '/src/ride-performance-guard.js?v=1',
   '/src/app-interaction-stability.js?v=1'
 ];
 

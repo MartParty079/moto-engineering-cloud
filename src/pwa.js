@@ -1,13 +1,14 @@
 const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
 const isStandalone=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
-const PWA_BUILD='app-interaction-audit-v34';
-const ACTIVE_CACHES=['motocloud-app-v34','motocloud-runtime-v34','motocloud-images-v34'];
+const PWA_BUILD='ride-performance-guard-v36';
+const ACTIVE_CACHES=['motocloud-app-v36','motocloud-runtime-v36','motocloud-images-v36'];
 
 function loadOfflineCache(){
   if(!document.querySelector('link[data-offline-cache]')){const link=document.createElement('link');link.rel='stylesheet';link.href='/src/offline-cache.css?v=1';link.dataset.offlineCache='1';document.head.appendChild(link)}
   import('/src/offline-cache.js?v=1').catch(error=>console.error('Offline cache module failed to load',error));
 }
 loadOfflineCache();
+import('/src/ride-performance-guard.js?v=1').catch(error=>console.error('Ride performance guard failed to load',error));
 
 async function clearLegacyMotoCaches(){
   if(!('caches'in window))return;
@@ -21,11 +22,11 @@ if('serviceWorker'in navigator){
   navigator.serviceWorker.addEventListener('controllerchange',()=>window.dispatchEvent(new CustomEvent('moto-app-cache-updated')));
   window.addEventListener('load',async()=>{
     try{
-      const registration=await navigator.serviceWorker.register('/sw.js?v=34',{updateViaCache:'none'});
+      const registration=await navigator.serviceWorker.register('/sw.js?v=36',{updateViaCache:'none'});
       await registration.update();
       registration.addEventListener('updatefound',()=>{
         const worker=registration.installing;if(!worker)return;
-        worker.addEventListener('statechange',()=>{if(worker.state==='activated'){void clearLegacyMotoCaches();console.info('Moto Mission interaction audit v34 installed.');window.dispatchEvent(new CustomEvent('moto-app-cache-updated'))}})
+        worker.addEventListener('statechange',()=>{if(worker.state==='activated'){void clearLegacyMotoCaches();console.info('Moto Mission Ride performance guard v36 installed.');window.dispatchEvent(new CustomEvent('moto-app-cache-updated'))}})
       });
     }catch(error){console.error(error)}
   });

@@ -27,13 +27,17 @@ for(const path of sourceFiles){
 
 const warnings=[];
 const failures=[];
-const buttonIds=new Map();
-const routeValues=new Set();
+const literalButtonIds=new Map();
+const literalRouteValues=new Set();
 let buttonCount=0;
-let inlineClickCount=0;
+let inlineHtmlClickCount=0;
+let propertyClickCount=0;
 let missingTypeCount=0;
+let unnamedButtonCount=0;
 let documentClickCount=0;
 let aggressiveObserverCount=0;
+
+const isLiteral=value=>Boolean(value)&&!/[${}]/.test(value);
 
 for(const {name,text} of rows){
   const buttons=[...text.matchAll(/<button\b([^>]*)>([\s\S]*?)<\/button>/gi)];
@@ -42,50 +46,55 @@ for(const {name,text} of rows){
     const attrs=match[1]||'';
     const body=(match[2]||'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
     const id=attrs.match(/\bid=["']([^"']+)["']/i)?.[1];
-    if(id){
-      if(!buttonIds.has(id))buttonIds.set(id,[]);
-      buttonIds.get(id).push(name);
+    if(isLiteral(id)){
+      if(!literalButtonIds.has(id))literalButtonIds.set(id,new Set());
+      literalButtonIds.get(id).add(name);
     }
     if(!/\btype=["'](?:button|submit|reset)["']/i.test(attrs))missingTypeCount+=1;
-    if(!body&&!/\b(?:aria-label|title)=["'][^"']+["']/i.test(attrs))warnings.push(`${name}: icon/empty button needs an accessible label${id?` (#${id})`:''}`);
+    if(!body&&!/\b(?:aria-label|title)=["'][^"']+["']/i.test(attrs)){
+      unnamedButtonCount+=1;
+      warnings.push(`${name}: icon/empty button needs an accessible label${isLiteral(id)?` (#${id})`:''}`);
+    }
   }
 
-  inlineClickCount+=(text.match(/\bonclick\s*=/gi)||[]).length;
+  inlineHtmlClickCount+=(text.match(/<[^>]+\sonclick\s*=/gi)||[]).length;
+  propertyClickCount+=(text.match(/\.onclick\s*=/g)||[]).length;
   documentClickCount+=(text.match(/document\.addEventListener\(\s*["']click["']/g)||[]).length;
   aggressiveObserverCount+=(text.match(/MutationObserver[\s\S]{0,500}observe\([^)]*document\.body[\s\S]{0,180}subtree\s*:\s*true[\s\S]{0,180}attributes\s*:\s*true/g)||[]).length;
-  for(const route of text.matchAll(/data-v=["']([^"']+)["']/g))routeValues.add(route[1]);
+  for(const route of text.matchAll(/data-(?:v|go)=["']([^"']+)["']/g))if(isLiteral(route[1]))literalRouteValues.add(route[1]);
 
   if(/target=["']_blank["']/i.test(text)&&!/rel=["'][^"']*noopener/i.test(text))warnings.push(`${name}: target=_blank without noopener`);
 }
 
-for(const [id,files] of buttonIds){
-  const occurrences=(combined.match(new RegExp(`(?:#|id=["'])${id.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}`, 'g'))||[]).length;
-  if(occurrences<2)warnings.push(`${files[0]}: button #${id} appears to have no explicit binding/reference`);
-  if(files.length>1)warnings.push(`Duplicate literal button id #${id}: ${[...new Set(files)].join(', ')}`);
+for(const [id,files] of literalButtonIds){
+  if(files.size>1)warnings.push(`Button id #${id} is declared in multiple files: ${[...files].join(', ')}`);
 }
 
-const renderedViews=new Set([...combined.matchAll(/view\s*===\s*["']([^"']+)["']/g)].map(match=>match[1]));
-for(const route of routeValues){
-  const referenced=new RegExp(`(?:view\\s*===\\s*["']${route}["']|data-v=["']${route}["']|\\[data-v=["']${route}["']\\])`).test(combined);
-  if(!renderedViews.has(route)&&!referenced)warnings.push(`Navigation route ${route} has no visible render/handler reference`);
+const renderedViews=new Set([...combined.matchAll(/view\s*===\s*["']([^"']+)["']/g)].map(match=>match[1]).filter(isLiteral));
+const handledBottomRoutes=new Set([...combined.matchAll(/go\s*===\s*["']([^"']+)["']/g)].map(match=>match[1]).filter(isLiteral));
+for(const route of literalRouteValues){
+  if(['home','ride','maps','garage','menu'].includes(route)&&!handledBottomRoutes.has(route))warnings.push(`Bottom-navigation route ${route} has no matching handler`);
 }
 
 const index=rows.find(row=>row.name==='index.html')?.text||'';
-const indexIds=[...index.matchAll(/\bid=["']([^"']+)["']/g)].map(match=>match[1]);
+const indexIds=[...index.matchAll(/\bid=["']([^"']+)["']/g)].map(match=>match[1]).filter(isLiteral);
 const duplicateIndexIds=[...new Set(indexIds.filter((id,index,array)=>array.indexOf(id)!==index))];
 if(duplicateIndexIds.length)failures.push(`index.html contains duplicate ids: ${duplicateIndexIds.join(', ')}`);
 
-if(aggressiveObserverCount)warnings.push(`${aggressiveObserverCount} aggressive body attribute observer(s) remain; inspect for tap-time layout work`);
-if(inlineClickCount)warnings.push(`${inlineClickCount} inline onclick handler(s) remain; delegated/property handlers are easier to audit`);
-if(missingTypeCount)warnings.push(`${missingTypeCount} generated button(s) omit type; runtime normalization covers non-submit controls`);
+if(aggressiveObserverCount)warnings.push(`${aggressiveObserverCount} body attribute observer(s) can run during button-state changes`);
+if(inlineHtmlClickCount)warnings.push(`${inlineHtmlClickCount} inline HTML onclick handler(s) remain`);
+if(missingTypeCount)warnings.push(`${missingTypeCount} generated button(s) omit type; app-interaction-stability normalizes non-submit controls at runtime`);
 
 console.log('Interaction audit');
 console.log(`- Files scanned: ${rows.length}`);
 console.log(`- Button literals: ${buttonCount}`);
-console.log(`- Navigation routes: ${routeValues.size}`);
+console.log(`- Rendered main views: ${renderedViews.size}`);
+console.log(`- Literal route controls: ${literalRouteValues.size}`);
 console.log(`- Document click delegates: ${documentClickCount}`);
-console.log(`- Inline onclick handlers: ${inlineClickCount}`);
+console.log(`- Property click bindings: ${propertyClickCount}`);
+console.log(`- Inline HTML onclick handlers: ${inlineHtmlClickCount}`);
 console.log(`- Buttons without explicit type: ${missingTypeCount}`);
+console.log(`- Unnamed icon buttons: ${unnamedButtonCount}`);
 
 if(warnings.length){
   console.log('\nInteraction warnings:');

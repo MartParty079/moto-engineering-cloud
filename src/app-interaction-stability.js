@@ -1,4 +1,5 @@
 const INTERACTIVE_SELECTOR='button,a[href],[role="button"],summary,label[for],label:has(input[type="file"])';
+const DIALOG_SELECTOR='.modal:not(.hidden),.rideModal,.garageModal,.dashPicker,.dashRideQuickSettings,.rideXSheet,[role="dialog"],[aria-modal="true"],[id$="Modal"],[id$="Picker"]';
 const FAST_TAP_WINDOW_MS=280;
 const PRESS_FEEDBACK_MS=170;
 const MOVE_CANCEL_PX=13;
@@ -15,12 +16,7 @@ const actionableFrom=target=>isElement(target)?target.closest(INTERACTIVE_SELECT
 const isNativeInteractive=element=>element?.matches?.('button,a[href],summary,input,select,textarea');
 
 function idLabel(id=''){
-  return id
-    .replace(/([a-z0-9])([A-Z])/g,'$1 $2')
-    .replace(/[-_]+/g,' ')
-    .replace(/\b(btn|button|control|action|nav)\b/gi,' ')
-    .replace(/\s+/g,' ')
-    .trim();
+  return id.replace(/([a-z0-9])([A-Z])/g,'$1 $2').replace(/[-_]+/g,' ').replace(/\b(btn|button|control|action|nav)\b/gi,' ').replace(/\s+/g,' ').trim();
 }
 
 function inferredLabel(element){
@@ -32,8 +28,7 @@ function inferredLabel(element){
     '×':'Close','✕':'Close','✖':'Close','☰':'Open navigation','↻':'Refresh','⌕':'Search',
     '+':'Add','＋':'Add','−':'Remove','←':'Previous','→':'Next','‹':'Previous','›':'Next','⋮':'More options','⋯':'More options'
   }[text];
-  if(glyph)return glyph;
-  return idLabel(element.id)||idLabel(element.dataset.go)||idLabel(element.dataset.v)||idLabel(element.dataset.action)||'';
+  return glyph||idLabel(element.id)||idLabel(element.dataset.go)||idLabel(element.dataset.v)||idLabel(element.dataset.action)||'';
 }
 
 function isObviousNonSubmit(button){
@@ -63,15 +58,12 @@ function repairNestedInteractive(root){
   });
   root.querySelectorAll?.('[role="button"] button,[role="button"] a[href],[role="button"] [role="button"]').forEach(inner=>{
     const outer=inner.parentElement?.closest('[role="button"]');
-    if(!outer||outer===inner)return;
-    outer.dataset.uiCompositeButton='true';
-    if(inner.dataset.uiNestedInteractive==='true')delete inner.dataset.uiNestedInteractive;
-    if(inner.getAttribute('aria-hidden')==='true')inner.removeAttribute('aria-hidden');
-    if(inner.tabIndex===-1)inner.removeAttribute('tabindex');
+    if(outer&&outer!==inner)outer.dataset.uiCompositeButton='true';
   });
 }
 
 function repairDuplicateIds(root=document){
+  root.querySelectorAll?.('[data-ui-duplicate-id]').forEach(element=>delete element.dataset.uiDuplicateId);
   const grouped=new Map();
   root.querySelectorAll?.('[id]').forEach(element=>{
     if(!grouped.has(element.id))grouped.set(element.id,[]);
@@ -99,7 +91,7 @@ function syncCurrentNavigation(){
 }
 
 function syncDialogs(){
-  const dialogs=[...document.querySelectorAll('.modal:not(.hidden),[role="dialog"],[id$="Modal"],[id$="Picker"],[id$="Sheet"]')].filter(visible);
+  const dialogs=[...document.querySelectorAll(DIALOG_SELECTOR)].filter(visible);
   document.body.classList.toggle('has-ui-dialog',dialogs.length>0);
   dialogs.forEach(dialog=>{
     if(!dialog.hasAttribute('role'))dialog.setAttribute('role','dialog');
@@ -148,9 +140,7 @@ function repeatAllowed(element){
 
 function closeNavigationForRoute(element){
   const route=element.closest('[data-v],[data-go]');
-  if(!route)return;
-  const go=route.dataset.go;
-  if(go==='menu')return;
+  if(!route||route.dataset.go==='menu')return;
   const nav=document.querySelector('#nav');
   nav?.classList.remove('open');
   document.body.classList.remove('menu-open');
@@ -168,10 +158,7 @@ function onPointerDown(event){
 function onPointerMove(event){
   const state=pointerState.get(event.pointerId);
   if(!state)return;
-  if(Math.hypot(event.clientX-state.x,event.clientY-state.y)>MOVE_CANCEL_PX){
-    state.moved=true;
-    clearPressState(state.action);
-  }
+  if(Math.hypot(event.clientX-state.x,event.clientY-state.y)>MOVE_CANCEL_PX){state.moved=true;clearPressState(state.action)}
 }
 
 function onPointerEnd(event){
@@ -185,41 +172,19 @@ function onTrustedClick(event){
   if(!event.isTrusted)return;
   const action=actionableFrom(event.target);
   if(!action)return;
-
   if(action.matches(':disabled')||action.getAttribute('aria-disabled')==='true'){
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    clearPressState(action);
-    return;
+    event.preventDefault();event.stopImmediatePropagation();clearPressState(action);return;
   }
-
   const pointer=[...pointerState.values()].find(value=>value.action===action);
-  if(pointer?.moved){
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    clearPressState(action);
-    return;
-  }
-
-  const now=performance.now();
-  const previous=lastTrustedActivation.get(action)||0;
+  if(pointer?.moved){event.preventDefault();event.stopImmediatePropagation();clearPressState(action);return;}
+  const now=performance.now(),previous=lastTrustedActivation.get(action)||0;
   if(!repeatAllowed(action)&&now-previous<FAST_TAP_WINDOW_MS){
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    clearPressState(action);
-    return;
+    event.preventDefault();event.stopImmediatePropagation();clearPressState(action);return;
   }
   lastTrustedActivation.set(action,now);
-
-  const activeRoute=action.closest('#nav [data-v].active');
-  if(activeRoute){
-    closeNavigationForRoute(action);
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    clearPressState(action);
-    return;
+  if(action.closest('#nav [data-v].active')){
+    closeNavigationForRoute(action);event.preventDefault();event.stopImmediatePropagation();clearPressState(action);return;
   }
-
   closeNavigationForRoute(action);
   pressFeedback(action);
   requestAnimationFrame(syncCurrentNavigation);
@@ -231,7 +196,6 @@ function onKeyboard(event){
     if(search){event.preventDefault();search.focus();search.select?.();}
     return;
   }
-
   if(event.key==='Escape'){
     const search=document.querySelector('#searchResults');
     if(search&&!search.classList.contains('hidden')){search.classList.add('hidden');return;}
@@ -239,14 +203,11 @@ function onKeyboard(event){
     if(nav){nav.classList.remove('open');document.querySelector('.menuButton')?.setAttribute('aria-expanded','false');return;}
     const dialogs=[...document.querySelectorAll('[aria-modal="true"]')].filter(visible);
     const top=dialogs.at(-1);
-    const close=top?.querySelector('[data-close],[data-dismiss],[aria-label*="close" i],button[id*="close" i],.close');
-    close?.click();
+    top?.querySelector('[data-close],[data-dismiss],[aria-label*="close" i],button[id*="close" i],.close')?.click();
     return;
   }
-
   if((event.key==='Enter'||event.key===' ')&&event.target?.matches?.('[role="button"]')&&!isNativeInteractive(event.target)){
-    event.preventDefault();
-    event.target.click();
+    event.preventDefault();event.target.click();
   }
 }
 
@@ -266,14 +227,7 @@ function runtimeAudit(){
     const rect=element.getBoundingClientRect();
     return rect.width>0&&rect.height>0&&(rect.width<32||rect.height<32);
   });
-  return {
-    interactiveCount:interactives.length,
-    unnamedCount:unnamed.length,
-    duplicateIdCount:new Set(duplicateIds).size,
-    nestedInteractiveCount:nested.length,
-    smallTargetCount:smallTargets.length,
-    unnamed,duplicateIds:[...new Set(duplicateIds)],nested,smallTargets
-  };
+  return {interactiveCount:interactives.length,unnamedCount:unnamed.length,duplicateIdCount:new Set(duplicateIds).size,nestedInteractiveCount:nested.length,smallTargetCount:smallTargets.length,unnamed,duplicateIds:[...new Set(duplicateIds)],nested,smallTargets};
 }
 
 function install(){
@@ -284,7 +238,6 @@ function install(){
   document.addEventListener('pointercancel',onPointerEnd,{capture:true,passive:true});
   document.addEventListener('click',onTrustedClick,true);
   document.addEventListener('keydown',onKeyboard,true);
-
   observer=new MutationObserver(mutations=>{
     let removed=false;
     for(const mutation of mutations){
@@ -294,12 +247,10 @@ function install(){
     if(removed)scheduleScan(document);
   });
   observer.observe(document.body,{childList:true,subtree:true});
-
   ['moto-page-ready','moto-ride-dash-opened','moto-ride-dash-rendered','moto-route-update','moto-permissions-change'].forEach(name=>window.addEventListener(name,event=>scheduleScan(event.detail?.overlay||document)));
   window.addEventListener('pageshow',()=>{cleanupTransientState();scheduleScan(document)});
   window.addEventListener('pagehide',cleanupTransientState);
   document.addEventListener('visibilitychange',()=>{if(document.hidden)cleanupTransientState()});
-
   window.MotoUIAudit={run:runtimeAudit,rescan:()=>scan(document),cleanup:cleanupTransientState};
   window.dispatchEvent(new CustomEvent('moto-ui-stability-ready'));
 }

@@ -1,3 +1,5 @@
+import './ride-dash-visual-fix.js?v=1';
+
 const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
 const isStandalone=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
 const PWA_BUILD='recording-isolation-v41';

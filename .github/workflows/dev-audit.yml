@@ -51,4 +51,48 @@ jobs:
             interaction-audit.log
             build.log
           if-no-files-found: ignore
-          retention-days: 3
+          retention-days: 7
+
+  browser-evidence:
+    needs: audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install app dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Install Playwright browser runner
+        run: |
+          npm install --no-save --package-lock=false playwright@1.54.2
+          npx playwright install --with-deps chromium
+      - name: Build production bundle
+        run: npm run build
+      - name: Start production preview
+        shell: bash
+        run: |
+          npm run preview -- --host 127.0.0.1 > vite-preview.log 2>&1 &
+          echo $! > vite-preview.pid
+          for attempt in {1..40}; do
+            if curl --fail --silent http://127.0.0.1:4173/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat vite-preview.log
+          exit 1
+      - name: Stress recording and capture screenshot proof
+        env:
+          E2E_BASE_URL: http://127.0.0.1:4173
+        run: node scripts/e2e-proof.mjs
+      - name: Upload screenshot and diagnostic proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: moto-mission-browser-proof
+          path: |
+            test-results/proof/
+            vite-preview.log
+          if-no-files-found: error
+          retention-days: 14

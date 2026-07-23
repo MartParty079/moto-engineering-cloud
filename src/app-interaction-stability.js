@@ -1,5 +1,5 @@
 const INTERACTIVE_SELECTOR='button,a[href],[role="button"],summary,label[for],label:has(input[type="file"])';
-const FAST_TAP_WINDOW_MS=360;
+const FAST_TAP_WINDOW_MS=280;
 const PRESS_FEEDBACK_MS=170;
 const MOVE_CANCEL_PX=13;
 const pendingRoots=new Set();
@@ -54,12 +54,20 @@ function normalizeButton(button){
 }
 
 function repairNestedInteractive(root){
-  root.querySelectorAll?.('button button,button a[href],a[href] button,[role="button"] button').forEach(inner=>{
-    const outer=inner.parentElement?.closest('button,a[href],[role="button"]');
+  root.querySelectorAll?.('button button,button a[href],a[href] button,button [role="button"]').forEach(inner=>{
+    const outer=inner.parentElement?.closest('button,a[href]');
     if(!outer||outer===inner)return;
     inner.dataset.uiNestedInteractive='true';
     inner.tabIndex=-1;
     inner.setAttribute('aria-hidden','true');
+  });
+  root.querySelectorAll?.('[role="button"] button,[role="button"] a[href],[role="button"] [role="button"]').forEach(inner=>{
+    const outer=inner.parentElement?.closest('[role="button"]');
+    if(!outer||outer===inner)return;
+    outer.dataset.uiCompositeButton='true';
+    if(inner.dataset.uiNestedInteractive==='true')delete inner.dataset.uiNestedInteractive;
+    if(inner.getAttribute('aria-hidden')==='true')inner.removeAttribute('aria-hidden');
+    if(inner.tabIndex===-1)inner.removeAttribute('tabindex');
   });
 }
 
@@ -104,7 +112,7 @@ function scan(root=document){
   if(root.matches?.(INTERACTIVE_SELECTOR))normalizeButton(root);
   root.querySelectorAll(INTERACTIVE_SELECTOR).forEach(normalizeButton);
   repairNestedInteractive(root);
-  if(root===document||root===document.body||root.id==='app')repairDuplicateIds(document);
+  if(root===document||root===document.body||root.id==='app'||root.matches?.('[id]')||root.querySelector?.('[id]'))repairDuplicateIds(document);
   syncCurrentNavigation();
   syncDialogs();
 }
@@ -278,9 +286,12 @@ function install(){
   document.addEventListener('keydown',onKeyboard,true);
 
   observer=new MutationObserver(mutations=>{
+    let removed=false;
     for(const mutation of mutations){
       mutation.addedNodes.forEach(node=>{if(isElement(node))scheduleScan(node)});
+      if(mutation.removedNodes.length)removed=true;
     }
+    if(removed)scheduleScan(document);
   });
   observer.observe(document.body,{childList:true,subtree:true});
 

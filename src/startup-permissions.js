@@ -1,21 +1,28 @@
-// First-launch permission flow for GPS plus iPhone motion/orientation sensors.
-// iOS requires motion permission requests to originate from a direct user gesture.
+// First-launch permission flow for GPS plus optional motion/orientation sensors.
+// iPhone motion sensors are temporarily disabled while Ride stability is investigated.
 (() => {
   if (window.__motoStartupPermissionsInstalled) return;
   window.__motoStartupPermissionsInstalled = true;
 
   const STORAGE_KEY = 'moto-startup-permissions-v1';
-  const state = { location: 'unknown', motion: 'unknown', gpsFix: 'unknown' };
+  const IPHONE_MOTION_DISABLED = Boolean(window.__motoIphoneMotionDisabled) || /iphone|ipod/i.test(navigator.userAgent);
+  const state = { location: 'unknown', motion: IPHONE_MOTION_DISABLED ? 'disabled' : 'unknown', gpsFix: 'unknown' };
   let sensorActivationPending = false;
 
   const publish = () => {
+    if (IPHONE_MOTION_DISABLED) state.motion = 'disabled';
     window.MotoPermissions = { ...state };
     window.dispatchEvent(new CustomEvent('moto-permissions-change', { detail: { ...state } }));
   };
 
   const save = () => {
+    if (IPHONE_MOTION_DISABLED) state.motion = 'disabled';
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state, updatedAt: Date.now() }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        ...state,
+        motionDisabledReason: IPHONE_MOTION_DISABLED ? 'iphone-stability' : undefined,
+        updatedAt: Date.now()
+      }));
     } catch (_) {}
   };
 
@@ -39,12 +46,11 @@
           state.location = 'denied';
           state.gpsFix = 'denied';
         } else {
-          // TIMEOUT and POSITION_UNAVAILABLE indicate a missing fix, not a denied
-          // permission. Keep permission granted and let watchPosition continue later.
+          // TIMEOUT and POSITION_UNAVAILABLE indicate a missing fix, not denial.
           state.location = 'granted';
           state.gpsFix = 'pending';
-          window.dispatchEvent(new CustomEvent('moto-gps-waiting',{
-            detail:{reason:'permission-check',errorCode:error?.code || null}
+          window.dispatchEvent(new CustomEvent('moto-gps-waiting', {
+            detail: { reason: 'permission-check', errorCode: error?.code || null }
           }));
         }
         resolve(state.location);
@@ -54,6 +60,13 @@
   });
 
   const requestMotion = async () => {
+    if (IPHONE_MOTION_DISABLED) {
+      state.motion = 'disabled';
+      save();
+      publish();
+      return state.motion;
+    }
+
     const requests = [];
     try {
       if (typeof window.DeviceMotionEvent?.requestPermission === 'function') {
@@ -77,6 +90,11 @@
   };
 
   const activateSensors = async (reason = 'startup-permission') => {
+    if (IPHONE_MOTION_DISABLED) {
+      state.motion = 'disabled';
+      window.MotoRideTools?.disableSensors?.();
+      return { enabled: false, disabled: true, reason: 'iphone-stability' };
+    }
     if (state.motion !== 'granted' || sensorActivationPending) return;
     const tools = window.MotoRideTools;
     if (!tools?.enableSensors) {
@@ -121,6 +139,10 @@
       document.head.appendChild(style);
     }
 
+    const motionRows = IPHONE_MOTION_DISABLED
+      ? '<li><span>📱</span><span><strong>iPhone motion sensors paused</strong><br>Lean, pitch and acceleration are temporarily disabled for stability.</span></li>'
+      : '<li><span>📱</span><span><strong>Motion sensors</strong><br>Lean, pitch, acceleration and braking data.</span></li><li><span>◎</span><span><strong>Automatic calibration</strong><br>Starts after a stable straight section above 8 mph.</span></li>';
+
     const prompt = document.createElement('section');
     prompt.id = 'motoPermissionPrompt';
     prompt.setAttribute('role', 'dialog');
@@ -128,12 +150,11 @@
     prompt.setAttribute('aria-labelledby', 'motoPermissionTitle');
     prompt.innerHTML = `
       <div class="moto-permission-card">
-        <h2 id="motoPermissionTitle">Enable live ride sensors</h2>
-        <p>Grant access once when Moto Mission opens. Lean data will automatically zero itself while you ride straight.</p>
+        <h2 id="motoPermissionTitle">${IPHONE_MOTION_DISABLED ? 'Enable ride location' : 'Enable live ride sensors'}</h2>
+        <p>${IPHONE_MOTION_DISABLED ? 'Location powers speed, road context, routes and ride logging. iPhone motion sensors will not be started.' : 'Grant access once when Moto Mission opens. Lean data will automatically zero itself while you ride straight.'}</p>
         <ul>
           <li><span>📍</span><span><strong>Location</strong><br>Speed, road context, routes and heading.</span></li>
-          <li><span>📱</span><span><strong>Motion sensors</strong><br>Lean, pitch, acceleration and braking data.</span></li>
-          <li><span>◎</span><span><strong>Automatic calibration</strong><br>Starts after a stable straight section above 8 mph.</span></li>
+          ${motionRows}
         </ul>
         <div class="moto-permission-actions">
           <button type="button" data-enable>Enable ride data</button>
@@ -149,26 +170,29 @@
     enable.addEventListener('click', async () => {
       enable.disabled = true;
       skip.disabled = true;
-      status.textContent = 'Requesting location and motion access…';
+      status.textContent = IPHONE_MOTION_DISABLED ? 'Requesting location access…' : 'Requesting location and motion access…';
 
-      // Both calls begin inside this click handler so iOS accepts them.
       const locationPromise = requestLocation();
-      const motionPromise = requestMotion();
+      const motionPromise = IPHONE_MOTION_DISABLED ? Promise.resolve('disabled') : requestMotion();
       const [location, motion] = await Promise.all([locationPromise, motionPromise]);
+      state.motion = IPHONE_MOTION_DISABLED ? 'disabled' : motion;
 
       save();
       publish();
       if (motion === 'granted') await activateSensors('initial-app-open');
       const gpsText = state.gpsFix === 'pending' ? ' GPS signal will connect when available.' : '';
-      status.textContent = motion === 'granted'
-        ? `Location: ${location}. Sensors ready.${gpsText}`
-        : `Location: ${location}. Sensors: ${motion}.${gpsText}`;
+      status.textContent = IPHONE_MOTION_DISABLED
+        ? `Location: ${location}. iPhone motion sensors off.${gpsText}`
+        : motion === 'granted'
+          ? `Location: ${location}. Sensors ready.${gpsText}`
+          : `Location: ${location}. Sensors: ${motion}.${gpsText}`;
       setTimeout(removePrompt, 900);
     });
 
     skip.addEventListener('click', () => {
       if (state.location === 'unknown') state.location = 'skipped';
-      if (state.motion === 'unknown') state.motion = 'skipped';
+      if (!IPHONE_MOTION_DISABLED && state.motion === 'unknown') state.motion = 'skipped';
+      if (IPHONE_MOTION_DISABLED) state.motion = 'disabled';
       save();
       publish();
       removePrompt();
@@ -182,16 +206,19 @@
     try { remembered = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch (_) {}
 
     if (remembered?.location) state.location = remembered.location;
-    if (remembered?.motion) state.motion = remembered.motion;
+    if (!IPHONE_MOTION_DISABLED && remembered?.motion) state.motion = remembered.motion;
     if (remembered?.gpsFix) state.gpsFix = remembered.gpsFix;
+    if (IPHONE_MOTION_DISABLED) state.motion = 'disabled';
+    save();
     publish();
 
     if (state.location === 'granted') {
       requestLocation().then(() => { save(); publish(); });
     }
-    if (state.motion === 'granted') void activateSensors('remembered-permission');
+    if (!IPHONE_MOTION_DISABLED && state.motion === 'granted') void activateSensors('remembered-permission');
 
-    if (state.location !== 'granted' || state.motion !== 'granted') showPrompt();
+    const needsPrompt = state.location !== 'granted' || (!IPHONE_MOTION_DISABLED && state.motion !== 'granted');
+    if (needsPrompt) showPrompt();
   };
 
   window.MotoPermissionController = {
@@ -199,6 +226,7 @@
     requestLocation,
     requestMotion,
     activateSensors,
+    isIphoneMotionDisabled: IPHONE_MOTION_DISABLED,
     getState: () => ({ ...state })
   };
 

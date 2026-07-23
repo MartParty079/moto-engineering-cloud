@@ -1,7 +1,7 @@
 const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
 const isStandalone=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
-const PWA_BUILD='iphone-recording-safe-v39';
-const ACTIVE_CACHES=['motocloud-app-v39','motocloud-runtime-v39','motocloud-images-v39'];
+const PWA_BUILD='iphone-recording-local-buffer-v40';
+const ACTIVE_CACHES=['motocloud-app-v40','motocloud-runtime-v40','motocloud-images-v40'];
 
 function loadOfflineCache(){
   if(!document.querySelector('link[data-offline-cache]')){const link=document.createElement('link');link.rel='stylesheet';link.href='/src/offline-cache.css?v=1';link.dataset.offlineCache='1';document.head.appendChild(link)}
@@ -9,7 +9,7 @@ function loadOfflineCache(){
 }
 loadOfflineCache();
 import('/src/ride-performance-guard.js?v=1').catch(error=>console.error('Ride visual stability module failed to load',error));
-if(isIOS)import('/src/iphone-recording-safe-mode.js?v=1').catch(error=>console.error('iPhone recording safe mode failed to load',error));
+if(isIOS)import('/src/iphone-recording-safe-mode.js?v=2').catch(error=>console.error('iPhone recording safe mode failed to load',error));
 
 async function clearLegacyMotoCaches(){
   if(!('caches'in window))return;
@@ -23,11 +23,11 @@ if('serviceWorker'in navigator){
   navigator.serviceWorker.addEventListener('controllerchange',()=>window.dispatchEvent(new CustomEvent('moto-app-cache-updated')));
   window.addEventListener('load',async()=>{
     try{
-      const registration=await navigator.serviceWorker.register('/sw.js?v=39',{updateViaCache:'none'});
+      const registration=await navigator.serviceWorker.register('/sw.js?v=40',{updateViaCache:'none'});
       await registration.update();
       registration.addEventListener('updatefound',()=>{
         const worker=registration.installing;if(!worker)return;
-        worker.addEventListener('statechange',()=>{if(worker.state==='activated'){void clearLegacyMotoCaches();console.info('Moto Mission iPhone recording-safe v39 installed.');window.dispatchEvent(new CustomEvent('moto-app-cache-updated'))}})
+        worker.addEventListener('statechange',()=>{if(worker.state==='activated'){void clearLegacyMotoCaches();console.info('Moto Mission iPhone recording local-buffer v40 installed.');window.dispatchEvent(new CustomEvent('moto-app-cache-updated'))}})
       });
     }catch(error){console.error(error)}
   });

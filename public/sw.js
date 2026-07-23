@@ -1,4 +1,4 @@
-const VERSION='v38';
+const VERSION='v39';
 const APP_CACHE=`motocloud-app-${VERSION}`;
 const RUNTIME_CACHE=`motocloud-runtime-${VERSION}`;
 const IMAGE_CACHE=`motocloud-images-${VERSION}`;
@@ -53,7 +53,7 @@ const CORE_URLS=[
   '/src/cirkit-link.js',
   '/src/access-control.js?v=3',
   '/src/access-bootstrap.js?v=3',
-  '/src/pwa.js?v=38',
+  '/src/pwa.js?v=39',
   '/src/gps-shared.js?v=5',
   '/src/ios-motion-disable.js?v=1',
   '/src/startup-permissions.js?v=4',
@@ -62,6 +62,7 @@ const CORE_URLS=[
   '/src/provider-auth-fix.js?v=2',
   '/src/offline-cache.js?v=1',
   '/src/ride-safe-enhancements.js?v=13',
+  '/src/iphone-recording-safe-mode.js?v=1',
   '/src/ride-lean-bridge.js?v=2',
   '/src/garage-observer-guard.js?v=2',
   '/src/garage-health.js?v=8',
@@ -77,7 +78,7 @@ const CORE_URLS=[
   '/src/ride-dashboard-map-page.js?v=5',
   '/src/adventure-ui-tweaks.js?v=1',
   '/src/bike-editor-fix.js',
-  '/src/ride-log-bridge.js?v=3',
+  '/src/ride-log-bridge.js?v=4',
   '/src/ride-delete.js?v=1',
   '/src/motorcycle-profiles.js?v=3',
   '/src/marty-brand.js?v=2',
@@ -124,7 +125,7 @@ async function staleWhileRevalidate(request,event,cacheName=RUNTIME_CACHE){
 }
 
 async function cacheFirst(request,cacheName=IMAGE_CACHE){
-  const cache=await caches.open(cacheName),cached=await cache.match(request,{ignoreVary:true});
+  const cache=await caches.open(name=cacheName),cached=await cache.match(request,{ignoreVary:true});
   if(cached)return cached;
   const response=await fetch(request);
   if(response.ok){await cache.put(request,response.clone());await trimCache(cacheName,100)}
@@ -139,11 +140,10 @@ async function navigationResponse(request){
     return response;
   });
   const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error('navigation timeout')),2500));
-  try{
-    return await Promise.race([network,timeout]);
-  }catch{
+  try{return await Promise.race([network,timeout])}
+  catch{
     if(cached)return cached;
-    try{return await network;}catch{}
+    try{return await network}catch{}
     return new Response('<!doctype html><title>Moto Mission Offline</title><main style="font-family:system-ui;background:#07090f;color:white;min-height:100vh;padding:40px"><h1>Moto Mission</h1><p>The app shell is not cached yet. Reconnect once, open the app, then try again.</p></main>',{headers:{'content-type':'text/html'}});
   }
 }

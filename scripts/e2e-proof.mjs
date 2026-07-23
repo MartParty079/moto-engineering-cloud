@@ -165,21 +165,29 @@ try{
   await shot('09-ride-saved');
   pass('Stop & Save completes and dashboard restores');
 
+  await page.click('#dashClose');
+  await page.waitForSelector('#rideDashOverlay',{state:'detached'});
   const routeViews=['dashboard','garageMode','roadmap','engineering','pcb','firmware','garage','parts','maintenance','rides','notes','media','ai'];
+  let routeIndex=0;
   for(const view of routeViews){
+    await page.click('#menu');
+    await page.waitForFunction(()=>document.querySelector('#nav')?.classList.contains('open'));
     const selector=`#nav [data-v="${view}"]`;
     const route=page.locator(selector).first();
-    if(!await route.count()||!await route.isVisible()){
+    if(!await route.count()){
       evidence.skippedViews.push(view);
+      await page.click('#menu');
       continue;
     }
     await route.click();
-    await page.waitForTimeout(160);
+    await page.waitForFunction(()=>!document.querySelector('#nav')?.classList.contains('open'));
+    await page.waitForTimeout(180);
     const mainText=(await page.locator('#main').innerText()).trim();
     if(!mainText)throw new Error(`View ${view} rendered empty`);
     pass(`Navigation view renders: ${view}`);
+    routeIndex+=1;
+    await shot(`10-${String(routeIndex).padStart(2,'0')}-view-${view}`);
   }
-  await shot('10-app-navigation-smoke',true);
 
   await page.evaluate(()=>window.MotoRideDash.open());
   await page.waitForSelector('#rideDashOverlay',{state:'visible'});

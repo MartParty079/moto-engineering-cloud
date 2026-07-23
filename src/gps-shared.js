@@ -20,9 +20,11 @@
   let publishedEvents = 0;
   let nativeStarts = 0;
   let nativeErrors = 0;
+  let suspendedCallbacks = 0;
 
   const finite = value => value !== null && value !== undefined && Number.isFinite(Number(value)) ? Number(value) : null;
   const toRad = value => value * Math.PI / 180;
+  const recordingActive = () => Boolean(window.__motoRecordingActive || window.__motoRecordingIsolation);
 
   function distanceFeet(a,b){
     if(!a || !b) return 0;
@@ -50,7 +52,8 @@
   }
 
   function combinedOptions(){
-    const all=[...subscribers.values()].map(item=>item.options);
+    const candidates=[...subscribers.values()].filter(item=>!recordingActive()||item.recordingOwner);
+    const all=(candidates.length?candidates:[...subscribers.values()]).map(item=>item.options);
     if(!all.length) return normalizedOptions();
     return {
       enableHighAccuracy: all.some(item=>item.enableHighAccuracy),
@@ -64,7 +67,7 @@
   }
 
   function dispatchFix(detail){
-    const minInterval = window.__motoRecordingActive || window.__motoRecordingIsolation ? 1000 : 250;
+    const minInterval = recordingActive() ? 1000 : 250;
     const now = performance.now();
     if(now-lastPublishedAt < minInterval) return;
     lastPublishedAt = now;
@@ -103,9 +106,17 @@
     return position;
   }
 
+  function subscriberAllowed(subscriber){
+    if(!recordingActive()) return true;
+    if(subscriber.recordingOwner) return true;
+    suspendedCallbacks += 1;
+    return false;
+  }
+
   function fanOutPosition(position){
     const remembered=remember(position);
     for(const subscriber of subscribers.values()){
+      if(!subscriberAllowed(subscriber))continue;
       try{subscriber.success?.(remembered)}catch(error){console.error('GPS subscriber failed',error)}
     }
   }
@@ -113,6 +124,7 @@
   function fanOutError(error){
     nativeErrors += 1;
     for(const subscriber of subscribers.values()){
+      if(!subscriberAllowed(subscriber))continue;
       try{subscriber.error?.(error)}catch(callbackError){console.error('GPS error subscriber failed',callbackError)}
     }
   }
@@ -136,12 +148,13 @@
 
   function wrappedWatch(success,error,options={}){
     const id=++virtualId;
-    subscribers.set(id,{success,error,options:normalizedOptions(options)});
+    const recordingOwner=Boolean(window.__motoRecordingActive);
+    subscribers.set(id,{success,error,options:normalizedOptions(options),recordingOwner,createdAt:Date.now()});
     ensureNative();
     if(latestPosition){
       const age=Date.now()-Number(latestPosition.timestamp||0);
       const allowed=subscribers.get(id)?.options.maximumAge??0;
-      if(age<=allowed) queueMicrotask(()=>{if(subscribers.has(id))success?.(latestPosition)});
+      if(age<=allowed) queueMicrotask(()=>{const subscriber=subscribers.get(id);if(subscriber&&subscriberAllowed(subscriber))success?.(latestPosition)});
     }
     return id;
   }
@@ -179,13 +192,19 @@
       nativeWatchActive:nativeWatchId!==null,
       nativeWatchStarts:nativeStarts,
       virtualSubscribers:subscribers.size,
+      activeSubscribers:[...subscribers.values()].filter(subscriber=>subscriberAllowed(subscriber)).length,
+      recorderSubscribers:[...subscribers.values()].filter(subscriber=>subscriber.recordingOwner).length,
       nativeCallbacks,
       publishedEvents,
       nativeErrors,
-      recording:Boolean(window.__motoRecordingActive||window.__motoRecordingIsolation)
+      suspendedCallbacks,
+      recording:recordingActive()
     }),
+    refresh:ensureNative,
     stop:()=>{subscribers.clear();stopNative()}
   };
+
+  window.addEventListener('moto-recording-isolation-change',ensureNative);
 
   try{
     Object.defineProperty(geo,'watchPosition',{configurable:true,value:wrappedWatch});

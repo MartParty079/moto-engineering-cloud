@@ -64,7 +64,7 @@ jobs:
   browser-evidence:
     needs: audit
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -73,10 +73,10 @@ jobs:
           cache: npm
       - name: Install app dependencies
         run: npm ci --no-audit --no-fund
-      - name: Install Playwright browser runner
+      - name: Install Playwright browser runners
         run: |
           npm install --no-save --package-lock=false playwright@1.54.2
-          npx playwright install --with-deps chromium
+          npx playwright install --with-deps chromium webkit
       - name: Build production bundle
         run: npm run build
       - name: Start production preview
@@ -90,9 +90,15 @@ jobs:
           done
           cat vite-preview.log
           exit 1
-      - name: Stress recording and capture screenshot proof
+      - name: Stress recording and capture Chromium proof
         env:
           E2E_BASE_URL: http://127.0.0.1:4173
+          E2E_BROWSER: chromium
+        run: node scripts/e2e-proof.mjs
+      - name: Stress recording and capture WebKit proof
+        env:
+          E2E_BASE_URL: http://127.0.0.1:4173
+          E2E_BROWSER: webkit
         run: node scripts/e2e-proof.mjs
       - name: Upload screenshot and diagnostic proof
         if: always()

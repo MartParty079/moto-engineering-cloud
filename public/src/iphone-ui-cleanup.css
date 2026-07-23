@@ -39,6 +39,7 @@ html[data-iphone-motion="disabled"] #rideDashOverlay .widget-lean [data-lean-cal
   display:none!important;
 }
 
+html[data-iphone-motion="disabled"] #rideDashOverlay .widget-lean::after,
 html[data-iphone-motion="disabled"] #rideDashOverlay .widget-lean .dashValue::before,
 html[data-iphone-motion="disabled"] #rideDashOverlay .widget-lean .dashLeanGauge::before,
 html[data-iphone-motion="disabled"] #rideDashOverlay .widget-lean .dashLeanGauge::after{

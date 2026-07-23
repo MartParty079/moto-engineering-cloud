@@ -125,7 +125,7 @@ async function staleWhileRevalidate(request,event,cacheName=RUNTIME_CACHE){
 }
 
 async function cacheFirst(request,cacheName=IMAGE_CACHE){
-  const cache=await caches.open(name=cacheName),cached=await cache.match(request,{ignoreVary:true});
+  const cache=await caches.open(cacheName),cached=await cache.match(request,{ignoreVary:true});
   if(cached)return cached;
   const response=await fetch(request);
   if(response.ok){await cache.put(request,response.clone());await trimCache(cacheName,100)}

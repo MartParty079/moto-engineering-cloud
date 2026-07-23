@@ -31,6 +31,11 @@ jobs:
         run: |
           set -o pipefail
           npm run check:syntax 2>&1 | tee audit.log
+      - name: Audit buttons, routes, and interaction wiring
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run check:interactions 2>&1 | tee interaction-audit.log
       - name: Build production bundle
         shell: bash
         run: |
@@ -43,6 +48,7 @@ jobs:
           name: dev-audit-output
           path: |
             audit.log
+            interaction-audit.log
             build.log
           if-no-files-found: ignore
           retention-days: 3

@@ -9,6 +9,7 @@ function loadOfflineCache(){
 }
 loadOfflineCache();
 import('/src/ride-performance-guard.js?v=1').catch(error=>console.error('Ride visual stability module failed to load',error));
+if(isIOS)import('/src/iphone-recording-safe-mode.js?v=1').catch(error=>console.error('iPhone recording safe mode failed to load',error));
 
 async function clearLegacyMotoCaches(){
   if(!('caches'in window))return;

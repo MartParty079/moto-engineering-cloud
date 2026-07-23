@@ -59,8 +59,11 @@ button span,button strong,button small{overflow-wrap:break-word}
 .actions>button,.formactions>button{flex:0 1 auto}
 input,select,textarea{max-width:100%;min-width:0}
 
-.modal,[role="dialog"],[id$="Modal"],[id$="Picker"],[id$="Sheet"]{overscroll-behavior:contain}
-.modalCard,[role="dialog"]>section,[id$="Modal"]>section,[id$="Picker"]>section,[id$="Sheet"]>section{
+.modal,.rideModal,.garageModal,.dashRideQuickSettings,.rideXSheet,[role="dialog"],[aria-modal="true"],[id$="Modal"],[id$="Picker"]{
+  overscroll-behavior:contain;
+}
+.modalCard,.rideModal>section,.garageModal>section,.dashRideQuickSettings>section,.rideXSheet>section,
+[role="dialog"]>section,[id$="Modal"]>section,[id$="Picker"]>section{
   max-width:min(100%,720px);
   max-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 20px);
   overflow:auto;
@@ -100,8 +103,9 @@ body.has-ui-dialog{overscroll-behavior:none}
     background:linear-gradient(180deg,transparent,rgba(8,11,15,.96) 24%);
   }
   .formactions>button{flex:1 1 120px}
-  .modal{align-items:flex-end;padding:8px}
-  .modalCard,[role="dialog"]>section,[id$="Modal"]>section,[id$="Picker"]>section,[id$="Sheet"]>section{
+  .modal,.rideModal,.garageModal{align-items:flex-end;padding:8px}
+  .modalCard,.rideModal>section,.garageModal>section,.dashRideQuickSettings>section,.rideXSheet>section,
+  [role="dialog"]>section,[id$="Modal"]>section,[id$="Picker"]>section{
     width:100%;
     border-bottom-left-radius:max(10px,env(safe-area-inset-bottom));
     border-bottom-right-radius:max(10px,env(safe-area-inset-bottom));

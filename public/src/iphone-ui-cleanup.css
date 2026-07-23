@@ -27,13 +27,23 @@
   isolation:isolate;
 }
 
-html[data-iphone-motion="disabled"] #rideDashOverlay .widget-lean .dashValue > *,
-html[data-iphone-motion="disabled"] #rideDashOverlay .widget-maxLean .dashValue > *,
-html[data-iphone-motion="disabled"] #rideDashOverlay .widget-cornerSpeed .dashValue > *,
-html[data-iphone-motion="disabled"] #rideDashOverlay .widget-accel .dashValue > *,
+html[data-iphone-motion="disabled"] #rideDashOverlay .widget-lean .dashValue *,
+html[data-iphone-motion="disabled"] #rideDashOverlay .widget-maxLean .dashValue *,
+html[data-iphone-motion="disabled"] #rideDashOverlay .widget-cornerSpeed .dashValue *,
+html[data-iphone-motion="disabled"] #rideDashOverlay .widget-accel .dashValue *,
 html[data-iphone-motion="disabled"] #rideDashOverlay .widget-lean .leanCalibrationStatus,
+html[data-iphone-motion="disabled"] #rideDashOverlay .widget-lean .leanCalibrationHint,
+html[data-iphone-motion="disabled"] #rideDashOverlay .widget-lean .leanPermissionHint,
+html[data-iphone-motion="disabled"] #rideDashOverlay .widget-lean .dashLeanHint,
 html[data-iphone-motion="disabled"] #rideDashOverlay .widget-lean [data-lean-calibration-status]{
   display:none!important;
+}
+
+html[data-iphone-motion="disabled"] #rideDashOverlay .widget-lean .dashValue::before,
+html[data-iphone-motion="disabled"] #rideDashOverlay .widget-lean .dashLeanGauge::before,
+html[data-iphone-motion="disabled"] #rideDashOverlay .widget-lean .dashLeanGauge::after{
+  display:none!important;
+  content:none!important;
 }
 
 #motoRecordingIsolation #recTime{

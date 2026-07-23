@@ -4,12 +4,16 @@ let sequence=10;
 
 const user={id:'e2e-user',email:'test@moto-mission.local'};
 const session={user,access_token:'e2e-token'};
+const featureKeys=['dashboard','garage_mode','motorcycles','maintenance','ride_log','parts','work_packages','engineering','pcb','firmware','notebook','project_files','ai_assistant'];
 const database=new Map(Object.entries({
   bikes:[{id:'bike-test-1',user_id:user.id,year:2022,make:'Honda',model:'CRF450RL',name:'2022 Honda CRF450RL',odometer:4125,gps_odometer_miles:0,rides_since_odometer_confirm:0,tank_capacity_gallons:2,created_at:now()}],
   tasks:[{id:'task-1',user_id:user.id,title:'Validate GPS recorder',source_id:'R002',stage:'2 - Ride Testing',status:'Testing',sort_order:1,created_at:now()}],
   parts:[{id:'part-1',user_id:user.id,part:'ESP32-S3 DevKit',category:'Electronics',quantity:1,created_at:now()}],
   notes:[{id:'note-1',user_id:user.id,title:'E2E test workspace',body:'Local browser evidence mode',created_at:now()}],
   maintenance:[{id:'maint-1',user_id:user.id,service:'Oil change',bike_id:'bike-test-1',created_at:now()}],
+  user_profiles:[{id:'profile-1',user_id:user.id,display_name:'Moto Mission Test',role:'owner',created_at:now()}],
+  feature_flags:featureKeys.map((feature_key,index)=>({id:`flag-${index+1}`,feature_key,name:feature_key.replaceAll('_',' '),area:index<5?'garage':'engineering',enabled:true,release_stage:'production',minimum_role:'rider',sort_order:index,created_at:now()})),
+  user_feature_access:[],user_activity_events:[],
   rides:[],ride_sessions:[],ride_samples:[],firmware:[],engineering_items:[],task_media:[],task_attachments:[],task_dependencies:[],ai_messages:[],ai_change_proposals:[],pcb_projects:[],pcb_components:[],pcb_pins:[],pcb_connectors:[],pcb_revisions:[],fuel_entries:[],adventure_routes:[],ride_notes:[],road_condition_tags:[]
 }));
 
@@ -75,7 +79,7 @@ export function createMockSupabase(){
   return{
     auth,storage,
     from:table=>new Query(table),
-    rpc:async()=>({data:null,error:null}),
+    rpc:async()=>({data:[],error:null}),
     __database:database,
     __reset(){for(const [key,value] of database)database.set(key,value.filter(row=>!String(row.id||'').includes('ride_sessions-')&&!String(row.id||'').includes('ride_samples-')))}
   };

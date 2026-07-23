@@ -1,4 +1,4 @@
-const VERSION='v33';
+const VERSION='v34';
 const APP_CACHE=`motocloud-app-${VERSION}`;
 const RUNTIME_CACHE=`motocloud-runtime-${VERSION}`;
 const IMAGE_CACHE=`motocloud-images-${VERSION}`;
@@ -45,6 +45,7 @@ const CORE_URLS=[
   '/src/mobile-layout-hotfix.css?v=1',
   '/src/ride-dash-live-hotfix.css?v=1',
   '/src/ride-dash-visual-fix.css?v=1',
+  '/src/app-interaction-stability.css?v=1',
   '/src/adaptive-layout.js?v=1',
   '/src/road-provider-default.js?v=1',
   '/src/main.js',
@@ -52,7 +53,7 @@ const CORE_URLS=[
   '/src/cirkit-link.js',
   '/src/access-control.js?v=3',
   '/src/access-bootstrap.js?v=3',
-  '/src/pwa.js?v=33',
+  '/src/pwa.js?v=34',
   '/src/gps-shared.js?v=5',
   '/src/startup-permissions.js?v=3',
   '/src/ride-center.js?v=22',
@@ -61,7 +62,7 @@ const CORE_URLS=[
   '/src/offline-cache.js?v=1',
   '/src/ride-safe-enhancements.js?v=13',
   '/src/ride-lean-bridge.js?v=2',
-  '/src/garage-observer-guard.js?v=1',
+  '/src/garage-observer-guard.js?v=2',
   '/src/garage-health.js?v=8',
   '/src/garage-compact.js?v=4',
   '/src/adventure-mode.js?v=10',
@@ -79,18 +80,19 @@ const CORE_URLS=[
   '/src/ride-delete.js?v=1',
   '/src/motorcycle-profiles.js?v=3',
   '/src/marty-brand.js?v=2',
-  '/src/ui-polish.js?v=3',
+  '/src/ui-polish.js?v=4',
   '/src/ride-experience-safety.js?v=1',
   '/src/ride-os-v3.js?v=1',
   '/src/ride-os-v3-page.js?v=2',
   '/src/provider-dashboard.js?v=1',
-  '/src/ui-system-v2.js?v=2',
-  '/src/mobile-workflow-fixes.js?v=6',
+  '/src/ui-system-v2.js?v=3',
+  '/src/mobile-workflow-fixes.js?v=7',
   '/src/garage-center.js?v=2',
   '/src/security-center.js?v=1',
   '/src/security-admin-guard.js?v=1',
   '/src/mobile-layout-hotfix.js?v=1',
-  '/src/ride-dash-visual-fix.js?v=1'
+  '/src/ride-dash-visual-fix.js?v=1',
+  '/src/app-interaction-stability.js?v=1'
 ];
 
 async function cacheCore(){

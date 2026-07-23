@@ -120,8 +120,8 @@ function syncRideStatus(overlay){
   const targetStatus=target.querySelector('[data-ride-os-status-label]');
   const targetBike=target.querySelector('[data-ride-os-status-bike]');
   const targetDot=target.querySelector('.rideV3DedicatedDot');
-  if(targetStatus&&sourceStatus)targetStatus.textContent=sourceStatus.textContent;
-  if(targetBike&&sourceBike)targetBike.textContent=sourceBike.textContent;
+  if(targetStatus&&sourceStatus&&targetStatus.textContent!==sourceStatus.textContent)targetStatus.textContent=sourceStatus.textContent;
+  if(targetBike&&sourceBike&&targetBike.textContent!==sourceBike.textContent)targetBike.textContent=sourceBike.textContent;
   target.classList.toggle('recording',source.classList.contains('recording'));
   target.classList.toggle('starting',source.classList.contains('starting'));
   targetDot?.classList.toggle('live',Boolean(sourceDot?.classList.contains('live')));
@@ -297,7 +297,6 @@ function observeOverlay(overlay){
 
 window.addEventListener('moto-ride-dash-rendered',event=>scheduleRideOsPage(event.detail?.overlay,{select:rideIsActive(event.detail?.overlay)}));
 window.addEventListener('moto-ride-dash-opened',event=>scheduleRideOsPage(event.detail?.overlay,{select:true}));
-window.addEventListener('moto-ride-v3-mode',()=>scheduleRideOsPage(document.querySelector(RIDE_DASH_SELECTOR),{select:true}));
 window.addEventListener('moto-ride-dash-refreshed',event=>{
   const overlay=event.detail?.overlay||document.querySelector(RIDE_DASH_SELECTOR);
   syncRideStatus(overlay);

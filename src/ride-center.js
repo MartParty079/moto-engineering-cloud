@@ -8,6 +8,9 @@ const timeout = (promise, ms, label) => Promise.race([
   new Promise((_, reject) => setTimeout(() => reject(new Error(`${label} timed out.`)), ms))
 ]);
 
+const SAMPLE_INTERVAL_MS = 1000;
+const SAMPLE_CHUNK_SIZE = 200;
+
 let session = null;
 let bikes = [];
 let rides = [];
@@ -15,15 +18,15 @@ let active = null;
 let starting = false;
 let watchId = null;
 let timerId = null;
-let flushTimerId = null;
 let lastPos = null;
+let lastSampleAt = 0;
 let gpsError = '';
 let distanceMi = 0;
 let maxSpeed = 0;
 let speedSum = 0;
 let speedCount = 0;
 let samples = [];
-let flushing = false;
+let stopping = false;
 
 function bikeName(bike){
   return [bike?.year,bike?.make,bike?.model].filter(Boolean).join(' ') || bike?.name || 'Motorcycle';
@@ -44,6 +47,7 @@ function rideState(){
   return {
     active:Boolean(active),
     starting,
+    stopping,
     bikeId:active?.bike?.id || null,
     bikeName:active?.bike_name || null,
     sessionId:active?.id || null,
@@ -59,7 +63,8 @@ function rideState(){
     latitude:point.latitude ?? null,
     longitude:point.longitude ?? null,
     gpsLocked:Boolean(active?.latest),
-    gpsError:gpsError || null
+    gpsError:gpsError || null,
+    bufferedSamples:samples.length
   };
 }
 
@@ -119,9 +124,8 @@ function cleanupRuntime(){
     watchId = null;
   }
   clearInterval(timerId);
-  clearInterval(flushTimerId);
   timerId = null;
-  flushTimerId = null;
+  window.__motoRecordingActive = false;
 }
 
 async function beginRide(bikeId){
@@ -161,15 +165,18 @@ async function beginRide(bikeId){
     speedSum = 0;
     speedCount = 0;
     lastPos = null;
+    lastSampleAt = 0;
     samples = [];
+    window.__motoRecordingActive = true;
 
     watchId = navigator.geolocation.watchPosition(onPosition,onGpsError,{
       enableHighAccuracy:true,
-      maximumAge:1500,
+      maximumAge:2000,
       timeout:20000
     });
+
+    // One deterministic UI/state update per second. GPS callbacks never publish directly.
     timerId = setInterval(publish,1000);
-    flushTimerId = setInterval(() => void flushSamples(),10000);
     publish();
     return rideState();
   }catch(error){
@@ -186,7 +193,6 @@ async function beginRide(bikeId){
 
 function onGpsError(error){
   gpsError = error?.message || 'GPS signal unavailable.';
-  publish();
 }
 
 function onPosition(position){
@@ -217,10 +223,15 @@ function onPosition(position){
     timestamp:position.timestamp
   };
 
+  const timestamp = Number(position.timestamp || Date.now());
+  if(timestamp - lastSampleAt < SAMPLE_INTERVAL_MS) return;
+  lastSampleAt = timestamp;
+
+  // Keep samples in memory while recording. No network/database work occurs here.
   samples.push({
     session_id:active.id,
     user_id:session.user.id,
-    recorded_at:new Date(position.timestamp || Date.now()).toISOString(),
+    recorded_at:new Date(timestamp).toISOString(),
     latitude:coordinates.latitude,
     longitude:coordinates.longitude,
     altitude_m:coordinates.altitude ?? null,
@@ -228,70 +239,84 @@ function onPosition(position){
     speed_mps:Number.isFinite(coordinates.speed) ? coordinates.speed : null,
     heading_deg:coordinates.heading ?? null
   });
-  if(samples.length >= 10) void flushSamples();
-  publish();
 }
 
-async function flushSamples(){
-  if(flushing || !samples.length) return;
-  flushing = true;
-  const rows = samples.splice(0);
-  try{
-    const {error} = await supabase.from('ride_samples').insert(rows);
-    if(error) throw error;
-  }catch(error){
-    console.error('Sample save failed',error);
-    samples.unshift(...rows.slice(-100));
-  }finally{
-    flushing = false;
+async function uploadBufferedSamples(rows){
+  if(!rows.length) return;
+  for(let index = 0; index < rows.length; index += SAMPLE_CHUNK_SIZE){
+    const chunk = rows.slice(index,index + SAMPLE_CHUNK_SIZE);
+    const result = await timeout(
+      supabase.from('ride_samples').insert(chunk),
+      20000,
+      'Ride sample upload'
+    );
+    if(result.error) throw result.error;
   }
 }
 
 async function stopRide(confirmFirst = false){
   if(!active) return rideState();
+  if(stopping) return rideState();
   if(confirmFirst && !confirm('Stop and save this ride?')) return rideState();
 
+  stopping = true;
+  publish();
   cleanupRuntime();
-  await flushSamples();
 
   const duration = Math.floor((Date.now() - active.startMs) / 1000);
   const average = speedCount ? speedSum / speedCount : 0;
   const point = active.latest || {};
   const finished = active;
   const bike = active.bike;
+  const buffered = samples.splice(0);
 
-  const {error:sessionError} = await supabase.from('ride_sessions').update({
-    ended_at:new Date().toISOString(),
-    duration_seconds:duration,
-    distance_miles:distanceMi,
-    max_speed_mph:maxSpeed,
-    average_speed_mph:average,
-    end_lat:point.latitude ?? null,
-    end_lng:point.longitude ?? null,
-    status:'complete',
-    updated_at:new Date().toISOString()
-  }).eq('id',active.id);
-  if(sessionError) throw sessionError;
+  try{
+    try{
+      await uploadBufferedSamples(buffered);
+    }catch(error){
+      console.error('Buffered sample upload failed',error);
+      // Preserve a bounded recovery copy without doing any work during the live ride.
+      try{
+        localStorage.setItem(`motoPendingRideSamples:${finished.id}`,JSON.stringify(buffered.slice(-3600)));
+      }catch{}
+    }
 
-  await supabase.from('bikes').update({
-    odometer:Number(bike.odometer || 0) + distanceMi,
-    gps_odometer_miles:Number(bike.gps_odometer_miles || 0) + distanceMi,
-    rides_since_odometer_confirm:Number(bike.rides_since_odometer_confirm || 0) + 1,
-    updated_at:new Date().toISOString()
-  }).eq('id',bike.id);
+    const {error:sessionError} = await supabase.from('ride_sessions').update({
+      ended_at:new Date().toISOString(),
+      duration_seconds:duration,
+      distance_miles:distanceMi,
+      max_speed_mph:maxSpeed,
+      average_speed_mph:average,
+      end_lat:point.latitude ?? null,
+      end_lng:point.longitude ?? null,
+      status:'complete',
+      updated_at:new Date().toISOString()
+    }).eq('id',finished.id);
+    if(sessionError) throw sessionError;
 
-  localStorage.removeItem('motoActiveRide');
-  active = null;
-  gpsError = '';
-  await loadData();
-  publish();
-  window.dispatchEvent(new CustomEvent('moto-ride-complete',{detail:{
-    sessionId:finished.id,
-    bikeId:bike.id,
-    distanceMiles:distanceMi,
-    durationSeconds:duration
-  }}));
-  return rideState();
+    await supabase.from('bikes').update({
+      odometer:Number(bike.odometer || 0) + distanceMi,
+      gps_odometer_miles:Number(bike.gps_odometer_miles || 0) + distanceMi,
+      rides_since_odometer_confirm:Number(bike.rides_since_odometer_confirm || 0) + 1,
+      updated_at:new Date().toISOString()
+    }).eq('id',bike.id);
+
+    localStorage.removeItem('motoActiveRide');
+    active = null;
+    gpsError = '';
+    await loadData();
+    publish();
+    window.dispatchEvent(new CustomEvent('moto-ride-complete',{detail:{
+      sessionId:finished.id,
+      bikeId:bike.id,
+      distanceMiles:distanceMi,
+      durationSeconds:duration
+    }}));
+    return rideState();
+  }finally{
+    stopping = false;
+    publish();
+  }
 }
 
 function openUnifiedRide(){
@@ -313,4 +338,5 @@ window.MotoRide = {
 };
 
 supabase.auth.onAuthStateChange(() => setTimeout(loadData,0));
+window.addEventListener('pagehide',cleanupRuntime);
 loadData();

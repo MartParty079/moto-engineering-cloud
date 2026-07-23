@@ -9,6 +9,9 @@ if (geo && !window.__motoGpsBrokerInstalled) {
   const originalCurrent = geo.getCurrentPosition.bind(geo);
   const watchers = new Map();
   let previousFix = null;
+  let lastPublishedAt = 0;
+  let pendingDetail = null;
+  let pendingTimer = 0;
 
   const bearingBetween = (a, b) => {
     if (!a || !b) return null;
@@ -56,6 +59,30 @@ if (geo && !window.__motoGpsBrokerInstalled) {
     if (heading && Number.isFinite(detail.heading)) heading.textContent = `${Math.round(detail.heading)}°`;
   };
 
+  const publishDetail = detail => {
+    pendingDetail = null;
+    lastPublishedAt = Date.now();
+    updateDiagnostics(detail);
+    window.dispatchEvent(new CustomEvent('moto-gps-fix', { detail }));
+  };
+
+  const scheduleDetail = detail => {
+    const minimumInterval = window.__motoRecordingActive ? 1000 : 150;
+    const elapsed = Date.now() - lastPublishedAt;
+    if (elapsed >= minimumInterval) {
+      clearTimeout(pendingTimer);
+      pendingTimer = 0;
+      publishDetail(detail);
+      return;
+    }
+    pendingDetail = detail;
+    if (pendingTimer) return;
+    pendingTimer = setTimeout(() => {
+      pendingTimer = 0;
+      if (pendingDetail) publishDetail(pendingDetail);
+    }, Math.max(0, minimumInterval - elapsed));
+  };
+
   const remember = position => {
     if (!position?.coords) return position;
     window.__motoLatestPosition = position;
@@ -85,8 +112,7 @@ if (geo && !window.__motoGpsBrokerInstalled) {
     };
     window.MotoGPS = detail;
     window.__motoLatestGpsFix = detail;
-    updateDiagnostics(detail);
-    window.dispatchEvent(new CustomEvent('moto-gps-fix', { detail }));
+    scheduleDetail(detail);
     return position;
   };
 
@@ -132,10 +158,10 @@ if (geo && !window.__motoGpsBrokerInstalled) {
   }
 
   setInterval(() => {
-    const age = window.MotoGPS?.timestamp ? Math.max(0, Math.round((Date.now() - window.MotoGPS.timestamp) / 1000)) : null;
     const element = document.getElementById('rideFixAge');
-    if (element) element.textContent = age === null ? '--' : `${age} sec`;
-    ensureDiagnostics();
+    if (!element) return;
+    const age = window.MotoGPS?.timestamp ? Math.max(0, Math.round((Date.now() - window.MotoGPS.timestamp) / 1000)) : null;
+    element.textContent = age === null ? '--' : `${age} sec`;
   }, 1000);
 
   originalCurrent(remember, () => {}, { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 });

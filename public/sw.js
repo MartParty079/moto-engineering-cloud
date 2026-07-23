@@ -1,4 +1,4 @@
-const VERSION='v39';
+const VERSION='v40';
 const APP_CACHE=`motocloud-app-${VERSION}`;
 const RUNTIME_CACHE=`motocloud-runtime-${VERSION}`;
 const IMAGE_CACHE=`motocloud-images-${VERSION}`;
@@ -62,7 +62,7 @@ const CORE_URLS=[
   '/src/provider-auth-fix.js?v=2',
   '/src/offline-cache.js?v=1',
   '/src/ride-safe-enhancements.js?v=13',
-  '/src/iphone-recording-safe-mode.js?v=1',
+  '/src/iphone-recording-safe-mode.js?v=2',
   '/src/ride-lean-bridge.js?v=2',
   '/src/garage-observer-guard.js?v=2',
   '/src/garage-health.js?v=8',

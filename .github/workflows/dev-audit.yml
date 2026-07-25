@@ -95,11 +95,21 @@ jobs:
           E2E_BASE_URL: http://127.0.0.1:4173
           E2E_BROWSER: chromium
         run: node scripts/e2e-proof.mjs
+      - name: Verify Chromium recorder scrolling
+        env:
+          E2E_BASE_URL: http://127.0.0.1:4173
+          E2E_BROWSER: chromium
+        run: node scripts/e2e-recorder-scroll.mjs
       - name: Stress recording and capture WebKit proof
         env:
           E2E_BASE_URL: http://127.0.0.1:4173
           E2E_BROWSER: webkit
         run: node scripts/e2e-proof.mjs
+      - name: Verify WebKit recorder scrolling
+        env:
+          E2E_BASE_URL: http://127.0.0.1:4173
+          E2E_BROWSER: webkit
+        run: node scripts/e2e-recorder-scroll.mjs
       - name: Upload screenshot and diagnostic proof
         if: always()
         uses: actions/upload-artifact@v4

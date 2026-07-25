@@ -1,0 +1,18 @@
+#motoRecordingIsolation .recShell{padding-bottom:92px}
+#motoRecordingIsolation .recActions{
+  position:fixed!important;
+  z-index:2147483005!important;
+  left:50%!important;
+  right:auto!important;
+  bottom:max(10px,env(safe-area-inset-bottom))!important;
+  width:min(calc(100% - 28px),720px)!important;
+  transform:translateX(-50%)!important;
+  padding:8px!important;
+  border:1px solid rgba(45,212,191,.24)!important;
+  border-radius:18px!important;
+  background:rgba(5,7,11,.96)!important;
+  box-shadow:0 -10px 30px rgba(0,0,0,.42)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+#motoRecordingIsolation .recActions button{touch-action:manipulation}

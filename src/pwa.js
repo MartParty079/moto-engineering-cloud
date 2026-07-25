@@ -1,4 +1,5 @@
 import './ride-dash-visual-fix.js?v=1';
+import './recorder-scroll-v43.css';
 
 const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
 const isStandalone=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;

@@ -1,0 +1,37 @@
+import { chromium, webkit } from 'playwright';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+
+const baseURL=process.env.E2E_BASE_URL||'http://127.0.0.1:4173';
+const engine=String(process.env.E2E_BROWSER||'webkit').toLowerCase();
+const browser=await (engine==='webkit'?webkit:chromium).launch({headless:true});
+const context=await browser.newContext({viewport:{width:430,height:932},isMobile:true,hasTouch:true,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1'});
+await context.addInitScript(()=>{
+  const position={coords:{latitude:30.2672,longitude:-97.7431,altitude:160,accuracy:6,altitudeAccuracy:4,heading:45,speed:12},timestamp:Date.now()};
+  Object.defineProperty(navigator,'geolocation',{configurable:true,value:{watchPosition(success){queueMicrotask(()=>success(position));return 1},clearWatch(){},getCurrentPosition(success){queueMicrotask(()=>success(position))}}});
+  localStorage.setItem('moto-startup-permissions-v1',JSON.stringify({location:'granted',motion:'disabled'}));
+  localStorage.setItem('motocloud-install-seen','1');
+});
+const page=await context.newPage();
+await page.goto(`${baseURL}/?e2e=1&forceRecordingIsolation=1`,{waitUntil:'networkidle'});
+await page.waitForFunction(()=>Boolean(window.MotoRide&&window.MotoRideDash));
+await page.evaluate(()=>window.MotoRideDash.open());
+await page.click('#dashRideToggle');
+await page.waitForSelector('#dashRidePicker',{state:'visible'});
+await page.locator('#dashRidePicker [data-bike-id]').first().click();
+await page.waitForSelector('#motoRecordingIsolation',{state:'visible'});
+await page.waitForSelector('#recFeaturePanel',{state:'visible'});
+const before=await page.evaluate(()=>{const el=document.querySelector('#motoRecordingIsolation');return {top:el.scrollTop,height:el.clientHeight,scrollHeight:el.scrollHeight,touch:getComputedStyle(el).touchAction,overflow:getComputedStyle(el).overflowY}});
+if(before.scrollHeight<=before.height)throw new Error(`Recorder does not overflow: ${JSON.stringify(before)}`);
+await page.evaluate(()=>{const el=document.querySelector('#motoRecordingIsolation');el.scrollTo({top:Math.min(900,el.scrollHeight-el.clientHeight),behavior:'instant'})});
+await page.waitForTimeout(250);
+const after=await page.evaluate(()=>document.querySelector('#motoRecordingIsolation').scrollTop);
+if(after<100)throw new Error(`Recorder failed to scroll; scrollTop=${after}`);
+await page.click('[data-rec-mode="enduro"]');
+if(!await page.locator('[data-rec-mode="enduro"]').evaluate(node=>node.classList.contains('active')))throw new Error('Mode control did not change while scrolled');
+await page.locator('#recStop').click();
+await page.waitForSelector('#motoRecordingIsolation',{state:'detached',timeout:15000});
+const out=path.resolve('test-results/proof',engine);await fs.mkdir(out,{recursive:true});
+await fs.writeFile(path.join(out,'scroll-proof.json'),JSON.stringify({engine,before,after,modeChanged:true,stopSaveReachable:true},null,2));
+console.log(`${engine} recorder scroll proof passed: ${after}px`);
+await browser.close();

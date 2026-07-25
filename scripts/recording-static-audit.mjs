@@ -10,17 +10,20 @@ const index=read('index.html');
 const rideCenter=read('src/ride-center.js');
 const gps=read('src/gps-shared.js');
 const isolation=read('src/recording-isolation.js');
+const features=read('src/recorder-features-v42.js');
 const pwa=read('src/pwa.js');
 const worker=read('public/sw.js');
 
 const order={
   gps:index.indexOf('/src/gps-shared.js?v=6'),
+  features:index.indexOf('/src/recorder-features-v42.js?v=1'),
   isolation:index.indexOf('/src/recording-isolation.js?v=1'),
   rideCenter:index.indexOf('/src/ride-center.js?v=23'),
   enhancements:index.indexOf('/src/ride-safe-enhancements.js'),
   dashboard:index.indexOf('/src/ride-dashboard.js')
 };
 add('GPS broker loads before recording isolation',order.gps>=0&&order.gps<order.isolation,JSON.stringify(order));
+add('Recorder feature layer loads before isolation',order.features>order.gps&&order.features<order.isolation,JSON.stringify(order));
 add('Recording isolation loads before Ride Center',order.isolation>=0&&order.isolation<order.rideCenter,JSON.stringify(order));
 add('Recording isolation loads before enhancements and dashboard',order.isolation<order.enhancements&&order.isolation<order.dashboard,JSON.stringify(order));
 
@@ -41,10 +44,16 @@ add('Isolation consumes GPS event fan-out',/moto-gps-fix/.test(isolation)&&/even
 add('Isolation blocks weather, tools, motion, and position events',/moto-motion-update.*moto-tools-update.*moto-weather-update.*moto-position/s.test(isolation));
 add('Isolation exposes health diagnostics',/maxEventLoopLagMs/.test(isolation)&&/maxDomNodes/.test(isolation)&&/actionTests/.test(isolation));
 
+add('Feature monitor exposes bounded performance metrics',/recMonFps/.test(features)&&/recMonLag/.test(features)&&/recMonGps/.test(features)&&/recMonDom/.test(features));
+add('Phase 2 features include route weather and speed history',/recRoute/.test(features)&&/recWeather/.test(features)&&/recSpeedLine/.test(features));
+add('Phase 3 metrics are GPS-derived',/acceleration/.test(features)&&/braking/.test(features)&&/cornerSpeed/.test(features)&&/turnRate/.test(features));
+add('Weather requests are rate limited and timed out',/600000/.test(features)&&/AbortController/.test(features)&&/5000/.test(features));
+add('Feature layer does not access Supabase',!/supabase\s*\./.test(features));
+
 add('Legacy iPhone safe-mode loader is retired',!pwa.includes('iphone-recording-safe-mode'));
-add('PWA build is v41',pwa.includes("recording-isolation-v41")&&pwa.includes("/sw.js?v=41"));
-add('Service worker cache is v41',worker.includes("const VERSION='v41'"));
-add('Service worker precaches isolation and GPS broker',worker.includes('/src/recording-isolation.js?v=1')&&worker.includes('/src/gps-shared.js?v=6'));
+add('PWA build is v42',pwa.includes('recorder-features-v42')&&pwa.includes('/sw.js?v=42'));
+add('Service worker cache is v42',worker.includes("const VERSION='v42'"));
+add('Service worker precaches isolation GPS broker and feature layer',worker.includes('/src/recording-isolation.js?v=1')&&worker.includes('/src/gps-shared.js?v=6')&&worker.includes('/src/recorder-features-v42.js?v=1'));
 
 const sourceFiles=[];
 for(const name of fs.readdirSync(path.join(root,'src'))){

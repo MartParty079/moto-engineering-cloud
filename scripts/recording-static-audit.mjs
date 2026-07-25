@@ -11,6 +11,7 @@ const rideCenter=read('src/ride-center.js');
 const gps=read('src/gps-shared.js');
 const isolation=read('src/recording-isolation.js');
 const features=read('src/recorder-features-v42.js');
+const scrollCss=read('src/recorder-scroll-v43.css');
 const pwa=read('src/pwa.js');
 const worker=read('public/sw.js');
 
@@ -50,31 +51,24 @@ add('Phase 3 metrics are GPS-derived',/acceleration/.test(features)&&/braking/.t
 add('Weather requests are rate limited and timed out',/600000/.test(features)&&/AbortController/.test(features)&&/5000/.test(features));
 add('Feature layer does not access Supabase',!/supabase\s*\./.test(features));
 
+add('Recorder is a dedicated vertical touch scroll container',/height:100dvh/.test(scrollCss)&&/overflow-y:scroll/.test(scrollCss)&&/touch-action:pan-y/.test(scrollCss)&&/-webkit-overflow-scrolling:touch/.test(scrollCss));
+add('Fixed action dock does not swallow swipe gestures',/\.recActions\{pointer-events:none/.test(scrollCss)&&/\.recActions button\{pointer-events:auto/.test(scrollCss));
+add('Recorder reserves space below feature cards',/padding-bottom:calc\(122px/.test(scrollCss));
+
 add('Legacy iPhone safe-mode loader is retired',!pwa.includes('iphone-recording-safe-mode'));
-add('PWA build is v42',pwa.includes('recorder-features-v42')&&pwa.includes('/sw.js?v=42'));
-add('Service worker cache is v42',worker.includes("const VERSION='v42'"));
-add('Service worker precaches isolation GPS broker and feature layer',worker.includes('/src/recording-isolation.js?v=1')&&worker.includes('/src/gps-shared.js?v=6')&&worker.includes('/src/recorder-features-v42.js?v=1'));
+add('PWA build is v43',pwa.includes('recorder-scroll-v43')&&pwa.includes('/sw.js?v=43'));
+add('Service worker cache is v43',worker.includes("const VERSION='v43'"));
+add('Service worker precaches recorder scroll and feature layer',worker.includes('/src/recorder-scroll-v43.css')&&worker.includes('/src/recorder-features-v42.js?v=1'));
 
 const sourceFiles=[];
-for(const name of fs.readdirSync(path.join(root,'src'))){
-  if(name.endsWith('.js'))sourceFiles.push(name);
-}
+for(const name of fs.readdirSync(path.join(root,'src'))){if(name.endsWith('.js'))sourceFiles.push(name)}
 let intervalCount=0,observerCount=0,watchCount=0;
-for(const name of sourceFiles){
-  const text=read(`src/${name}`);
-  intervalCount+=(text.match(/setInterval\s*\(/g)||[]).length;
-  observerCount+=(text.match(/new\s+MutationObserver\s*\(/g)||[]).length;
-  watchCount+=(text.match(/\.watchPosition\s*\(/g)||[]).length;
-}
+for(const name of sourceFiles){const text=read(`src/${name}`);intervalCount+=(text.match(/setInterval\s*\(/g)||[]).length;observerCount+=(text.match(/new\s+MutationObserver\s*\(/g)||[]).length;watchCount+=(text.match(/\.watchPosition\s*\(/g)||[]).length}
 
 const report={generatedAt:new Date().toISOString(),checks,inventory:{sourceFiles:sourceFiles.length,setIntervalCalls:intervalCount,mutationObservers:observerCount,watchPositionCallSites:watchCount}};
 fs.writeFileSync('recording-static-audit.json',JSON.stringify(report,null,2));
 fs.writeFileSync('recording-static-audit.md',`# Recording static audit\n\nGenerated: ${report.generatedAt}\n\n| Result | Check | Detail |\n|---|---|---|\n${checks.map(item=>`| ${item.pass?'PASS':'FAIL'} | ${item.name} | ${String(item.detail||'').replaceAll('|','\\|')} |`).join('\n')}\n\n## Source inventory\n\n- JavaScript source files: ${sourceFiles.length}\n- setInterval call sites: ${intervalCount}\n- MutationObserver call sites: ${observerCount}\n- watchPosition call sites: ${watchCount}\n`);
-
 const failed=checks.filter(item=>!item.pass);
 for(const item of checks)console.log(`${item.pass?'PASS':'FAIL'} ${item.name}${item.detail?` — ${item.detail}`:''}`);
-if(failed.length){
-  console.error(`\n${failed.length} recording audit check(s) failed.`);
-  process.exit(1);
-}
+if(failed.length){console.error(`\n${failed.length} recording audit check(s) failed.`);process.exit(1)}
 console.log(`\n${checks.length} recording audit checks passed.`);

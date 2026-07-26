@@ -11,6 +11,8 @@ const rideCenter=read('src/ride-center.js');
 const gps=read('src/gps-shared.js');
 const isolation=read('src/recording-isolation.js');
 const features=read('src/recorder-features-v42.js');
+const roadContext=read('src/recorder-road-context-v45.js');
+const phase4=read('src/recorder-phase4-v44.js');
 const scrollCss=read('src/recorder-scroll-v43.css');
 const pwa=read('src/pwa.js');
 const worker=read('public/sw.js');
@@ -27,6 +29,8 @@ add('GPS broker loads before recording isolation',order.gps>=0&&order.gps<order.
 add('Recorder feature layer loads before isolation',order.features>order.gps&&order.features<order.isolation,JSON.stringify(order));
 add('Recording isolation loads before Ride Center',order.isolation>=0&&order.isolation<order.rideCenter,JSON.stringify(order));
 add('Recording isolation loads before enhancements and dashboard',order.isolation<order.enhancements&&order.isolation<order.dashboard,JSON.stringify(order));
+add('Road context module is imported by PWA before isolation script executes',pwa.includes("import './recorder-road-context-v45.js?v=1'")&&index.indexOf('/src/pwa.js')<order.isolation);
+add('Phase 4 module remains imported by PWA',pwa.includes("import './recorder-phase4-v44.js?v=1'"));
 
 const onPositionStart=rideCenter.indexOf('function onPosition');
 const uploadStart=rideCenter.indexOf('async function uploadBufferedSamples');
@@ -51,14 +55,21 @@ add('Phase 3 metrics are GPS-derived',/acceleration/.test(features)&&/braking/.t
 add('Weather requests are rate limited and timed out',/600000/.test(features)&&/AbortController/.test(features)&&/5000/.test(features));
 add('Feature layer does not access Supabase',!/supabase\s*\./.test(features));
 
+add('Road context lookup is bounded',/MIN_LOOKUP_MS\s*=\s*15_000/.test(roadContext)&&/TIMED_REFRESH_MS\s*=\s*180_000/.test(roadContext)&&/MOVE_REFRESH_MI\s*=\s*0\.08/.test(roadContext));
+add('Road lookup has timeout and one-request guard',/state\.busy/.test(roadContext)&&/AbortController/.test(roadContext)&&/6500/.test(roadContext));
+add('Road context caches speed limits for offline use',/CACHE_KEY/.test(roadContext)&&/FRESH_MS/.test(roadContext)&&/STALE_MS/.test(roadContext)&&/limit_mph/.test(roadContext));
+add('Road context exposes road name speed limit and overspeed UI',/recRoadName/.test(roadContext)&&/recRoadLimitValue/.test(roadContext)&&/MPH OVER/.test(roadContext));
+add('Road context performs no database writes',!/\.from\([^)]*\)\.(insert|update|upsert|delete)/.test(roadContext));
+add('Phase 4 remains deferred until ride stop',/processAfterRide/.test(phase4)&&/No Phase 4 service writes to the network during a ride/.test(phase4));
+
 add('Recorder is a dedicated vertical touch scroll container',/height:100dvh/.test(scrollCss)&&/overflow-y:scroll/.test(scrollCss)&&/touch-action:pan-y/.test(scrollCss)&&/-webkit-overflow-scrolling:touch/.test(scrollCss));
 add('Fixed action dock does not swallow swipe gestures',/\.recActions\{pointer-events:none/.test(scrollCss)&&/\.recActions button\{pointer-events:auto/.test(scrollCss));
 add('Recorder reserves space below feature cards',/padding-bottom:calc\(122px/.test(scrollCss));
 
 add('Legacy iPhone safe-mode loader is retired',!pwa.includes('iphone-recording-safe-mode'));
-add('PWA build is v43',pwa.includes('recorder-scroll-v43')&&pwa.includes('/sw.js?v=43'));
-add('Service worker cache is v43',worker.includes("const VERSION='v43'"));
-add('Service worker precaches recorder scroll and feature layer',worker.includes('/src/recorder-scroll-v43.css')&&worker.includes('/src/recorder-features-v42.js?v=1'));
+add('PWA build is v45',pwa.includes('recorder-road-context-v45')&&pwa.includes('/sw.js?v=45'));
+add('Service worker cache is v45',worker.includes("const VERSION='v45'"));
+add('Service worker precaches road context Phase 4 scroll and feature layers',worker.includes('/src/recorder-road-context-v45.js?v=1')&&worker.includes('/src/recorder-phase4-v44.js?v=1')&&worker.includes('/src/recorder-scroll-v43.css')&&worker.includes('/src/recorder-features-v42.js?v=1'));
 
 const sourceFiles=[];
 for(const name of fs.readdirSync(path.join(root,'src'))){if(name.endsWith('.js'))sourceFiles.push(name)}

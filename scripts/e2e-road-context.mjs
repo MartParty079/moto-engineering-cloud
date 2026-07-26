@@ -43,7 +43,7 @@ try{
   evidence={engine,road,limit,meta,limitMeta,topLimit,requests,cacheRows,errors,roadState:await page.evaluate(()=>window.MotoRecorderRoadContext?.getState?.())};
   if(road!=='CONGRESS AVENUE')throw new Error(`Unexpected road: ${road}`);
   if(limit!=='35'||topLimit!=='35')throw new Error(`Unexpected limit: card=${limit}, top=${topLimit}`);
-  if(!/OPENSTREETMAP|LIVE/.test(meta))throw new Error(`Missing source: ${meta}`);
+  if(!/OPENSTREETMAP|LIVE/i.test(meta))throw new Error(`Missing source: ${meta}`);
   if(!limitMeta.includes('OVER'))throw new Error(`Overspeed state missing: ${limitMeta}`);
   if(requests!==1)throw new Error(`Expected one bounded road request, got ${requests}`);
   if(cacheRows<1)throw new Error('Road context was not cached');

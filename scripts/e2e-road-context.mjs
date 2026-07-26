@@ -20,7 +20,7 @@ const errors=[];
 page.on('pageerror',error=>errors.push(String(error)));
 page.on('console',message=>{if(message.type()==='error')errors.push(message.text())});
 let requests=0;
-await page.route(/\/api\/road-info\?/,async route=>{
+await page.route('**/api/road-info**',async route=>{
   requests+=1;
   await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({road:'Congress Avenue',limit:{mph:35},source:'OpenStreetMap',roadClass:'primary',surface:'asphalt',lanes:4,confidence:.94})});
 });
@@ -39,9 +39,10 @@ try{
   const meta=await page.locator('#recRoadMeta').innerText();
   const limitMeta=await page.locator('#recRoadLimitMeta').innerText();
   const cacheRows=await page.evaluate(()=>Object.keys(JSON.parse(localStorage.getItem('moto-road-context-cache-v45')||'{}')).length);
-  evidence={engine,road,limit,meta,limitMeta,requests,cacheRows,errors,roadState:await page.evaluate(()=>window.MotoRecorderRoadContext?.getState?.())};
+  const topLimit=await page.locator('#recLimit').innerText();
+  evidence={engine,road,limit,meta,limitMeta,topLimit,requests,cacheRows,errors,roadState:await page.evaluate(()=>window.MotoRecorderRoadContext?.getState?.())};
   if(road!=='CONGRESS AVENUE')throw new Error(`Unexpected road: ${road}`);
-  if(limit!=='35')throw new Error(`Unexpected limit: ${limit}`);
+  if(limit!=='35'||topLimit!=='35')throw new Error(`Unexpected limit: card=${limit}, top=${topLimit}`);
   if(!/OPENSTREETMAP|LIVE/.test(meta))throw new Error(`Missing source: ${meta}`);
   if(!limitMeta.includes('OVER'))throw new Error(`Overspeed state missing: ${limitMeta}`);
   if(requests!==1)throw new Error(`Expected one bounded road request, got ${requests}`);

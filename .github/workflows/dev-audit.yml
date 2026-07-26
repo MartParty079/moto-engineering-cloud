@@ -64,7 +64,7 @@ jobs:
   browser-evidence:
     needs: audit
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -100,6 +100,11 @@ jobs:
           E2E_BASE_URL: http://127.0.0.1:4173
           E2E_BROWSER: chromium
         run: node scripts/e2e-recorder-scroll.mjs
+      - name: Verify Chromium road context and speed limits
+        env:
+          E2E_BASE_URL: http://127.0.0.1:4173
+          E2E_BROWSER: chromium
+        run: node scripts/e2e-road-context.mjs
       - name: Stress recording and capture WebKit proof
         env:
           E2E_BASE_URL: http://127.0.0.1:4173
@@ -110,6 +115,11 @@ jobs:
           E2E_BASE_URL: http://127.0.0.1:4173
           E2E_BROWSER: webkit
         run: node scripts/e2e-recorder-scroll.mjs
+      - name: Verify WebKit road context and speed limits
+        env:
+          E2E_BASE_URL: http://127.0.0.1:4173
+          E2E_BROWSER: webkit
+        run: node scripts/e2e-road-context.mjs
       - name: Upload screenshot and diagnostic proof
         if: always()
         uses: actions/upload-artifact@v4

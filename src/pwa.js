@@ -1,6 +1,7 @@
 import './ride-dash-visual-fix.js?v=1';
 import './recorder-scroll-v43.css';
 import './recorder-road-context-v45.js?v=1';
+import './recorder-road-context-compat-v45.js?v=1';
 import './recorder-phase4-v44.js?v=1';
 
 const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);

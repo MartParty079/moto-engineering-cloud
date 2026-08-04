@@ -34,7 +34,7 @@ try{
     return {
       kmh:service.parseLimit('50 km/h'),
       object:service.parseLimit({value:55,unit:'mph'}),
-      estimated:service.parseLimit('≈ 45 mph'),
+      estimated:service.parseLimit({mph:45,estimated:true}),
       missing:service.normalize({}),
       zero:service.parseLimit(0),
       absurd:service.parseLimit(180)

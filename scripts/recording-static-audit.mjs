@@ -13,11 +13,14 @@ const isolation=read('src/recording-isolation.js');
 const features=read('src/recorder-features-v42.js');
 const roadContext=read('src/recorder-road-context-v45.js');
 const phase4=read('src/recorder-phase4-v44.js');
+const aiRemoval=read('src/remove-ai-integration.js');
 const scrollCss=read('src/recorder-scroll-v43.css');
 const pwa=read('src/pwa.js');
 const worker=read('public/sw.js');
 
 const order={
+  aiRemoval:index.indexOf('/src/remove-ai-integration.js?v=1'),
+  main:index.indexOf('/src/main.js'),
   gps:index.indexOf('/src/gps-shared.js?v=6'),
   features:index.indexOf('/src/recorder-features-v42.js?v=1'),
   isolation:index.indexOf('/src/recording-isolation.js?v=1'),
@@ -25,12 +28,18 @@ const order={
   enhancements:index.indexOf('/src/ride-safe-enhancements.js'),
   dashboard:index.indexOf('/src/ride-dashboard.js')
 };
+add('AI removal loads before the main application',order.aiRemoval>=0&&order.aiRemoval<order.main,JSON.stringify(order));
 add('GPS broker loads before recording isolation',order.gps>=0&&order.gps<order.isolation,JSON.stringify(order));
 add('Recorder feature layer loads before isolation',order.features>order.gps&&order.features<order.isolation,JSON.stringify(order));
 add('Recording isolation loads before Ride Center',order.isolation>=0&&order.isolation<order.rideCenter,JSON.stringify(order));
 add('Recording isolation loads before enhancements and dashboard',order.isolation<order.enhancements&&order.isolation<order.dashboard,JSON.stringify(order));
-add('Road context module is imported by PWA before isolation script executes',pwa.includes("import './recorder-road-context-v45.js?v=1'")&&index.indexOf('/src/pwa.js')<order.isolation);
+add('Road context module is imported by PWA before isolation script executes',pwa.includes("import './recorder-road-context-v45.js?v=2'")&&index.indexOf('/src/pwa.js')<order.isolation);
 add('Phase 4 module remains imported by PWA',pwa.includes("import './recorder-phase4-v44.js?v=1'"));
+
+add('AI navigation and UI cleanup is installed',/\[data-v=\\?"ai/.test(aiRemoval)&&/AI Assistant\|ChatGPT/.test(aiRemoval));
+add('AI Supabase tables are disabled',/ai_messages/.test(aiRemoval)&&/ai_change_proposals/.test(aiRemoval)&&/disabledQuery/.test(aiRemoval));
+add('OpenAI and ChatGPT network calls are blocked',/api\.openai\.com/.test(aiRemoval)&&/chatgpt\.com/.test(aiRemoval)&&/window\.fetch/.test(aiRemoval));
+add('AI removal clears legacy local storage',/chatgpt\|openai\|moto-ai\|ai-assistant/.test(aiRemoval)&&/localStorage\.removeItem/.test(aiRemoval));
 
 const onPositionStart=rideCenter.indexOf('function onPosition');
 const uploadStart=rideCenter.indexOf('async function uploadBufferedSamples');
@@ -59,6 +68,9 @@ add('Road context lookup is bounded',/MIN_LOOKUP_MS\s*=\s*15_000/.test(roadConte
 add('Road lookup has timeout and one-request guard',/state\.busy/.test(roadContext)&&/AbortController/.test(roadContext)&&/6500/.test(roadContext));
 add('Road context caches speed limits for offline use',/CACHE_KEY/.test(roadContext)&&/FRESH_MS/.test(roadContext)&&/STALE_MS/.test(roadContext)&&/limit_mph/.test(roadContext));
 add('Road context exposes road name speed limit and overspeed UI',/recRoadName/.test(roadContext)&&/recRoadLimitValue/.test(roadContext)&&/MPH OVER/.test(roadContext));
+add('Speed-limit parser handles units and rejects invalid values',/parseLimit/.test(roadContext)&&/km\\\/?h\|kmh\|kph\|kmph/.test(roadContext)&&/MIN_VALID_LIMIT/.test(roadContext)&&/MAX_VALID_LIMIT/.test(roadContext));
+add('Missing speed limit cannot become zero',/limit_mph:\s*parsedLimit\?\.mph\s*\?\?\s*undefined/.test(roadContext)&&/limit === null \? '--'/.test(roadContext));
+add('Both recorder speed-limit displays are synchronized',/syncPrimaryLimitCard/.test(roadContext)&&/recLimitState/.test(roadContext)&&/recRoadLimitValue/.test(roadContext));
 add('Road context performs no database writes',!/\.from\([^)]*\)\.(insert|update|upsert|delete)/.test(roadContext));
 add('Phase 4 remains deferred until ride stop',/processAfterRide/.test(phase4)&&/No Phase 4 service writes to the network during a ride/.test(phase4));
 
@@ -67,9 +79,10 @@ add('Fixed action dock does not swallow swipe gestures',/\.recActions\{pointer-e
 add('Recorder reserves space below feature cards',/padding-bottom:calc\(122px/.test(scrollCss));
 
 add('Legacy iPhone safe-mode loader is retired',!pwa.includes('iphone-recording-safe-mode'));
-add('PWA build is v45',pwa.includes('recorder-road-context-v45')&&pwa.includes('/sw.js?v=45'));
-add('Service worker cache is v45',worker.includes("const VERSION='v45'"));
-add('Service worker precaches road context Phase 4 scroll and feature layers',worker.includes('/src/recorder-road-context-v45.js?v=1')&&worker.includes('/src/recorder-phase4-v44.js?v=1')&&worker.includes('/src/recorder-scroll-v43.css')&&worker.includes('/src/recorder-features-v42.js?v=1'));
+add('PWA build is v46',pwa.includes('ai-removed-speed-limits-v46')&&pwa.includes('/sw.js?v=46'));
+add('Service worker cache is v46',worker.includes("const VERSION='v46'"));
+add('Service worker precaches AI removal and road context',worker.includes('/src/remove-ai-integration.js?v=1')&&worker.includes('/src/recorder-road-context-v45.js?v=2'));
+add('Service worker still precaches Phase 4 scroll and feature layers',worker.includes('/src/recorder-phase4-v44.js?v=1')&&worker.includes('/src/recorder-scroll-v43.css')&&worker.includes('/src/recorder-features-v42.js?v=1'));
 
 const sourceFiles=[];
 for(const name of fs.readdirSync(path.join(root,'src'))){if(name.endsWith('.js'))sourceFiles.push(name)}

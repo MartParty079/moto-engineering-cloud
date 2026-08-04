@@ -36,10 +36,10 @@ add('Recording isolation loads before enhancements and dashboard',order.isolatio
 add('Road context module is imported by PWA before isolation script executes',pwa.includes("import './recorder-road-context-v45.js?v=2'")&&index.indexOf('/src/pwa.js')<order.isolation);
 add('Phase 4 module remains imported by PWA',pwa.includes("import './recorder-phase4-v44.js?v=1'"));
 
-add('AI navigation and UI cleanup is installed',/\[data-v=\\?"ai/.test(aiRemoval)&&/AI Assistant\|ChatGPT/.test(aiRemoval));
-add('AI Supabase tables are disabled',/ai_messages/.test(aiRemoval)&&/ai_change_proposals/.test(aiRemoval)&&/disabledQuery/.test(aiRemoval));
-add('OpenAI and ChatGPT network calls are blocked',/api\.openai\.com/.test(aiRemoval)&&/chatgpt\.com/.test(aiRemoval)&&/window\.fetch/.test(aiRemoval));
-add('AI removal clears legacy local storage',/chatgpt\|openai\|moto-ai\|ai-assistant/.test(aiRemoval)&&/localStorage\.removeItem/.test(aiRemoval));
+add('AI navigation and UI cleanup is installed',aiRemoval.includes('[data-v="ai"]')&&aiRemoval.includes('AI Assistant|ChatGPT'));
+add('AI Supabase tables are disabled',aiRemoval.includes('ai_messages')&&aiRemoval.includes('ai_change_proposals')&&aiRemoval.includes('disabledQuery'));
+add('OpenAI and ChatGPT network calls are blocked',aiRemoval.includes('api\\.openai\\.com')&&aiRemoval.includes('chatgpt\\.com')&&aiRemoval.includes('window.fetch'));
+add('AI removal clears legacy local storage',aiRemoval.includes('chatgpt|openai|moto-ai|ai-assistant')&&aiRemoval.includes('localStorage.removeItem'));
 
 const onPositionStart=rideCenter.indexOf('function onPosition');
 const uploadStart=rideCenter.indexOf('async function uploadBufferedSamples');
@@ -68,9 +68,9 @@ add('Road context lookup is bounded',/MIN_LOOKUP_MS\s*=\s*15_000/.test(roadConte
 add('Road lookup has timeout and one-request guard',/state\.busy/.test(roadContext)&&/AbortController/.test(roadContext)&&/6500/.test(roadContext));
 add('Road context caches speed limits for offline use',/CACHE_KEY/.test(roadContext)&&/FRESH_MS/.test(roadContext)&&/STALE_MS/.test(roadContext)&&/limit_mph/.test(roadContext));
 add('Road context exposes road name speed limit and overspeed UI',/recRoadName/.test(roadContext)&&/recRoadLimitValue/.test(roadContext)&&/MPH OVER/.test(roadContext));
-add('Speed-limit parser handles units and rejects invalid values',/parseLimit/.test(roadContext)&&/km\\\/?h\|kmh\|kph\|kmph/.test(roadContext)&&/MIN_VALID_LIMIT/.test(roadContext)&&/MAX_VALID_LIMIT/.test(roadContext));
-add('Missing speed limit cannot become zero',/limit_mph:\s*parsedLimit\?\.mph\s*\?\?\s*undefined/.test(roadContext)&&/limit === null \? '--'/.test(roadContext));
-add('Both recorder speed-limit displays are synchronized',/syncPrimaryLimitCard/.test(roadContext)&&/recLimitState/.test(roadContext)&&/recRoadLimitValue/.test(roadContext));
+add('Speed-limit parser handles units and rejects invalid values',roadContext.includes('function parseLimit')&&roadContext.includes('km\\/?h|kmh|kph|kmph')&&roadContext.includes('MIN_VALID_LIMIT')&&roadContext.includes('MAX_VALID_LIMIT'));
+add('Missing speed limit cannot become zero',roadContext.includes('limit_mph: parsedLimit?.mph ?? undefined')&&roadContext.includes("limit === null ? '--'"));
+add('Both recorder speed-limit displays are synchronized',roadContext.includes('syncPrimaryLimitCard')&&roadContext.includes('recLimitState')&&roadContext.includes('recRoadLimitValue'));
 add('Road context performs no database writes',!/\.from\([^)]*\)\.(insert|update|upsert|delete)/.test(roadContext));
 add('Phase 4 remains deferred until ride stop',/processAfterRide/.test(phase4)&&/No Phase 4 service writes to the network during a ride/.test(phase4));
 

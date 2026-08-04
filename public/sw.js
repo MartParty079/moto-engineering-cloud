@@ -1,4 +1,4 @@
-const VERSION='v45';
+const VERSION='v46';
 const APP_CACHE=`motocloud-app-${VERSION}`;
 const RUNTIME_CACHE=`motocloud-runtime-${VERSION}`;
 const IMAGE_CACHE=`motocloud-images-${VERSION}`;
@@ -50,14 +50,15 @@ const CORE_URLS=[
   '/src/app-interaction-stability.css?v=1',
   '/src/adaptive-layout.js?v=1',
   '/src/road-provider-default.js?v=1',
+  '/src/remove-ai-integration.js?v=1',
   '/src/main.js',
   '/src/navigation-state.js?v=1',
   '/src/cirkit-link.js',
   '/src/access-control.js?v=3',
   '/src/access-bootstrap.js?v=3',
-  '/src/pwa.js?v=45',
+  '/src/pwa.js?v=46',
   '/src/gps-shared.js?v=6',
-  '/src/recorder-road-context-v45.js?v=1',
+  '/src/recorder-road-context-v45.js?v=2',
   '/src/recorder-phase4-v44.js?v=1',
   '/src/recorder-features-v42.js?v=1',
   '/src/recording-isolation.js?v=1',

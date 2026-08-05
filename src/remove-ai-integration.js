@@ -1,3 +1,4 @@
+import './rider-welcome-ui.js';
 import { supabase } from './supabase.js';
 
 // Moto Mission no longer exposes or contacts the former ChatGPT / AI assistant.

@@ -2,14 +2,15 @@
 
 ## Mission
 
-Build and stabilize Moto Engineering Cloud as a safe, honest motorcycle engineering platform. Preserve the system boundary and release gates in `docs/ENGINEERING_BASELINE.md`.
+Build and stabilize Moto Engineering Cloud as a safe, honest motorcycle engineering platform. Preserve the system boundary and release gates in `docs/ENGINEERING_BASELINE.md` and the repository controls in `docs/REPOSITORY_POLICY.md`.
 
 ## Read before changing code
 
 1. `README.md`
 2. `docs/ENGINEERING_BASELINE.md`
-3. `docs/OPERATIONS.md`
-4. Any nearby documentation or migration notes relevant to the task
+3. `docs/REPOSITORY_POLICY.md`
+4. `docs/OPERATIONS.md`
+5. Any nearby documentation or migration notes relevant to the task
 
 ## Repository map
 
@@ -32,6 +33,21 @@ Build and stabilize Moto Engineering Cloud as a safe, honest motorcycle engineer
 - Do not silently remove features, records, migrations, or user-visible behavior.
 - Keep comments focused on non-obvious engineering reasons, not line-by-line narration.
 - Update documentation when behavior, architecture, risk, setup, or release requirements change.
+
+## Repository hygiene rules
+
+- `main` is the only production source branch. Never push unreviewed implementation work directly to it.
+- One task gets one branch and one pull request unless stacked work is explicitly authorized.
+- Start task branches from current `main`.
+- Do not create `backup/` branches or branch chains named `final`, `final2`, `v2`, `v3`, or similar. Git history is the archive.
+- Delete merged branches immediately after merge and close superseded or abandoned PRs.
+- Treat branches with no active issue or PR for 14 days as stale and follow `docs/REPOSITORY_POLICY.md` before preserving or deleting them.
+- Do not add ordinary runtime files named `*-fix.*`, `*-hotfix.*`, `*-cleanup.*`, `*-compat.*`, or version-suffixed replacements. Fix the owning module.
+- Emergency compatibility patches require a linked issue, a documented removal condition, and a planned removal date or milestone.
+- Do not increase the number of independently loaded scripts or styles in `index.html` for ordinary feature work. Import through the owning domain module.
+- When a replacement becomes canonical, remove the superseded implementation in the same PR unless verified compatibility requirements require temporary overlap.
+- Before deleting runtime code, verify direct imports, dynamic imports, HTML references, service-worker precache references, and event/global dependencies.
+- The normal target is no more than five active implementation branches at once.
 
 ## Safety and truthfulness rules
 

@@ -1,0 +1,176 @@
+/* Adaptive primary speed cell.
+   The main card shows only speed and posted limit. Adaptive status is a small,
+   persistent corner label with no percentage readout or flashing animation. */
+
+#rideDashOverlay .widget-speed{
+  --speed-cell-color:#3b82f6;
+  transition:border-color .18s ease,box-shadow .18s ease,background .18s ease;
+}
+
+#rideDashOverlay .widget-speed[data-speed-state]{
+  border-color:color-mix(in srgb,var(--speed-cell-color) 72%,rgba(255,255,255,.12))!important;
+  background:
+    radial-gradient(circle at 48% 50%,color-mix(in srgb,var(--speed-cell-color) 22%,transparent),transparent 46%),
+    linear-gradient(145deg,color-mix(in srgb,var(--speed-cell-color) 18%,#151b22),color-mix(in srgb,var(--speed-cell-color) 6%,#04070b) 66%,#030507)!important;
+  box-shadow:
+    inset 0 0 68px color-mix(in srgb,var(--speed-cell-color) 10%,transparent),
+    inset 0 1px rgba(255,255,255,.08),
+    0 0 18px color-mix(in srgb,var(--speed-cell-color) 10%,transparent)!important;
+}
+
+#rideDashOverlay .widget-speed[data-speed-state="unknown"]{--speed-cell-color:#3b82f6}
+#rideDashOverlay .widget-speed[data-speed-state="clear"]{--speed-cell-color:#22c55e}
+#rideDashOverlay .widget-speed[data-speed-state="near"]{--speed-cell-color:#f59e0b}
+#rideDashOverlay .widget-speed[data-speed-state="grace"]{--speed-cell-color:#f97316}
+#rideDashOverlay .widget-speed[data-speed-state="over"]{--speed-cell-color:#ef4444}
+#rideDashOverlay .widget-speed[data-speed-state="critical"]{--speed-cell-color:#e879f9}
+
+/* Deliberately no pulse animation. State changes remain readable without flashing. */
+#rideDashOverlay .widget-speed[data-speed-state]{animation:none!important}
+
+#rideDashOverlay .widget-speed .dashSpeedGauge{
+  position:relative!important;
+  isolation:isolate;
+  overflow:visible!important;
+}
+
+#rideDashOverlay .widget-speed .dashSpeedNumber,
+#rideDashOverlay .widget-speed .dashSpeedGauge>span,
+#rideDashOverlay .widget-speed .dashSpeedGauge>i{
+  position:relative;
+  z-index:3;
+}
+
+/* Compact posted-limit sign beside the speed value. */
+#rideDashOverlay .widget-speed .dashInlineSpeedLimit{
+  position:absolute!important;
+  top:50%!important;
+  right:clamp(10px,3.2vw,24px)!important;
+  bottom:auto!important;
+  left:auto!important;
+  z-index:12!important;
+  display:block!important;
+  width:50px!important;
+  min-width:50px!important;
+  max-width:50px!important;
+  height:58px!important;
+  min-height:58px!important;
+  max-height:58px!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  background:transparent!important;
+  transform:translateY(-50%)!important;
+  pointer-events:none!important;
+}
+
+#rideDashOverlay .widget-speed .dashInlineLimitSign{
+  display:grid!important;
+  grid-template-rows:13px 1fr!important;
+  width:50px!important;
+  min-width:50px!important;
+  max-width:50px!important;
+  height:58px!important;
+  min-height:58px!important;
+  max-height:58px!important;
+  box-sizing:border-box!important;
+  place-items:center!important;
+  padding:4px 3px 5px!important;
+  border:2px solid #10151b!important;
+  border-radius:7px!important;
+  background:linear-gradient(180deg,#fff,#dce3e8)!important;
+  color:#090d12!important;
+  box-shadow:0 8px 22px rgba(0,0,0,.4),0 0 0 1px rgba(255,255,255,.38)!important;
+  font-family:system-ui,-apple-system,sans-serif!important;
+  text-align:center!important;
+  transform:none!important;
+}
+
+#rideDashOverlay .widget-speed .dashInlineLimitWord{
+  display:block!important;
+  margin:0!important;
+  padding:0!important;
+  color:#111827!important;
+  font:950 7px/.9 system-ui,-apple-system,sans-serif!important;
+  letter-spacing:.11em!important;
+  text-transform:uppercase!important;
+  white-space:nowrap!important;
+}
+
+#rideDashOverlay .widget-speed .dashInlineLimitNumber{
+  display:block!important;
+  margin:0!important;
+  padding:0!important;
+  color:#05080b!important;
+  font:950 27px/.82 system-ui,-apple-system,sans-serif!important;
+  letter-spacing:-.05em!important;
+  white-space:nowrap!important;
+}
+
+#rideDashOverlay .widget-speed .dashInlineSpeedLimit[data-known="false"] .dashInlineLimitSign{
+  opacity:.58!important;
+}
+
+/* Small persistent adaptive state in the lower-right corner. */
+#rideDashOverlay .widget-speed .dashSpeedCornerStatus{
+  position:absolute!important;
+  right:10px!important;
+  bottom:8px!important;
+  z-index:13!important;
+  display:block!important;
+  max-width:100px!important;
+  margin:0!important;
+  padding:3px 6px!important;
+  overflow:hidden!important;
+  border:1px solid color-mix(in srgb,var(--speed-cell-color) 48%,rgba(255,255,255,.16))!important;
+  border-radius:999px!important;
+  background:rgba(0,0,0,.42)!important;
+  color:var(--speed-cell-color)!important;
+  font:950 5.5px/1 system-ui,-apple-system,sans-serif!important;
+  letter-spacing:.1em!important;
+  text-align:center!important;
+  text-overflow:ellipsis!important;
+  text-shadow:none!important;
+  text-transform:uppercase!important;
+  white-space:nowrap!important;
+  backdrop-filter:blur(8px)!important;
+  pointer-events:none!important;
+}
+
+/* The separate speed/limit strip card is redundant now. */
+#rideDashOverlay .rideXSmartStrip .rideXCompliance{display:none!important}
+#rideDashOverlay .rideXSmartStrip{grid-template-columns:minmax(128px,1.15fr) minmax(128px,1fr) minmax(128px,1fr)!important}
+#rideDashOverlay[data-ride-active="true"] .rideXSmartStrip{grid-template-columns:1.08fr 1fr 1fr!important}
+
+@media(max-width:430px){
+  #rideDashOverlay .widget-speed .dashInlineSpeedLimit{
+    right:8px!important;
+    width:44px!important;
+    min-width:44px!important;
+    max-width:44px!important;
+    height:52px!important;
+    min-height:52px!important;
+    max-height:52px!important;
+  }
+  #rideDashOverlay .widget-speed .dashInlineLimitSign{
+    width:44px!important;
+    min-width:44px!important;
+    max-width:44px!important;
+    height:52px!important;
+    min-height:52px!important;
+    max-height:52px!important;
+  }
+  #rideDashOverlay .widget-speed .dashInlineLimitNumber{font-size:23px!important}
+  #rideDashOverlay .widget-speed .dashSpeedCornerStatus{
+    right:7px!important;
+    bottom:6px!important;
+    max-width:88px!important;
+    padding:3px 5px!important;
+    font-size:5px!important;
+  }
+}
+
+@media(max-width:360px){
+  #rideDashOverlay .widget-speed .dashInlineSpeedLimit{right:5px!important}
+  #rideDashOverlay .widget-speed .dashSpeedCornerStatus{right:5px!important;max-width:76px!important}
+}

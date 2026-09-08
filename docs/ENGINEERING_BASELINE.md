@@ -2,7 +2,7 @@
 
 **Baseline:** V1 stabilization  
 **Owner:** Chief Engineer  
-**Last reviewed:** 2026-07-16
+**Last reviewed:** 2026-09-03
 
 ## Mission
 
@@ -28,7 +28,7 @@ Build a safe, reliable motorcycle engineering platform that records rides, organ
 - BMW CAN integration
 - Suspension-position sensing
 - Independent wheel-speed sensing
-- CarPlay integration
+- CarPlay integration beyond the existing experimental/native companion work
 - Automated emergency dispatch
 - Any diagnostic write operation to a motorcycle ECU
 
@@ -58,6 +58,7 @@ Browser PWA deployed by Vercel
 4. **Data provenance:** derived values must identify their source and confidence.
 5. **Recoverability:** interrupted rides and failed uploads must preserve local data where feasible.
 6. **Honest states:** disconnected hardware is shown as disconnected.
+7. **Single ownership:** major runtime domains must have a canonical owning module rather than accumulating overlapping patch layers.
 
 ## Data domains
 
@@ -74,13 +75,20 @@ Browser PWA deployed by Vercel
 
 | ID | Risk | Severity | Control |
 |---|---|---:|---|
-| R-001 | Large number of independently loaded browser patch modules | High | Consolidate by domain and remove obsolete modules after regression tests |
+| R-001 | Large number of independently loaded browser patch modules | High | Continue domain consolidation; new ordinary patch/hotfix/compat runtime files are prohibited by repository policy |
 | R-002 | Runtime dependency emits deprecated `url.parse()` warning | Medium | Identify dependency/runtime source and migrate to WHATWG URL API |
 | R-003 | PWA cache can preserve stale shells | High | Revalidate `index.html` and service worker; version assets deliberately |
 | R-004 | Privileged database functions callable too broadly | High | Restrict grants; run Supabase security advisors after migrations |
 | R-005 | Public storage listing can expose object inventory | Medium | Remove broad listing policy; use object URLs or scoped policies |
 | R-006 | Provider APIs can fail or return uncertain data | Medium | Timeouts, fallback providers, confidence labels, bounded usage |
 | R-007 | Live telemetry backend is incomplete | High | Keep feature gated and report disconnected state |
+| R-008 | Repository branch and stale-PR sprawl obscures current work | Medium | Enforce `docs/REPOSITORY_POLICY.md`, close stale PRs, delete merged/zero-unique branches, and perform monthly hygiene reviews |
+
+## Repository stabilization status
+
+The 2026-09-03 hygiene pass established `docs/REPOSITORY_POLICY.md`, closed the stale July pull-request queue, closed the completed documentation-worker smoke-test issue, and removed a first set of verified-unreferenced superseded frontend patch files on a dedicated cleanup branch.
+
+This pass intentionally did **not** delete dormant standalone feature modules solely because they are not currently loaded. Those require explicit product or architecture review before removal.
 
 ## Release gates
 
@@ -90,6 +98,7 @@ Browser PWA deployed by Vercel
 - Navigation works on iOS and desktop
 - No module throws during initial load
 - Offline or stale cache does not mask a deployment
+- Ordinary feature work does not increase independently loaded patch modules
 
 ### Gate B — Data and access
 
@@ -115,8 +124,13 @@ Browser PWA deployed by Vercel
 
 ## Next architecture work
 
-1. Inventory every `src/` module and classify it as core, active feature, compatibility patch, or obsolete.
-2. Replace global DOM observers with explicit lifecycle hooks.
-3. Consolidate ride modules behind one ride-state service.
+1. Finish inventorying every remaining `src/` module as core, active feature, intentionally dormant feature, compatibility patch, or obsolete.
+2. Consolidate ride modules behind one ride-state service and reduce independently loaded Ride UI layers.
+3. Replace global DOM observers with explicit lifecycle hooks wherever practical.
 4. Introduce a small automated smoke-test suite for shell load, auth, and API validation.
-5. Define the ESP32 telemetry protocol and offline synchronization contract before firmware implementation.
+5. Complete the ESP32 telemetry protocol and offline synchronization contract before production firmware implementation.
+6. Review dormant standalone modules and either reactivate them through an owning domain or remove them deliberately.
+
+## Repository governance
+
+`docs/REPOSITORY_POLICY.md` is mandatory for branch lifecycle, pull-request lifecycle, frontend patch rules, file hygiene, cleanup cadence, and change sizing. `AGENTS.md` applies those rules to automated contributors.

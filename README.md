@@ -25,7 +25,7 @@ Moto Engineering Cloud is the software platform for the Moto Mission motorcycle 
 - `src/` — browser modules and styles
 - `api/` — server-side provider and utility endpoints
 - `supabase/` — database migrations
-- `docs/` — architecture, operations, decisions, and test guidance
+- `docs/` — architecture, operations, decisions, policy, and test guidance
 - `manifest.webmanifest` / service worker — installable PWA support
 - `vercel.json` — deployment routing, caching, and security headers
 
@@ -43,13 +43,19 @@ A release is acceptable only when:
 
 ## Development workflow
 
-1. Define or update the requirement.
-2. Make the smallest coherent change.
-3. Validate browser and API behavior.
-4. Validate Supabase policies and function permissions.
-5. Deploy through the GitHub-to-Vercel integration.
-6. Inspect deployment state and runtime errors.
-7. Record the decision and remaining risk.
+1. Read `docs/REPOSITORY_POLICY.md` before creating branches or adding runtime modules.
+2. Define or update the requirement.
+3. Start one task branch from current `main`.
+4. Make the smallest coherent change in the owning module.
+5. Validate browser and API behavior.
+6. Validate Supabase policies and function permissions when applicable.
+7. Open one focused pull request with validation, risk, and rollback notes.
+8. Deploy through the GitHub-to-Vercel integration only after authorized merge.
+9. Inspect deployment state and runtime errors.
+10. Record the decision and remaining risk.
+11. Delete the merged branch.
+
+Do not use backup branches, version-chain branches, or new patch/hotfix runtime files as a substitute for fixing the owning module. Git history is the archive.
 
 ## Production services
 
@@ -61,4 +67,4 @@ Secrets belong in Vercel or Supabase environment configuration. Never commit ser
 
 ## Status
 
-The application is under active stabilization. The authoritative system definition is maintained in `docs/ENGINEERING_BASELINE.md`, and deployment procedures are in `docs/OPERATIONS.md`.
+The application is under active stabilization. The authoritative system definition is maintained in `docs/ENGINEERING_BASELINE.md`, repository lifecycle rules are in `docs/REPOSITORY_POLICY.md`, and deployment procedures are in `docs/OPERATIONS.md`.

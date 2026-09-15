@@ -1118,7 +1118,7 @@ supabase/migrations/20260719225701_audited_admin_mutations.sql
   ALTER TABLE targets: none
   Functions: admin_set_feature_grant, admin_update_feature_flag
 
-supabase/migrations/20260914210109_durable_ride_sync.sql
+supabase/migrations/20260915145159_durable_ride_sync.sql
   ALTER TABLE targets: ride_samples, ride_sessions
   Functions: complete_ride_v1
 

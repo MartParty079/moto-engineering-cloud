@@ -127,4 +127,3 @@ grant TRUNCATE on public.ride_samples to authenticated;
 grant REFERENCES on public.ride_samples to authenticated;
 grant TRIGGER on public.ride_samples to authenticated;
 grant usage,select on all sequences in schema public to authenticated;
-

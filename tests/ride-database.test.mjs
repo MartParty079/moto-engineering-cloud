@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 const fixture = await readFile(new URL('./fixtures/ride-schema.sql', import.meta.url), 'utf8');
 const owner = '00000000-0000-4000-8000-000000000001', other = '00000000-0000-4000-8000-000000000002';
 const bike = '00000000-0000-4000-8000-000000000003', ride = '00000000-0000-4000-8000-000000000004';
-const migration = await readFile(new URL('../supabase/migrations/20260914210109_durable_ride_sync.sql', import.meta.url), 'utf8');
+const migration = await readFile(new URL('../supabase/migrations/20260915145159_durable_ride_sync.sql', import.meta.url), 'utf8');
 const complete = `select public.complete_ride_v1('${ride}','2026-09-01T00:10:00Z',600,2,25,12,32,-97,0) as result`;
 
 test('completion is atomic, idempotent, owner-scoped, and denied to anonymous callers', async () => {

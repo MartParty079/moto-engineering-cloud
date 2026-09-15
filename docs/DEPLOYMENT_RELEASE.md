@@ -20,4 +20,8 @@ Keep additive schema during frontend rollback. Never drop completion markers/RPC
 
 ## Receipts
 
-Deployment pending final validation.
+- Supabase applied migration durable_ride_sync successfully at version 20260915145159. The repository filename matches the remote migration history.
+- Catalog verification: sample ID int8 retained, client UUID and unique index present, all three RLS flags and six policies retained; completion RPC invoker; anon execution false, authenticated execution true; authenticated sample TRUNCATE false.
+- Post-migration security advisor retains the existing warnings described above. Remediation references: https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable and https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection.
+- Local audit: 11 tests, syntax/interactions and Vite build pass. Recording architecture: 45 checks pass. Both isolated browser suites pass; screenshots inspected at desktop and 390px.
+- PR #77 opened against main. Initial GitHub audit job and Vercel preview build passed. Production merge/deployment await the remaining browser CI checks.

@@ -1,5 +1,12 @@
 # Moto Mission Documentation
 
+- [Swift port handoff](../SWIFT_PORT_HANDOFF.txt)
+- [Web and Swift parallel-use requirements](WEB_SWIFT_COEXISTENCE.md)
+- [Frontend refresh](FRONTEND_REDESIGN.md)
+- [Generated app inventory](APP_INVENTORY.txt)
+- [Handoff repairs and validation](HANDOFF_VALIDATION.md)
+- [Durable ride storage and backend prerequisites](RIDE_SYNC.md)
+
 - [Roadmap](ROADMAP.md)
 - [Initial sprint](NEXT_SPRINT.md)
 - [Architecture](ARCHITECTURE.md)

@@ -29,6 +29,20 @@ Moto Engineering Cloud is the software platform for the Moto Mission motorcycle 
 - `manifest.webmanifest` / service worker — installable PWA support
 - `vercel.json` — deployment routing, caching, and security headers
 
+## Developer handoff and Swift port
+
+The web app must remain usable throughout the Swift port. Swift is an additional client during development, using compatible accounts and records; it must not require retiring the web app. Release web repairs independently when verified. Backend changes must remain compatible with the deployed web client until a deliberate cutover. See [parallel-use requirements](docs/WEB_SWIFT_COEXISTENCE.md).
+
+Start with [SWIFT_PORT_HANDOFF.txt](SWIFT_PORT_HANDOFF.txt). It documents the current app, screen parity, data and API contracts, safety limits, proposed native structure, port phases, and a starting prompt for Claude.
+
+- [Source inventory](docs/APP_INVENTORY.txt): module loading, dependencies, table/RPC references, storage keys and checked-in base schemas. Regenerate with `npm run docs:inventory`.
+- [Repair and validation record](docs/HANDOFF_VALIDATION.md): changes, local test evidence, remaining risks and release checks.
+- Copy `.env.example` to `.env.local` and supply an authorized development project's public configuration. The existing client fallback points to the production project; override both URL and key before development.
+
+Run `npm ci` only when dependencies need installation, then `npm run dev`. Vite serves the frontend; it does not execute the Vercel `api/` handlers. Run `npm run audit` for syntax, offline regression tests and the production build. Optional mocked browser verification is documented in the validation record.
+
+Native integration still requires a full reviewed schema export. The three recording tables have been inspected and copied to a local schema fixture for compatibility tests. The web ride queue persists in owner-scoped IndexedDB and uses the completion contract in docs/RIDE_SYNC.md. See docs/DEPLOYMENT_RELEASE.md for release receipts and remaining limits. Browser persistence does not provide continuous iOS background recording.
+
 ## Release rules
 
 A release is acceptable only when:

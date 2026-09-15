@@ -22,8 +22,8 @@ function providerCard(name, key, cap, used, configured, note) {
   const percent = cap ? Math.min(100, Math.round((used / cap) * 100)) : 0;
   const state = configured ? 'ready' : 'missing';
   return `<article class="providerCard ${state}">
-    <header><div><small>${esc(key)}</small><h3>${esc(name)}</h3></div><span>${configured ? 'READY' : 'KEY MISSING'}</span></header>
-    ${cap == null ? '<strong>Unlimited free fallback</strong>' : `<strong>${used.toLocaleString()} / ${cap.toLocaleString()}</strong><div class="providerMeter"><i style="width:${percent}%"></i></div><p>${remaining.toLocaleString()} requests remaining this month</p>`}
+    <header><div><small>${esc(key)}</small><h3>${esc(name)}</h3></div><span>${configured ? 'CONFIGURED' : 'KEY MISSING'}</span></header>
+    ${cap == null ? '<strong>Free fallback; availability varies</strong>' : `<strong>${used.toLocaleString()} / ${cap.toLocaleString()}</strong><div class="providerMeter"><i style="width:${percent}%"></i></div><p>${remaining.toLocaleString()} requests remaining this month</p>`}
     <footer>${esc(note)}</footer>
   </article>`;
 }

@@ -1,3 +1,5 @@
+import { queryNumber, validCoordinates, requireGet } from '../server/request-validation.js';
+
 const RAW_SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 
@@ -149,14 +151,15 @@ async function google(lat, lon, prevLat, prevLon, heading) {
 }
 
 export default async function handler(req, res) {
+  if (!requireGet(req, res)) return;
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Allow', 'GET');
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
-  const lat = Number(req.query.lat), lon = Number(req.query.lon), heading = Number(req.query.heading), prevLat = Number(req.query.prevLat), prevLon = Number(req.query.prevLon);
-  if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) return res.status(400).json({ error: 'Invalid coordinates' });
+  const lat = queryNumber(req.query.lat), lon = queryNumber(req.query.lon), heading = queryNumber(req.query.heading), prevLat = queryNumber(req.query.prevLat), prevLon = queryNumber(req.query.prevLon);
+  if (!validCoordinates(lat, lon)) return res.status(400).json({ error: 'Invalid coordinates' });
 
   const requested = ['auto', 'tomtom', 'google'].includes(req.query.provider) ? req.query.provider : 'auto';
   const order = requested === 'auto' ? ['tomtom', 'google'] : [requested];

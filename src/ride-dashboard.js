@@ -159,6 +159,7 @@ function open(){
       <button id="dashRideToggle" type="button">START RIDE</button>
     </div>
     <div class="dashTabs" id="dashTabs"></div>
+    <div id="dashRecovery" role="status" hidden></div>
     <div class="dashPages" id="dashPages"></div>
     <footer><button id="dashPrev" aria-label="Previous display">‹</button><div id="dashDots"></div><button id="dashAddPage">＋ DISPLAY</button><button id="dashNext" aria-label="Next display">›</button></footer>
   </section>`;
@@ -175,6 +176,15 @@ function open(){
     render();
   };
   $('#dashRideToggle').onclick = toggleRide;
+  $('#dashRecovery').onclick = async event => {
+    const action = event.target.closest('[data-recovery]')?.dataset.recovery;
+    if (!action || rideActionBusy) return;
+    if (action === 'discard' && !confirm('Discard this local ride and its pending upload? Export a recovery copy first if needed.')) return;
+    rideActionBusy = true; refresh(true);
+    try { await window.MotoRide[action](); }
+    catch (error) { alert(error.message); }
+    finally { rideActionBusy = false; state.ride = window.MotoRide.getState(); refresh(true); }
+  };
   $('#dashAddPage').onclick = addPage;
   $('#dashPrev').onclick = () => scrollPage(-1);
   $('#dashNext').onclick = () => scrollPage(1);
@@ -405,12 +415,14 @@ async function toggleRide(){
   const controller = window.MotoRide;
   if(!controller){ alert('Ride logger is still loading. Try again in a moment.'); return; }
   const ride = controller.getState?.() || state.ride || {};
-  if(!ride.active){ showRidePicker(); return; }
-  if(!confirm('Stop and save this ride?')) return;
+  if(!ride.active && !['interrupted','pending'].includes(ride.status)){ showRidePicker(); return; }
+  if(ride.active && !confirm('Stop and save this ride?')) return;
   rideActionBusy = true;
   refresh(true);
   try{
-    await controller.stop();
+    if (ride.status === 'interrupted') await controller.resume();
+    else if (ride.status === 'pending') await controller.retry();
+    else await controller.stop();
   }catch(error){
     alert(error?.message || String(error));
   }finally{
@@ -441,6 +453,19 @@ function renderRideControl(){
   setText(toggle,active ? (rideActionBusy ? 'SAVING…' : 'STOP & SAVE') : (starting || rideActionBusy ? 'STARTING…' : 'START RIDE'));
   if(active && !runtime.rideWasActive) resetRuntime();
   runtime.rideWasActive = active;
+  const recovery = $('#dashRecovery');
+  const recoverable = ['interrupted','pending'].includes(ride.status);
+  if (recovery) {
+    recovery.hidden = !recoverable;
+    const text = recoverable ? `<p>${esc(ride.error || (ride.status === 'interrupted' ? 'This recording was interrupted. Resume capture or finish with the samples saved on this device.' : 'Saved on this device. Keep this browser data until upload is confirmed.'))}</p><div>${ride.status === 'interrupted' ? '<button data-recovery="stop">Finish & upload</button>' : ''}<button data-recovery="export">Export recovery copy</button>${!ride.completionRequested ? '<button data-recovery="discard">Discard local ride</button>' : ''}</div>` : '';
+    if (recovery.innerHTML !== text) recovery.innerHTML = text;
+  }
+  if (recoverable) {
+    setText(status,ride.status === 'interrupted' ? 'RECORDING INTERRUPTED' : 'UPLOAD PENDING');
+    setText(bike,ride.bikeName || 'Motorcycle');
+    setText(toggle,ride.syncing || rideActionBusy ? 'WORKING…' : ride.status === 'interrupted' ? 'RESUME RIDE' : 'RETRY UPLOAD');
+    toggle.disabled = ride.syncing || rideActionBusy || starting;
+  }
 }
 
 function resetRuntime(){

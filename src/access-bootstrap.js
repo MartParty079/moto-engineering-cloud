@@ -36,6 +36,7 @@ function ensureAccessUI(){
 function ensureQuickButton(){
   let button=document.querySelector('#accessQuickButton');
   if(!button){button=document.createElement('button');button.id='accessQuickButton';button.type='button';button.addEventListener('click',()=>openAccessPanel('dashboard'));document.body.appendChild(button)}
+  const actions=document.querySelector('.topActions');if(actions&&button.parentNode!==actions)actions.prepend(button);
   const [icon,label]=ROLE_META[profile.role]||['👤',profile.role];
   button.innerHTML=`<span>${icon}</span><b>${esc(label)}</b><i>⌄</i>`;
   button.title='Open Admin Console';

@@ -90,7 +90,9 @@ export function createMockSupabase(){
   return{
     auth,storage,
     from:table=>new Query(table),
-    rpc:async()=>({data:[],error:null}),
+    rpc:async(name,args)=>name==='complete_ride_v1'
+      ? {data:{session_id:args.p_session_id,status:'complete'},error:null}
+      : {data:[],error:null},
     __database:database,
     __reset(){for(const [key,value] of database)database.set(key,value.filter(row=>!String(row.id||'').includes('ride_sessions-')&&!String(row.id||'').includes('ride_samples-')))}
   };

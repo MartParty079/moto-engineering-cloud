@@ -118,6 +118,7 @@
   const removePrompt = () => document.getElementById('motoPermissionPrompt')?.remove();
 
   const showPrompt = () => {
+    if (!document.querySelector('#nav')) return;
     if (document.getElementById('motoPermissionPrompt')) return;
 
     if (!document.getElementById('motoPermissionPromptStyles')) {

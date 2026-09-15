@@ -1,4 +1,5 @@
 import { supabase } from './supabase.js';
+import { recorder } from './ride-runtime.js';
 
 const finite = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value)) ? Number(value) : null;
 const hav = (a,b) => {
@@ -357,10 +358,15 @@ function queueMotionSample(acceleration){
   const point = latestGps();
   if(!ride?.sessionId || !motionEnabled) return;
   lastMotionSave = Date.now();
-  motionBuffer.push({
+  const sample = {
     session_id:ride.sessionId,recorded_at:new Date().toISOString(),latitude:point?.lat ?? null,longitude:point?.lon ?? null,altitude_m:point?.altitude ?? null,accuracy_m:point?.accuracy ?? null,speed_mps:point?.speedMps ?? null,heading_deg:point?.heading ?? null,
     accel_x:acceleration.x ?? null,accel_y:acceleration.y ?? null,accel_z:acceleration.z ?? null,accel_g:accelG,rotation_beta:pitch,rotation_gamma:roll,lean_deg:leanCalibrated && Number.isFinite(lean) ? lean : null,pitch_deg:pitch,roll_deg:roll
-  });
+  };
+  if (recorder.recording && recorder.ride?.id === ride.sessionId) {
+    void recorder.motion(sample);
+    return;
+  }
+  motionBuffer.push(sample);
   if(motionBuffer.length >= 12) void flushMotion();
 }
 

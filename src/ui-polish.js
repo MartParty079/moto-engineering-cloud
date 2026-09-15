@@ -67,9 +67,9 @@ function cleanNav(){
   const adventure = $('#adventureNav');
   if(adventure){
     const label=adventure.querySelector('span:nth-of-type(2)');
-    if(label) label.textContent='Maps & Routes';
+    if(label && label.textContent !== 'Maps & Routes') label.textContent='Maps & Routes';
     const badge=adventure.querySelector('em');
-    if(badge) badge.textContent='GPX';
+    if(badge && badge.textContent !== 'GPX') badge.textContent='GPX';
     const group = [...nav.querySelectorAll('.navGroup')].find(item => item.querySelector('.navLabel')?.textContent.trim() === 'Operations');
     if(group && !group.contains(adventure)) group.appendChild(adventure);
   }
@@ -88,6 +88,7 @@ function setBottomActive(name){
 
 function bottomNav(){
   let bar = $('#motoBottomNav');
+  if (!$('#nav')) { bar?.remove(); return; }
   if(!bar){
     bar = document.createElement('nav');
     bar.id = 'motoBottomNav';

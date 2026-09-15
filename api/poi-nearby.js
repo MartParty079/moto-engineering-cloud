@@ -1,3 +1,5 @@
+import { queryNumber, validCoordinates, requireGet } from '../server/request-validation.js';
+
 const ENDPOINTS = [
   'https://overpass-api.de/api/interpreter',
   'https://overpass.kumi.systems/api/interpreter',
@@ -216,21 +218,22 @@ async function openStreetMapPlaces(category, lat, lon, radius) {
 }
 
 export default async function handler(req, res) {
+  if (!requireGet(req, res)) return;
   res.setHeader('Cache-Control', 'no-store');
 
-  const lat = Number(req.query.lat);
-  const lon = Number(req.query.lon);
+  const lat = queryNumber(req.query.lat);
+  const lon = queryNumber(req.query.lon);
   const radius = Math.max(1000, Math.min(50000, Number(req.query.radius) || 25000));
   const category = CATEGORIES[req.query.category] ? req.query.category : 'fuel';
   const authorization = req.headers.authorization;
   const attempts = [];
 
-  if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) {
+  if (!validCoordinates(lat, lon)) {
     return res.status(400).json({ error: 'Invalid coordinates' });
   }
 
   if (process.env.GOOGLE_PLACES_API_KEY) {
-    const quota = await consumePlacesRequest(authorization);
+    const quota = await consumePlacesRequest(authorization).catch(() => ({ allowed: false, reason: 'Usage counter unavailable' }));
     if (quota.allowed) {
       try {
         const places = await googlePlaces(category, lat, lon, radius);

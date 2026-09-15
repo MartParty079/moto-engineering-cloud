@@ -1,5 +1,7 @@
 # Data Contracts
 
+The current ride protocol is documented in [RIDE_SYNC.md](RIDE_SYNC.md). The additive migration is reconciled with the inspected recording schema; see DEPLOYMENT_RELEASE.md for its application receipt. Server sample IDs remain bigint; client_sample_id is the UUID retry key.
+
 ## Status
 
 This document defines the baseline contract that must be refined before firmware and application telemetry implementation.

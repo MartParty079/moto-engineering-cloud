@@ -41,14 +41,15 @@ add('AI Supabase tables are disabled',aiRemoval.includes('ai_messages')&&aiRemov
 add('OpenAI and ChatGPT network calls are blocked',aiRemoval.includes('api\\.openai\\.com')&&aiRemoval.includes('chatgpt\\.com')&&aiRemoval.includes('window.fetch'));
 add('AI removal clears legacy local storage',aiRemoval.includes('chatgpt|openai|moto-ai|ai-assistant')&&aiRemoval.includes('localStorage.removeItem'));
 
-const onPositionStart=rideCenter.indexOf('function onPosition');
-const uploadStart=rideCenter.indexOf('async function uploadBufferedSamples');
-const onPosition=rideCenter.slice(onPositionStart,uploadStart);
-add('Live GPS callback contains no Supabase call',onPositionStart>=0&&!/supabase\s*\./.test(onPosition));
-add('Live GPS callback contains no global event dispatch',!/dispatchEvent\s*\(/.test(onPosition));
-add('Live GPS samples are rate limited',/SAMPLE_INTERVAL_MS\s*=\s*1000/.test(rideCenter)&&/timestamp\s*-\s*lastSampleAt\s*<\s*SAMPLE_INTERVAL_MS/.test(onPosition));
-add('Sample upload happens after recording callback',uploadStart>onPositionStart&&/uploadBufferedSamples\(buffered\)/.test(rideCenter));
-
+const recorder=read('src/ride-recorder.js');
+const runtime=read('src/ride-runtime.js');
+const journal=read('src/ride-journal.js');
+const callback=recorder.slice(recorder.indexOf('  capture()'),recorder.indexOf('  async stop()'));
+add('Live GPS callback uses the durable journal without Supabase',callback.includes('this.journal.append')&&!/supabase\s*\./.test(callback));
+add('Live GPS callback contains no global event dispatch',!/dispatchEvent\s*\(/.test(callback));
+add('Live GPS samples are rate limited',runtime.includes('timestamp - lastSampleAt < 1000'));
+add('Runtime excludes recording sessions from network synchronization',runtime.includes("ride.status === 'recording'")&&runtime.includes('continue;'));
+add('Journal commits samples and summaries atomically',journal.includes("durability: 'strict'")&&journal.includes("db.transaction(['rides', 'samples']"));
 add('GPS broker multiplexes virtual subscribers',/const subscribers\s*=\s*new Map/.test(gps)&&/nativeWatch\(fanOutPosition/.test(gps));
 add('GPS broker overrides clearWatch as well as watchPosition',/Object\.defineProperty\(geo,'watchPosition'/.test(gps)&&/Object\.defineProperty\(geo,'clearWatch'/.test(gps));
 add('GPS broker suspends non-recorder subscribers',/subscriber\.recordingOwner/.test(gps)&&/suspendedCallbacks/.test(gps));
@@ -79,8 +80,8 @@ add('Fixed action dock does not swallow swipe gestures',/\.recActions\{pointer-e
 add('Recorder reserves space below feature cards',/padding-bottom:calc\(122px/.test(scrollCss));
 
 add('Legacy iPhone safe-mode loader is retired',!pwa.includes('iphone-recording-safe-mode'));
-add('PWA build is v46',pwa.includes('ai-removed-speed-limits-v46')&&pwa.includes('/sw.js?v=46'));
-add('Service worker cache is v46',worker.includes("const VERSION='v46'"));
+add('PWA build is v47',pwa.includes('durable-rider-redesign-v47')&&pwa.includes('/sw.js?v=47'));
+add('Service worker cache is v47',worker.includes("const VERSION='v47'"));
 add('Service worker precaches AI removal and road context',worker.includes('/src/remove-ai-integration.js?v=1')&&worker.includes('/src/recorder-road-context-v45.js?v=2'));
 add('Service worker still precaches Phase 4 scroll and feature layers',worker.includes('/src/recorder-phase4-v44.js?v=1')&&worker.includes('/src/recorder-scroll-v43.css')&&worker.includes('/src/recorder-features-v42.js?v=1'));
 

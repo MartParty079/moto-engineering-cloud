@@ -1,7 +1,11 @@
 .vercel/
+supabase/.temp/
 node_modules/
 dist/
 coverage/
+recording-static-audit.json
+recording-static-audit.md
+test-results/
 
 .env
 .env.*

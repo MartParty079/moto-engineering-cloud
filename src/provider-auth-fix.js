@@ -5,8 +5,10 @@ const nativeFetch = window.fetch.bind(window);
 const providerKey = 'motoRoadProvider';
 
 window.fetch = async function motoProviderFetch(input, init = {}) {
-  const originalUrl = typeof input === 'string' ? input : input?.url || '';
-  if (!originalUrl.includes('/api/road-info')) return nativeFetch(input, init);
+  const originalUrl = typeof input === 'string' || input instanceof URL ? String(input) : input?.url || '';
+  let url;
+  try { url = new URL(originalUrl, location.href); } catch { return nativeFetch(input, init); }
+  if (url.origin !== location.origin || !['/api/road-info', '/api/road-info-live'].includes(url.pathname)) return nativeFetch(input, init);
 
   let session = (await supabase.auth.getSession()).data.session;
   if (!session?.access_token) session = (await supabase.auth.refreshSession()).data.session;
@@ -15,8 +17,9 @@ window.fetch = async function motoProviderFetch(input, init = {}) {
   headers.set('Accept', 'application/json');
   if (session?.access_token) headers.set('Authorization', `Bearer ${session.access_token}`);
 
-  const rewrittenUrl = originalUrl.replace('/api/road-info', '/api/road-info-live');
-  const response = await nativeFetch(rewrittenUrl, { ...init, headers, cache: 'no-store' });
+  url.pathname = '/api/road-info-live';
+  const request = input instanceof Request ? new Request(url, input) : url;
+  const response = await nativeFetch(request, { ...init, headers, cache: 'no-store' });
   if (!response.ok) return response;
 
   try {

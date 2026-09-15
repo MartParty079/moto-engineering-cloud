@@ -21,6 +21,8 @@ Configure local Vite with public placeholders and VITE_SUPABASE_URL=http://127.0
 
 Existing CI retains Chromium/WebKit recorder proof, scrolling, road-context and AI-removal suites. Headless WebKit is not a physical iPhone field test.
 
+The road-context suite starts the real recorder and verifies bounded road lookups during isolation. Isolation forwards GPS directly to the road-context owner, avoiding capture-listener ordering dependencies. GPS fixtures timestamp each delivered fix so stale pre-ride positions cannot falsely pause recording.
+
 ## Remaining limits
 
 Physical iPhone/PWA capture, long rides, suspension and hardware remain manual. Only the three recording tables were inspected; a full backend/Storage export is needed for native parity. No development cloud project or Apple signing setup was created. Keep pending site data during updates. Review security-advisor warnings and deployment receipts; see RIDE_SYNC.md for rollback and accounting limits.

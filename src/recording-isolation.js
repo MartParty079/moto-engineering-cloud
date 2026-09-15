@@ -273,6 +273,7 @@
     if (!isolated) return;
     event.stopImmediatePropagation();
     gps = {...gps,...(event.detail || {})};
+    window.MotoRecorderRoadContext?.updatePosition?.(event.detail);
     diagnostics.gpsEvents += 1;
     diagnostics.lastGpsAt = Date.now();
     scheduleRender();

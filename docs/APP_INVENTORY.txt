@@ -320,7 +320,7 @@ src/recorder-phase4-v44.js [Not loaded by current shell; 21 lines]
 src/recorder-road-context-compat-v45.js [Not loaded by current shell; 25 lines]
   Events observed: moto-road-update
 
-src/recorder-road-context-v45.js [Not loaded by current shell; 373 lines]
+src/recorder-road-context-v45.js [Not loaded by current shell; 381 lines]
   Imports: ./supabase.js
   Local/session storage keys (literal): motoRoadProvider
   Events emitted: moto-road-update
@@ -328,7 +328,7 @@ src/recorder-road-context-v45.js [Not loaded by current shell; 373 lines]
 
 src/recorder-scroll-v43.css [Loaded browser source; 8 lines]
 
-src/recording-isolation.js [Loaded browser source; 300 lines]
+src/recording-isolation.js [Loaded browser source; 302 lines]
   Local/session storage keys (literal): motoRecordingDiagnosticsV41
   Events emitted: moto-recording-isolation-change
   Events observed: moto-gps-fix, moto-ride-state, moto-road-update, pagehide

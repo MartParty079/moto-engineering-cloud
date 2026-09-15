@@ -11,7 +11,7 @@ const browser=await browserType.launch({headless:true});
 const context=await browser.newContext({viewport:{width:430,height:932},isMobile:true,hasTouch:true,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1'});
 await context.addInitScript(()=>{
   const position={coords:{latitude:30.2672,longitude:-97.7431,altitude:160,accuracy:6,heading:45,speed:22},timestamp:Date.now()};
-  Object.defineProperty(navigator,'geolocation',{configurable:true,value:{watchPosition(success){queueMicrotask(()=>success(position));return 1},clearWatch(){},getCurrentPosition(success){queueMicrotask(()=>success(position))}}});
+  Object.defineProperty(navigator,'geolocation',{configurable:true,value:{watchPosition(success){queueMicrotask(()=>success({...position,timestamp:Date.now()}));return 1},clearWatch(){},getCurrentPosition(success){queueMicrotask(()=>success({...position,timestamp:Date.now()}))}}});
   localStorage.setItem('moto-startup-permissions-v1',JSON.stringify({location:'granted',motion:'disabled'}));
   localStorage.setItem('motocloud-install-seen','1');
 });
@@ -46,7 +46,8 @@ try{
   if(parserProof.missing.limit_mph!==undefined)throw new Error(`Missing limit was not undefined: ${JSON.stringify(parserProof.missing)}`);
   if(parserProof.zero!==null||parserProof.absurd!==null)throw new Error('Invalid speed limits were accepted');
 
-  await page.evaluate(()=>window.MotoRecordingIsolation.forceStart({speedMph:48,bikeName:'Road Context Test'}));
+  await page.waitForFunction(()=>window.MotoRide?.getBikes?.().length>0);
+  await page.evaluate(()=>window.MotoRide.start(window.MotoRide.getBikes()[0].id));
   await page.waitForSelector('#motoRecordingIsolation',{state:'visible',timeout:10000});
   const initialTopLimit=await page.locator('#recLimit').innerText();
   if(initialTopLimit==='0')throw new Error('Missing limit rendered as 0 MPH before lookup');

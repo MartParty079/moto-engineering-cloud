@@ -172,16 +172,14 @@ try{
   const routeViews=['dashboard','garageMode','roadmap','engineering','pcb','firmware','garage','parts','maintenance','rides','notes','media'];
   let routeIndex=0;
   for(const view of routeViews){
-    await page.click('#menu');
-    await page.waitForFunction(()=>document.querySelector('#nav')?.classList.contains('open'));
     const selector=`#nav [data-v="${view}"]`;
     const route=page.locator(selector).first();
     if(!await route.count()){
       evidence.skippedViews.push(view);
-      await page.click('#navClose');
-      await page.waitForFunction(()=>!document.querySelector('#nav')?.classList.contains('open'));
       continue;
     }
+    await page.click('#menu');
+    await page.waitForFunction(()=>document.querySelector('#nav')?.classList.contains('open'));
     await route.click();
     await page.waitForFunction(()=>!document.querySelector('#nav')?.classList.contains('open'));
     await page.waitForTimeout(180);

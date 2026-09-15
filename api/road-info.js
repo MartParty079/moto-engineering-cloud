@@ -1,3 +1,5 @@
+import { queryNumber, validCoordinates, requireGet } from '../server/request-validation.js';
+
 const ENDPOINTS = [
   'https://overpass-api.de/api/interpreter',
   'https://overpass.kumi.systems/api/interpreter',
@@ -347,18 +349,19 @@ async function osmRoad(lat, lon, heading, speed) {
 }
 
 export default async function handler(req, res) {
+  if (!requireGet(req, res)) return;
   res.setHeader('Cache-Control', 'no-store');
 
-  const lat = Number(req.query.lat);
-  const lon = Number(req.query.lon);
-  const heading = Number(req.query.heading);
-  const speed = Number(req.query.speed);
-  const prevLat = Number(req.query.prevLat);
-  const prevLon = Number(req.query.prevLon);
+  const lat = queryNumber(req.query.lat);
+  const lon = queryNumber(req.query.lon);
+  const heading = queryNumber(req.query.heading);
+  const speed = queryNumber(req.query.speed);
+  const prevLat = queryNumber(req.query.prevLat);
+  const prevLon = queryNumber(req.query.prevLon);
   const requested = ['auto', 'osm', 'tomtom', 'google'].includes(req.query.provider) ? req.query.provider : 'osm';
   const authorization = req.headers.authorization;
 
-  if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) {
+  if (!validCoordinates(lat, lon)) {
     return res.status(400).json({ error: 'Invalid coordinates' });
   }
 

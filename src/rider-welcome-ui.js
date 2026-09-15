@@ -100,13 +100,13 @@ function filterSearchResults() {
 
 function renderWelcome() {
   const main = $('#main');
-  if (!$('#nav [data-v="dashboard"]')?.classList.contains('active') || !main || main.querySelector('.motoWelcomePage')) return;
+  if (!$('#nav [data-v="dashboard"]')?.classList.contains('active') || !main || main.dataset.accessBlocked || main.querySelector('.motoWelcomePage')) return;
   const username = $('.userButton b')?.textContent?.trim() || 'Rider';
   main.innerHTML = `<section class="motoWelcomePage">
-    <div class="motoWelcomeHero"><div><span class="eyebrow">WELCOME BACK</span><h2>Ready to ride, ${esc(username)}?</h2><p>Start a ride, record maintenance, or adjust your motorcycle and account settings from one clean home screen.</p></div><div class="motoWelcomeBadge"><span>🏍️</span><strong>Moto Mission</strong><small>Your motorcycles and rides, without the engineering workspace.</small></div></div>
+    <div class="motoWelcomeHero"><div><span class="eyebrow">WELCOME BACK</span><h2>Ready to ride, ${esc(username)}?</h2><p>A place for your motorcycles, the miles ahead, and the details in between.</p></div><div class="motoWelcomeBadge"><span>🏍️</span><strong>Moto Mission</strong><small>Keep your next ride within reach.</small></div></div>
     <div class="motoWelcomeActions"><button class="motoWelcomeAction" id="welcomeStartRide"><span class="icon">▶</span><strong>Start Ride</strong><small>Open the ride dashboard and begin GPS recording.</small></button><button class="motoWelcomeAction" id="welcomeAddMaintenance"><span class="icon">🔧</span><strong>Add Maintenance</strong><small>Log service, mileage, parts, cost, and notes.</small></button><button class="motoWelcomeAction" id="welcomeSettings"><span class="icon">⚙</span><strong>Settings</strong><small>Manage motorcycles, ride display, and account security.</small></button></div>
   </section>`;
-  $('#welcomeStartRide').onclick = () => window.MotoRide?.open?.() || window.dispatchEvent(new CustomEvent('moto-ride-open-request'));
+  $('#welcomeStartRide').onclick = () => { if (window.MotoRide?.open) window.MotoRide.open(); else window.dispatchEvent(new CustomEvent('moto-ride-open-request')); };
   $('#welcomeAddMaintenance').onclick = () => void openMaintenanceModal();
   $('#welcomeSettings').onclick = openSettingsModal;
 }

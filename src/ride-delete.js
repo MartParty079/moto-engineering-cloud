@@ -17,6 +17,10 @@ async function discardActiveRide(){
  try{saved=JSON.parse(localStorage.getItem('motoActiveRide')||'null')}catch{}
  if(!saved?.id)return alert('No active ride was found.');
  if(!confirm('Stop and discard this ride? The ride and all recorded sensor samples will be permanently deleted.'))return;
+ if(saved.durable){
+  try{await window.MotoRide.discard()}catch(error){alert(error.message)}
+  return;
+ }
  const button=$('#rideDiscard');if(button){button.disabled=true;button.textContent='DISCARDING…'}
  if(!await removeRide(saved.id)){if(button){button.disabled=false;button.textContent='STOP & DISCARD'}return}
  localStorage.removeItem('motoActiveRide');

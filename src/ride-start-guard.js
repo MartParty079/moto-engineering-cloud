@@ -137,7 +137,7 @@
     const guarded = async bikeId => {
       progress('permissions','CHECKING RIDE LOCATION');
       try {
-        await ensurePermissions();
+        await deadline(ensurePermissions(),20000,'Ride permissions');
         progress('starting','STARTING RIDE');
         const result = await deadline(original(bikeId),22000,'Ride session');
         progress('ready',result?.gpsLocked ? 'RECORDING' : 'RECORDING · WAITING FOR GPS');
@@ -150,7 +150,7 @@
         setTimeout(() => {
           const state = window.MotoRide?.getState?.() || {};
           const toggle = document.querySelector('#dashRideToggle');
-          if (toggle) {
+          if (toggle && !['pending','interrupted'].includes(state.status)) {
             toggle.disabled = false;
             toggle.textContent = state.active ? 'STOP & SAVE' : 'START RIDE';
           }
@@ -174,7 +174,7 @@
     setTimeout(() => {
       const state = window.MotoRide?.getState?.() || {};
       const toggle = document.querySelector('#dashRideToggle');
-      if (!state.starting && toggle) {
+      if (!state.starting && toggle && !['pending','interrupted'].includes(state.status)) {
         toggle.disabled = false;
         toggle.textContent = state.active ? 'STOP & SAVE' : 'START RIDE';
       }

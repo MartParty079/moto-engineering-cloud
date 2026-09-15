@@ -1,3 +1,4 @@
+import { validPosition, freshPosition } from './location-validity.js';
 // Single native geolocation authority for Moto Mission.
 // Every legacy watchPosition subscriber is multiplexed through one iOS GPS watch.
 (() => {
@@ -76,7 +77,7 @@
   }
 
   function remember(position){
-    if(!position?.coords) return position;
+    if(!validPosition(position)) return null;
     nativeCallbacks += 1;
     latestPosition = position;
     window.__motoLatestPosition = position;
@@ -115,6 +116,7 @@
 
   function fanOutPosition(position){
     const remembered=remember(position);
+    if(!remembered) return;
     for(const subscriber of subscribers.values()){
       if(!subscriberAllowed(subscriber))continue;
       try{subscriber.success?.(remembered)}catch(error){console.error('GPS subscriber failed',error)}
@@ -154,7 +156,7 @@
     if(latestPosition){
       const age=Date.now()-Number(latestPosition.timestamp||0);
       const allowed=subscribers.get(id)?.options.maximumAge??0;
-      if(age<=allowed) queueMicrotask(()=>{const subscriber=subscribers.get(id);if(subscriber&&subscriberAllowed(subscriber))success?.(latestPosition)});
+      if(age>=0 && age<=allowed) queueMicrotask(()=>{const subscriber=subscribers.get(id);if(subscriber&&subscriberAllowed(subscriber))success?.(latestPosition)});
     }
     return id;
   }
@@ -170,17 +172,17 @@
   function wrappedCurrent(success,error,options={}){
     const normalized=normalizedOptions(options);
     const age=latestPosition?Date.now()-Number(latestPosition.timestamp||0):Infinity;
-    if(latestPosition&&age<=Math.max(normalized.maximumAge,1000)){
+    if(latestPosition&&age>=0&&age<=normalized.maximumAge){
       queueMicrotask(()=>success?.(latestPosition));
       return;
     }
-    nativeCurrent(position=>success?.(remember(position)),error,normalized);
+    nativeCurrent(position=>{ const result=remember(position); if(result) success?.(result); else error?.({code:2,message:'Invalid GPS fix'}); },error,normalized);
   }
 
   window.__motoGpsPublish=remember;
   window.__motoGpsGetLatest=()=>latestPosition;
   window.__motoGpsWaitForFix=(timeoutMs=20000)=>new Promise((resolve,reject)=>{
-    if(latestPosition){resolve(latestPosition);return}
+    if(freshPosition(latestPosition,1500)){resolve(latestPosition);return}
     const timer=setTimeout(()=>{window.removeEventListener('moto-gps-fix',onFix);reject(new Error('Waiting for GPS fix'))},timeoutMs);
     const onFix=()=>{clearTimeout(timer);window.removeEventListener('moto-gps-fix',onFix);resolve(latestPosition)};
     window.addEventListener('moto-gps-fix',onFix,{once:true});

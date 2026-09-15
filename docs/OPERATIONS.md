@@ -1,5 +1,7 @@
 # Production Operations
 
+The current durable ride contract and its mandatory backend release prerequisites are documented in [RIDE_SYNC.md](RIDE_SYNC.md). The additive completion migration is not remotely applied; reconcile the authoritative development schema before deployment.
+
 ## Services
 
 - GitHub: source of truth

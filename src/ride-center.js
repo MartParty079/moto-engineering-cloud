@@ -1,342 +1,91 @@
 import { supabase } from './supabase.js';
+import { recorder, subscribeRecorder, exportLocalRide } from './ride-runtime.js';
 
-const mph = mps => Number.isFinite(mps) ? mps * 2.236936 : 0;
-const ft = meters => Number.isFinite(meters) ? meters * 3.28084 : null;
-const fmtTime = seconds => `${String(Math.floor(seconds / 3600)).padStart(2,'0')}:${String(Math.floor((seconds % 3600) / 60)).padStart(2,'0')}:${String(seconds % 60).padStart(2,'0')}`;
-const timeout = (promise, ms, label) => Promise.race([
-  promise,
-  new Promise((_, reject) => setTimeout(() => reject(new Error(`${label} timed out.`)), ms))
-]);
-
-const SAMPLE_INTERVAL_MS = 1000;
-const SAMPLE_CHUNK_SIZE = 200;
-
-let session = null;
-let bikes = [];
-let rides = [];
-let active = null;
-let starting = false;
-let watchId = null;
-let timerId = null;
-let lastPos = null;
-let lastSampleAt = 0;
-let gpsError = '';
-let distanceMi = 0;
-let maxSpeed = 0;
-let speedSum = 0;
-let speedCount = 0;
-let samples = [];
-let stopping = false;
-
-function bikeName(bike){
-  return [bike?.year,bike?.make,bike?.model].filter(Boolean).join(' ') || bike?.name || 'Motorcycle';
-}
-
-function hav(a,b){
-  const R = 3958.7613;
-  const toRad = value => value * Math.PI / 180;
-  const dLat = toRad(b.latitude - a.latitude);
-  const dLon = toRad(b.longitude - a.longitude);
-  const q = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a.latitude)) * Math.cos(toRad(b.latitude)) * Math.sin(dLon / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(q));
-}
-
-function rideState(){
-  const point = active?.latest || {};
-  const elapsed = active ? Math.max(0,Math.floor((Date.now() - active.startMs) / 1000)) : 0;
+// Preserve the unified Ride OS interface while the journal owns capture and recovery.
+let bikes = [], rides = [], stopping = false, loadGeneration = 0;
+const bikeName = bike => [bike.year, bike.make, bike.model].filter(Boolean).join(' ') || bike.name || 'Motorcycle';
+const ft = value => Number.isFinite(value) ? value * 3.28084 : null;
+function rideState() {
+  const ride = recorder.ride, point = ride?.latest || {};
+  const elapsed = ride ? Math.max(0, Math.floor(((ride.stoppedAt || Date.now()) - ride.startedAt) / 1000)) : 0;
   return {
-    active:Boolean(active),
-    starting,
-    stopping,
-    bikeId:active?.bike?.id || null,
-    bikeName:active?.bike_name || null,
-    sessionId:active?.id || null,
-    elapsedSeconds:elapsed,
-    elapsedText:fmtTime(elapsed),
-    distanceMiles:distanceMi,
-    speedMph:Number.isFinite(point.speed) ? point.speed : null,
-    averageSpeedMph:speedCount ? speedSum / speedCount : 0,
-    maxSpeedMph:maxSpeed,
-    heading:Number.isFinite(point.heading) ? point.heading : null,
-    altitudeFt:Number.isFinite(point.altitude) ? ft(point.altitude) : null,
-    accuracyFt:Number.isFinite(point.accuracy) ? ft(point.accuracy) : null,
-    latitude:point.latitude ?? null,
-    longitude:point.longitude ?? null,
-    gpsLocked:Boolean(active?.latest),
-    gpsError:gpsError || null,
-    bufferedSamples:samples.length
+    active: recorder.recording, recording: recorder.recording, starting: recorder.starting, stopping, syncing: recorder.syncing,
+    status: ride ? (recorder.recording ? 'recording' : ride.status === 'recording' ? 'interrupted' : ride.status) : 'idle',
+    bikeId: ride?.bike.id || null, bikeName: ride?.bikeName || null, sessionId: ride?.id || null,
+    elapsedSeconds: elapsed, elapsedText: `${String(Math.floor(elapsed / 3600)).padStart(2,'0')}:${String(Math.floor(elapsed % 3600 / 60)).padStart(2,'0')}:${String(elapsed % 60).padStart(2,'0')}`,
+    distanceMiles: ride?.distanceMiles || 0, speedMph: point.speed ?? null,
+    averageSpeedMph: ride?.speedCount ? ride.speedSum / ride.speedCount : 0, maxSpeedMph: ride?.maxSpeedMph || 0,
+    heading: point.heading ?? null, altitudeFt: ft(point.altitude), accuracyFt: ft(point.accuracy),
+    latitude: point.latitude ?? null, longitude: point.longitude ?? null, gpsLocked: Boolean(ride?.latest),
+    gpsError: recorder.error || null, error: recorder.error, bufferedSamples: ride ? ride.sequence - ride.acknowledged : 0,
+    completionRequested: Boolean(ride?.completionRequested)
   };
 }
-
-function rideHistory(){
-  return rides.map(ride => ({
-    id:ride.id,
-    bikeId:ride.bike_id || null,
-    bikeName:ride.bike_name || 'Motorcycle',
-    startedAt:ride.started_at || null,
-    endedAt:ride.ended_at || null,
-    durationSeconds:Number(ride.duration_seconds || 0),
-    distanceMiles:Number(ride.distance_miles || 0),
-    maxSpeedMph:Number(ride.max_speed_mph || 0),
-    averageSpeedMph:Number(ride.average_speed_mph || 0),
-    status:ride.status || 'complete'
-  }));
+function rideHistory() {
+  return rides.map(ride => ({id:ride.id,bikeId:ride.bike_id,bikeName:ride.bike_name,startedAt:ride.started_at,endedAt:ride.ended_at,
+    durationSeconds:Number(ride.duration_seconds || 0),distanceMiles:Number(ride.distance_miles || 0),maxSpeedMph:Number(ride.max_speed_mph || 0),
+    averageSpeedMph:Number(ride.average_speed_mph || 0),status:ride.status}));
 }
-
-function publish(){
+function publish() {
   const state = rideState();
   window.MotoRideState = state;
+  window.__motoRecordingActive = recorder.recording;
+  // Only capture owns this marker; recovery must not reactivate legacy motion writers.
+  try {
+    if (recorder.recording) localStorage.setItem('motoActiveRide', JSON.stringify({id:state.sessionId,bikeId:state.bikeId,startedAt:recorder.ride.startedAt,durable:true}));
+    else localStorage.removeItem('motoActiveRide');
+  } catch { /* IndexedDB is authoritative; this legacy UI hint is optional. */ }
   window.dispatchEvent(new CustomEvent('moto-ride-state',{detail:state}));
   return state;
 }
-
-function publishRides(){
-  const history = rideHistory();
-  window.MotoRideHistory = history;
-  window.dispatchEvent(new CustomEvent('moto-rides-update',{detail:history}));
-  return history;
-}
-
-async function loadData(){
-  const {data:{session:nextSession}} = await supabase.auth.getSession();
-  session = nextSession;
-  if(!session){
-    bikes = [];
-    rides = [];
-    publishRides();
-    publish();
-    return;
+async function loadData() {
+  const generation = ++loadGeneration;
+  const {data, error} = await supabase.auth.getSession();
+  if (generation !== loadGeneration) return;
+  const owner = error ? null : data.session?.user.id;
+  await recorder.setOwner(owner || null);
+  if (generation !== loadGeneration) return;
+  if (!owner) { bikes = []; rides = []; }
+  else {
+    const [bikeResult, rideResult] = await Promise.all([
+      supabase.from('bikes').select('*').eq('user_id',owner).order('created_at'),
+      supabase.from('ride_sessions').select('*').eq('user_id',owner).order('started_at',{ascending:false}).limit(40)
+    ]);
+    if (generation !== loadGeneration || owner !== recorder.owner) return;
+    if (bikeResult.error || rideResult.error) throw new Error('Garage or ride history could not be loaded.');
+    bikes = bikeResult.data || []; rides = rideResult.data || [];
   }
-
-  const [bikeResult,rideResult] = await Promise.all([
-    supabase.from('bikes').select('*').order('created_at'),
-    supabase.from('ride_sessions').select('*').order('started_at',{ascending:false}).limit(40)
-  ]);
-  bikes = bikeResult.data || [];
-  rides = rideResult.data || [];
-  publishRides();
+  window.MotoRideHistory = rideHistory();
+  window.dispatchEvent(new CustomEvent('moto-rides-update',{detail:window.MotoRideHistory}));
   publish();
 }
-
-function cleanupRuntime(){
-  if(watchId !== null){
-    navigator.geolocation.clearWatch(watchId);
-    watchId = null;
-  }
-  clearInterval(timerId);
-  timerId = null;
-  window.__motoRecordingActive = false;
+const refresh = () => loadData().catch(error => { recorder.error = error.message; publish(); });
+async function stop() {
+  if (stopping) return rideState();
+  stopping = true; publish();
+  try { await recorder.stop(); await refresh(); return rideState(); }
+  finally { stopping = false; publish(); }
 }
-
-async function beginRide(bikeId){
-  if(starting || active) return rideState();
-  if(!session){
-    const {data:{session:current}} = await supabase.auth.getSession();
-    session = current;
-  }
-  if(!session) throw new Error('Sign in before starting a ride.');
-
-  const bike = bikes.find(item => String(item.id) === String(bikeId));
-  if(!bike) throw new Error('Motorcycle not found.');
-  if(!navigator.geolocation) throw new Error('GPS is unavailable.');
-
-  starting = true;
-  gpsError = '';
-  publish();
-  cleanupRuntime();
-
-  try{
-    const result = await timeout(
-      supabase.from('ride_sessions').insert({
-        user_id:session.user.id,
-        bike_id:bike.id,
-        bike_name:bikeName(bike),
-        status:'recording'
-      }).select().single(),
-      15000,
-      'Ride session'
-    );
-    if(result.error) throw result.error;
-
-    active = {...result.data,bike,startMs:Date.now(),latest:null};
-    localStorage.setItem('motoActiveRide',JSON.stringify({id:active.id,bikeId:bike.id,startedAt:active.startMs}));
-    distanceMi = 0;
-    maxSpeed = 0;
-    speedSum = 0;
-    speedCount = 0;
-    lastPos = null;
-    lastSampleAt = 0;
-    samples = [];
-    window.__motoRecordingActive = true;
-
-    watchId = navigator.geolocation.watchPosition(onPosition,onGpsError,{
-      enableHighAccuracy:true,
-      maximumAge:2000,
-      timeout:20000
-    });
-
-    // One deterministic UI/state update per second. GPS callbacks never publish directly.
-    timerId = setInterval(publish,1000);
-    publish();
-    return rideState();
-  }catch(error){
-    console.error('Ride start failed',error);
-    cleanupRuntime();
-    active = null;
-    localStorage.removeItem('motoActiveRide');
-    throw error;
-  }finally{
-    starting = false;
-    publish();
-  }
-}
-
-function onGpsError(error){
-  gpsError = error?.message || 'GPS signal unavailable.';
-}
-
-function onPosition(position){
-  if(!active) return;
-  const coordinates = position.coords;
-  const point = {latitude:coordinates.latitude,longitude:coordinates.longitude};
-
-  if(lastPos && Number.isFinite(coordinates.accuracy) && coordinates.accuracy < 80){
-    const delta = hav(lastPos,point);
-    if(Number.isFinite(delta) && delta >= 0 && delta < .5) distanceMi += delta;
-  }
-  lastPos = point;
-
-  const speed = mph(coordinates.speed);
-  if(speed >= 0 && speed < 250){
-    maxSpeed = Math.max(maxSpeed,speed);
-    speedSum += speed;
-    speedCount += 1;
-  }
-
-  gpsError = '';
-  active.latest = {
-    ...point,
-    altitude:coordinates.altitude,
-    accuracy:coordinates.accuracy,
-    speed,
-    heading:coordinates.heading,
-    timestamp:position.timestamp
-  };
-
-  const timestamp = Number(position.timestamp || Date.now());
-  if(timestamp - lastSampleAt < SAMPLE_INTERVAL_MS) return;
-  lastSampleAt = timestamp;
-
-  // Keep samples in memory while recording. No network/database work occurs here.
-  samples.push({
-    session_id:active.id,
-    user_id:session.user.id,
-    recorded_at:new Date(timestamp).toISOString(),
-    latitude:coordinates.latitude,
-    longitude:coordinates.longitude,
-    altitude_m:coordinates.altitude ?? null,
-    accuracy_m:coordinates.accuracy ?? null,
-    speed_mps:Number.isFinite(coordinates.speed) ? coordinates.speed : null,
-    heading_deg:coordinates.heading ?? null
-  });
-}
-
-async function uploadBufferedSamples(rows){
-  if(!rows.length) return;
-  for(let index = 0; index < rows.length; index += SAMPLE_CHUNK_SIZE){
-    const chunk = rows.slice(index,index + SAMPLE_CHUNK_SIZE);
-    const result = await timeout(
-      supabase.from('ride_samples').insert(chunk),
-      20000,
-      'Ride sample upload'
-    );
-    if(result.error) throw result.error;
-  }
-}
-
-async function stopRide(confirmFirst = false){
-  if(!active) return rideState();
-  if(stopping) return rideState();
-  if(confirmFirst && !confirm('Stop and save this ride?')) return rideState();
-
-  stopping = true;
-  publish();
-  cleanupRuntime();
-
-  const duration = Math.floor((Date.now() - active.startMs) / 1000);
-  const average = speedCount ? speedSum / speedCount : 0;
-  const point = active.latest || {};
-  const finished = active;
-  const bike = active.bike;
-  const buffered = samples.splice(0);
-
-  try{
-    try{
-      await uploadBufferedSamples(buffered);
-    }catch(error){
-      console.error('Buffered sample upload failed',error);
-      // Preserve a bounded recovery copy without doing any work during the live ride.
-      try{
-        localStorage.setItem(`motoPendingRideSamples:${finished.id}`,JSON.stringify(buffered.slice(-3600)));
-      }catch{}
-    }
-
-    const {error:sessionError} = await supabase.from('ride_sessions').update({
-      ended_at:new Date().toISOString(),
-      duration_seconds:duration,
-      distance_miles:distanceMi,
-      max_speed_mph:maxSpeed,
-      average_speed_mph:average,
-      end_lat:point.latitude ?? null,
-      end_lng:point.longitude ?? null,
-      status:'complete',
-      updated_at:new Date().toISOString()
-    }).eq('id',finished.id);
-    if(sessionError) throw sessionError;
-
-    await supabase.from('bikes').update({
-      odometer:Number(bike.odometer || 0) + distanceMi,
-      gps_odometer_miles:Number(bike.gps_odometer_miles || 0) + distanceMi,
-      rides_since_odometer_confirm:Number(bike.rides_since_odometer_confirm || 0) + 1,
-      updated_at:new Date().toISOString()
-    }).eq('id',bike.id);
-
-    localStorage.removeItem('motoActiveRide');
-    active = null;
-    gpsError = '';
-    await loadData();
-    publish();
-    window.dispatchEvent(new CustomEvent('moto-ride-complete',{detail:{
-      sessionId:finished.id,
-      bikeId:bike.id,
-      distanceMiles:distanceMi,
-      durationSeconds:duration
-    }}));
-    return rideState();
-  }finally{
-    stopping = false;
-    publish();
-  }
-}
-
-function openUnifiedRide(){
-  if(window.MotoRideDash?.open){
-    window.MotoRideDash.open();
-    return;
-  }
-  window.dispatchEvent(new CustomEvent('moto-ride-open-request'));
-}
-
 window.MotoRide = {
-  getState:rideState,
-  getBikes:() => bikes.map(bike => ({id:bike.id,name:bikeName(bike),odometer:Number(bike.odometer || 0)})),
-  getRides:rideHistory,
-  start:beginRide,
-  stop:() => stopRide(false),
-  open:openUnifiedRide,
-  refresh:loadData
+  getState:rideState, getBikes:() => bikes.map(bike => ({id:bike.id,name:bikeName(bike),odometer:Number(bike.odometer || 0)})),
+  getRides:rideHistory, refresh, stop,
+  async start(id) { const bike = bikes.find(item => String(item.id) === String(id)); if (!bike) throw new Error('Choose a motorcycle from your garage.'); await recorder.start(bike); return publish(); },
+  async resume() { await recorder.resume(); return publish(); },
+  async retry() { await recorder.sync(); await refresh(); return publish(); },
+  async discard() { await recorder.discard(); return publish(); },
+  export:exportLocalRide,
+  open() { if (window.MotoRideDash?.open) window.MotoRideDash.open(); else window.dispatchEvent(new CustomEvent('moto-ride-open-request')); }
 };
-
-supabase.auth.onAuthStateChange(() => setTimeout(loadData,0));
-window.addEventListener('pagehide',cleanupRuntime);
-loadData();
+let lifecycle = '';
+subscribeRecorder(() => {
+  const next = [recorder.owner,recorder.recording,recorder.starting,recorder.syncing,recorder.ride?.status,recorder.error].join('|');
+  if (next !== lifecycle) { lifecycle = next; publish(); }
+});
+setInterval(() => { if (recorder.recording) publish(); },1000);
+setInterval(() => { if (recorder.owner && !recorder.recording && !recorder.starting && recorder.ride?.status === 'pending') recorder.sync(); },15000);
+window.addEventListener('online',() => { if (!recorder.recording) recorder.sync(); });
+window.addEventListener('moto-ride-complete',refresh);
+window.addEventListener('pagehide',() => { recorder.release(); publish(); });
+window.addEventListener('pageshow',refresh);
+supabase.auth.onAuthStateChange(() => setTimeout(refresh,0));
+refresh();

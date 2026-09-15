@@ -8,7 +8,7 @@ const browser=await (engine==='webkit'?webkit:chromium).launch({headless:true});
 const context=await browser.newContext({viewport:{width:430,height:932},isMobile:true,hasTouch:true,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1'});
 await context.addInitScript(()=>{
   const position={coords:{latitude:30.2672,longitude:-97.7431,altitude:160,accuracy:6,altitudeAccuracy:4,heading:45,speed:12},timestamp:Date.now()};
-  Object.defineProperty(navigator,'geolocation',{configurable:true,value:{watchPosition(success){queueMicrotask(()=>success(position));return 1},clearWatch(){},getCurrentPosition(success){queueMicrotask(()=>success(position))}}});
+  Object.defineProperty(navigator,'geolocation',{configurable:true,value:{watchPosition(success){queueMicrotask(()=>success({...position,timestamp:Date.now()}));return 1},clearWatch(){},getCurrentPosition(success){queueMicrotask(()=>success({...position,timestamp:Date.now()}))}}});
   localStorage.setItem('moto-startup-permissions-v1',JSON.stringify({location:'granted',motion:'disabled'}));
   localStorage.setItem('motocloud-install-seen','1');
 });

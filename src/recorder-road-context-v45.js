@@ -343,11 +343,17 @@ import { supabase } from './supabase.js';
   }
 
   window.addEventListener('moto-recording-isolation-change', event => event.detail?.active ? start() : stop());
-  window.addEventListener('moto-gps-fix', event => {
-    const point = pointFrom(event.detail);
+  function updatePosition(detail) {
+    const point = pointFrom(detail);
     if (!point) return;
     state.latestGps = point;
     if (state.active) evaluate(point);
+  }
+  window.addEventListener('moto-gps-fix', event => {
+    // During recording the isolation owner forwards fixes explicitly; listener
+    // registration order must not decide whether road context receives GPS.
+    if (window.MotoRecordingIsolation?.isActive?.()) return;
+    updatePosition(event.detail);
   }, true);
   window.addEventListener('online', () => {
     state.online = true;
@@ -365,6 +371,7 @@ import { supabase } from './supabase.js';
   });
 
   window.MotoRecorderRoadContext = {
+    updatePosition,
     refresh: () => lookup(state.latestGps, 'manual'),
     getState: () => ({ ...state, context: state.context ? { ...state.context } : null }),
     parseLimit,

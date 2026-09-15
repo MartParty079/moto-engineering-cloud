@@ -6,6 +6,8 @@
 
 ## Mission
 
+September 2026 compatibility note: the current UI is rider-focused. Preserve newer main's invitation-only verified access, MFA, unified Ride OS and recording isolation. Do not reintroduce removed AI or engineering navigation during cleanup. Web use continues throughout the Swift port. Ride capture persists to owner/project-scoped IndexedDB; stopped-only uploads use client UUID deduplication while retaining numeric server sample IDs. Completion and mileage changes share an owner-scoped transaction. See RIDE_SYNC.md and DEPLOYMENT_RELEASE.md for evidence, rollback and limits. Browser persistence does not establish continuous iOS background capture or certified mileage.
+
 Build a safe, reliable motorcycle engineering platform that records rides, organizes vehicle development, and supports future ESP32-S3 telemetry hardware without overstating unfinished capability.
 
 ## V1 system boundary

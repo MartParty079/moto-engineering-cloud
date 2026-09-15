@@ -10,10 +10,19 @@
     "check:syntax": "node scripts/check-syntax.mjs",
     "check:interactions": "node scripts/check-interactions.mjs",
     "check:providers": "node scripts/provider-check.mjs",
-    "audit": "npm run check:syntax && npm run check:interactions && npm run build"
+    "audit": "npm run check:syntax && npm run check:interactions && npm test && npm run build",
+    "test": "node --test tests/*.test.mjs",
+    "inventory": "node scripts/app-inventory.mjs",
+    "test:browser": "node tests/browser-smoke.mjs",
+    "test:browser:rides": "node tests/browser-durable.mjs",
+    "docs:inventory": "node scripts/app-inventory.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
     "vite": "^7.1.7"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.8",
+    "fake-indexeddb": "6.2.5"
   }
 }

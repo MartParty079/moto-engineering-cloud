@@ -85,13 +85,13 @@ test('provider wrapper rewrites only exact same-origin endpoints', async () => {
 
 test('service worker bypasses API navigation and preserves unrelated caches', async () => {
   const listeners = {}, deleted = [];
-  const context = vm.createContext({ self: { addEventListener: (name, fn) => { listeners[name] = fn; }, clients: { claim: async () => {} } }, URL, location: { origin: 'https://app.test' }, caches: { keys: async () => ['other-app', 'motocloud-shell-v4', 'motocloud-app-v47'], delete: async key => { deleted.push(key); } } });
+  const context = vm.createContext({ self: { addEventListener: (name, fn) => { listeners[name] = fn; }, clients: { claim: async () => {} } }, URL, location: { origin: 'https://app.test' }, caches: { keys: async () => ['other-app', 'motocloud-shell-v4', 'motocloud-app-v47', 'motocloud-app-v48'], delete: async key => { deleted.push(key); } } });
   vm.runInContext(await readFile(new URL('../public/sw.js', import.meta.url), 'utf8'), context);
   listeners.fetch({ request: { method: 'GET', url: 'https://app.test/api/road-info', mode: 'navigate' }, respondWith() { assert.fail('API must bypass the worker'); } });
   let activation;
   listeners.activate({ waitUntil(promise) { activation = promise; } });
   await activation;
-  assert.deepEqual(deleted, ['motocloud-shell-v4']);
+  assert.deepEqual(deleted, ['motocloud-shell-v4', 'motocloud-app-v47']);
 });
 
 // Ride persistence, retry and completion coverage now lives in ride-journal.test.mjs and ride-database.test.mjs.

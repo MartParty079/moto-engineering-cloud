@@ -80,8 +80,8 @@ add('Fixed action dock does not swallow swipe gestures',/\.recActions\{pointer-e
 add('Recorder reserves space below feature cards',/padding-bottom:calc\(122px/.test(scrollCss));
 
 add('Legacy iPhone safe-mode loader is retired',!pwa.includes('iphone-recording-safe-mode'));
-add('PWA build is v47',pwa.includes('durable-rider-redesign-v47')&&pwa.includes('/sw.js?v=47'));
-add('Service worker cache is v47',worker.includes("const VERSION='v47'"));
+add('PWA build is v48',pwa.includes('map-ride-center-layout-v48')&&pwa.includes('/sw.js?v=48'));
+add('Service worker cache is v48',worker.includes("const VERSION='v48'"));
 add('Service worker precaches AI removal and road context',worker.includes('/src/remove-ai-integration.js?v=1')&&worker.includes('/src/recorder-road-context-v45.js?v=2'));
 add('Service worker still precaches Phase 4 scroll and feature layers',worker.includes('/src/recorder-phase4-v44.js?v=1')&&worker.includes('/src/recorder-scroll-v43.css')&&worker.includes('/src/recorder-features-v42.js?v=1'));
 

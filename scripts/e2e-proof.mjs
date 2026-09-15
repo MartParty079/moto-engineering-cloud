@@ -178,7 +178,8 @@ try{
     const route=page.locator(selector).first();
     if(!await route.count()){
       evidence.skippedViews.push(view);
-      await page.click('#menu');
+      await page.click('#navClose');
+      await page.waitForFunction(()=>!document.querySelector('#nav')?.classList.contains('open'));
       continue;
     }
     await route.click();

@@ -71,10 +71,10 @@ try{
 
   await page.evaluate(()=>window.MotoRideDash.open());
   await page.waitForSelector('#rideDashOverlay',{state:'visible'});
-  await page.waitForSelector('.dashSpeedSplit',{state:'visible',timeout:10000});
-  const speedCardText=(await page.locator('.dashSpeedSplit').first().innerText()).replace(/\s+/g,' ').trim();
-  if(!speedCardText.includes('SPEED')||!speedCardText.includes('LIMIT'))throw new Error(`Split speed card did not render: ${speedCardText}`);
-  pass('Speed is left and limit is right',{value:speedCardText});
+  await page.waitForSelector('.widget-speed .dashSpeedGauge',{state:'visible',timeout:10000});
+  const speedCardText=(await page.locator('.widget-speed').first().innerText()).replace(/\s+/g,' ').trim();
+  if(!/speed/i.test(speedCardText)||!speedCardText.includes('MPH'))throw new Error(`Speed gauge did not render: ${speedCardText}`);
+  pass('Speed gauge renders with MPH units',{value:speedCardText});
   await shot('02-ride-dashboard');
   pass('Ride dashboard opens');
 
@@ -163,7 +163,7 @@ try{
   await page.click('#recStop');
   await page.waitForSelector('#motoRecordingIsolation',{state:'detached',timeout:15000});
   await page.waitForSelector('#rideDashOverlay',{state:'visible',timeout:15000});
-  await page.waitForSelector('.dashSpeedSplit',{state:'visible',timeout:10000});
+  await page.waitForSelector('.widget-speed .dashSpeedGauge',{state:'visible',timeout:10000});
   await shot('09-ride-saved');
   pass('Stop & Save completes and dashboard restores');
 

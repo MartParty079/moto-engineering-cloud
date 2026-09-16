@@ -1,13 +1,13 @@
 # Handoff repairs and validation
 
-Updated 2026-09-15. Reconciled with main at 1681bff, preserving current rider home, invitation-only security, unified Ride OS and recording isolation. See DEPLOYMENT_RELEASE.md for remote receipts.
+Updated 2026-09-16. Reconciled with main at 1cbfaf7, preserving current rider home, invitation-only security, unified Ride OS and recording isolation. See DEPLOYMENT_RELEASE.md for remote receipts.
 
 ## Changes and evidence
 
 - Shared shell, auth/home, navigation and utility styling: main.js, styles.css, marty-brand.css/js, rider-welcome-ui.js and ui-polish.js. pwa.js places installation in the header/form instead of over content.
 - Ride journal, recorder, runtime, sync and center modules plus dashboard/Adventure/motion integration provide persistent recovery, stopped-only uploads, deduplicated samples and transactional completion.
 - GPS validity, access-loading failure state, exact same-origin provider routing and shared API request validation repair unsafe/misleading failure behavior.
-- Worker v48 and vercel.json preserve API bypass, unrelated caches and shell revalidation. This release removes superseded Ride OS placement and map-overlay modules after checking their HTML, service-worker, import and global references.
+- Worker v49 and vercel.json preserve API bypass, unrelated caches and shell revalidation. The map and gauge refresh removes superseded Ride visual and map-overlay modules after checking HTML, service-worker, import and global references.
 - Additive migration retains bigint sample IDs and existing RLS, adds client UUID and completion RPC, and revokes browser TRUNCATE.
 - Text handoff, generated inventory, copied three-table schema fixture and automated tests support the next developer.
 

@@ -1,4 +1,4 @@
-const VERSION='v48';
+const VERSION='v49';
 const APP_CACHE=`motocloud-app-${VERSION}`;
 const RUNTIME_CACHE=`motocloud-runtime-${VERSION}`;
 const IMAGE_CACHE=`motocloud-images-${VERSION}`;
@@ -42,7 +42,6 @@ const CORE_URLS=[
   '/src/security-center.css?v=1',
   '/src/mobile-layout-hotfix.css?v=1',
   '/src/ride-dash-live-hotfix.css?v=1',
-  '/src/ride-dash-visual-fix.css?v=1',
   '/src/recorder-features-v42.css?v=2',
   '/src/recorder-scroll-v43.css',
   '/src/app-interaction-stability.css?v=1',
@@ -94,7 +93,6 @@ const CORE_URLS=[
   '/src/security-center.js?v=1',
   '/src/security-admin-guard.js?v=1',
   '/src/mobile-layout-hotfix.js?v=1',
-  '/src/ride-dash-visual-fix.js?v=1',
   '/src/ride-performance-guard.js?v=1',
   '/src/app-interaction-stability.js?v=1'
 ];

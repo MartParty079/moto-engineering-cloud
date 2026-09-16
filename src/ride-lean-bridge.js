@@ -4,13 +4,6 @@
   if(window.__motoLeanBridgeInstalled) return;
   window.__motoLeanBridgeInstalled = true;
 
-  if(!document.getElementById('motoLeanBridgeStyles')){
-    const style=document.createElement('style');
-    style.id='motoLeanBridgeStyles';
-    style.textContent='.leanCalibrationStatus{display:inline-flex;margin-top:8px;padding:5px 8px;border:1px solid color-mix(in srgb,var(--dash-accent,#22d3ee) 42%,transparent);border-radius:999px;font-size:.62rem;font-weight:800;letter-spacing:.09em;color:var(--dash-accent,#22d3ee);background:color-mix(in srgb,var(--dash-accent,#22d3ee) 9%,transparent)}.leanCalibrationStatus.live{color:#4ade80;border-color:rgba(74,222,128,.35);background:rgba(74,222,128,.08)}';
-    document.head.appendChild(style);
-  }
-
   let state = {
     lean:null,pitch:null,roll:null,accel:null,maxLean:0,
     calibrated:false,calibrating:false,motionEnabled:false,

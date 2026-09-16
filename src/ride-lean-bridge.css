@@ -6,6 +6,11 @@
   -webkit-tap-highlight-color:transparent;
 }
 
+/* The explicit status badge is the sole sensor state message in each gauge. */
+#rideDashOverlay .widget-lean::after{display:none!important}
+#rideDashOverlay .widget-lean .leanCalibrationStatus{position:absolute;left:50%;bottom:8px;z-index:9;display:block;width:max-content;max-width:calc(100% - 16px);padding:4px 7px;border:1px solid rgba(85,184,229,.45);border-radius:7px;background:#0c1b24;color:#a9d9ec;font:800 7px/1.15 system-ui;letter-spacing:.03em;text-align:center;white-space:normal;transform:translateX(-50%)}
+#rideDashOverlay .widget-lean .leanCalibrationStatus.live{border-color:rgba(74,222,128,.45);color:#8be3b1}
+
 #rideDashOverlay .widget-lean:focus-visible{
   outline:2px solid var(--dash-accent);
   outline-offset:2px;

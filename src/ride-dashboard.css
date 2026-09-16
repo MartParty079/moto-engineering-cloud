@@ -718,3 +718,34 @@
 @media(prefers-reduced-motion:reduce){
   #rideDashOverlay *{scroll-behavior:auto!important;animation:none!important;transition:none!important}
 }
+
+/* Gauge-first Ride Center. Dashboard editing and saved widget layouts still work. */
+#rideDashOverlay[data-ride-os="v3"]{background:#0b1017}
+#rideDashOverlay[data-ride-os="v3"] .rideDash{background:#0b1017}
+#rideDashOverlay[data-ride-os="v3"] .dashPages{background:#0b1017}
+#rideDashOverlay[data-ride-os="v3"] .dashPage{padding:15px max(12px,calc((100vw - 1220px)/2)) 22px}
+#rideDashOverlay[data-ride-os="v3"] .dashPageHead{margin:0 0 12px}
+#rideDashOverlay[data-ride-os="v3"] .dashPageHead h3{font-size:19px;letter-spacing:-.025em;text-transform:none}
+#rideDashOverlay[data-ride-os="v3"] .dashGrid{gap:11px;grid-auto-rows:minmax(128px,auto)}
+#rideDashOverlay[data-ride-os="v3"] .dashWidget{padding:16px;border:1px solid #2d3944;border-radius:17px;background:linear-gradient(145deg,#17212c,#111923);box-shadow:none}
+#rideDashOverlay[data-ride-os="v3"] .dashWidget::before,#rideDashOverlay[data-ride-os="v3"] .dashWidget::after{display:none}
+#rideDashOverlay[data-ride-os="v3"] .dashWidgetLabel{position:relative;top:auto;left:auto;color:#a3b3bf;font-size:10px;letter-spacing:.11em}
+#rideDashOverlay[data-ride-os="v3"] .dashWidget .dashValue{color:#f5fafc;font-variant-numeric:tabular-nums}
+#rideDashOverlay[data-ride-os="v3"] .widget-speed{min-height:270px;padding:16px!important}
+#rideDashOverlay[data-ride-os="v3"] .widget-speed .dashWidgetLabel{display:block}
+#rideDashOverlay[data-ride-os="v3"] .widget-speed .dashValue{display:flex;align-items:center;justify-content:center;flex:1;min-height:0}
+#rideDashOverlay[data-ride-os="v3"] .dashTabs{gap:5px;padding:6px 12px;background:#121b24}
+#rideDashOverlay[data-ride-os="v3"] .dashTabs button{min-height:36px;border-radius:9px;font-size:10px}
+#rideDashOverlay[data-ride-os="v3"] .dashTabs button.active{background:#d6e9ad;color:#1a3023;box-shadow:none}
+#rideDashOverlay[data-ride-os="v3"] .dashRideControl{background:#111a21}
+@media(min-width:760px){
+  #rideDashOverlay[data-ride-os="v3"] .dashGrid .widget-speed.size-xl{grid-column:span 2;grid-row:span 2}
+  #rideDashOverlay[data-ride-os="v3"] .dashGrid .widget-speed.size-wide{grid-row:span 2}
+}
+@media(max-width:759px){
+  #rideDashOverlay[data-ride-os="v3"] .dashPage{padding:12px 9px 20px}
+  #rideDashOverlay[data-ride-os="v3"] .dashGrid{gap:8px;grid-auto-rows:minmax(112px,auto)}
+  #rideDashOverlay[data-ride-os="v3"] .dashWidget{padding:11px;border-radius:14px}
+  #rideDashOverlay[data-ride-os="v3"] .widget-speed{min-height:235px;padding:12px!important}
+  #rideDashOverlay[data-ride-os="v3"] .dashPageHead h3{font-size:16px}
+}

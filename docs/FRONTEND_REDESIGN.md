@@ -6,4 +6,6 @@ marty-brand.css owns the shared theme; rider-welcome-ui.js owns home/utilities; 
 
 The integration preserves newer main rather than restoring removed AI or engineering views. Branding no longer injects a competing overview or observes every content mutation. Recovery controls live in the existing Ride dashboard.
 
+Ride Center uses a compact mode band and a gauge-first telemetry grid inspired by Torque's customizable dashboard. The existing widget editor, themes, ride controls and source labels remain. The retired split-speed patch no longer replaces the canonical speed gauge. Map layout takes a map-first approach inspired by onX Offroad: floating recenter/layer shortcuts, a saved-route search, a quieter navigation dock, and clear route sheets. Search covers the rider's saved routes and waypoint names; it does not claim a nationwide trail catalog or offline tile packs. Maps & Routes owns its header and heading rotation.
+
 Desktop, tablet and 390px layouts are checked with synthetic fixtures and isolated sessions. Legacy observer/global CSS interactions remain candidates for later consolidation; no workflows are silently removed to simplify them.

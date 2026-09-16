@@ -92,6 +92,9 @@
   }
 
   function compactAdventureChrome(overlay){
+    // Current Maps & Routes owns this chrome. Keep this enhancement limited to
+    // the older rail-based layout it was written for.
+    if (!overlay?.querySelector('.advSideRail')) return;
     overlay.dataset.mapSpace = 'max';
 
     const data = overlay.querySelector('#advDataOverlay');

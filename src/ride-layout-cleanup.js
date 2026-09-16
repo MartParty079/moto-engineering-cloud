@@ -118,6 +118,9 @@
 
   function compactAdventure(overlay){
     if (!overlay?.isConnected) return;
+    // The canonical map shell owns its own header and controls. This compatibility
+    // layer only applies to the legacy rail-based map layout.
+    if (!overlay.querySelector('.advSideRail')) return;
     overlay.dataset.mapLayout = 'ultra';
     const data = overlay.querySelector('#advDataOverlay');
     if (data && !data.dataset.ultraLayoutManaged) {

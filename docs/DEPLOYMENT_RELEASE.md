@@ -16,7 +16,7 @@ Pre-release security advisor warnings include disabled leaked-password protectio
 
 ## Rollback and verification
 
-Keep additive schema during frontend rollback. Never drop completion markers/RPC while pending clients can retry. Export/reconcile journals before downgrading to an incompatible recorder. Verify canonical URL, main commit, worker v47, cache headers and bounded API JSON errors. Refresh existing tabs without clearing site data. Physical iPhone long-ride/background/hardware acceptance remains manual.
+Keep additive schema during frontend rollback. Never drop completion markers/RPC while pending clients can retry. Export/reconcile journals before downgrading to an incompatible recorder. Verify canonical URL, main commit, worker v49, cache headers and bounded API JSON errors. Refresh existing tabs without clearing site data. Physical iPhone long-ride/background/hardware acceptance remains manual.
 
 ## Receipts
 

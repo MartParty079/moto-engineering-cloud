@@ -111,7 +111,7 @@ server/ helpers; keep paid provider credentials server-side. Frontend Vite alone
 does not serve these API handlers. vercel.json owns rewrites and cache headers.
 supabase/: migrations and function code. Historical root SQL is not a safe ordered
 bootstrap. Reconcile a schema export before applying it to any new environment.
-public/sw.js and src/pwa.js: worker v47 and update/install lifecycle.
+public/sw.js and src/pwa.js: worker v49 and update/install lifecycle.
 manifest.webmanifest and app-icon.svg: install metadata/assets.
 docs/: architecture, operations, safety baseline, risks and release evidence.
 scripts/: syntax/interaction/recording audits, inventory and browser evidence.

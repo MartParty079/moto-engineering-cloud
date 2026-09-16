@@ -41,23 +41,16 @@
     return {state:'critical',color:'#e879f9',label:'HIGH OVER'};
   }
 
-  function ensureLimitUi(gauge){
-    let panel = gauge.querySelector('.dashInlineSpeedLimit');
-    if (!panel) {
-      panel = document.createElement('div');
-      panel.className = 'dashInlineSpeedLimit';
-      panel.innerHTML = '<div class="dashInlineLimitSign"><div class="dashInlineLimitWord">LIMIT</div><div class="dashInlineLimitNumber">--</div></div>';
-      gauge.appendChild(panel);
+  function ensureLimitUi(widget){
+    let meta = widget.querySelector('.dashSpeedMeta');
+    if (!meta) {
+      meta = document.createElement('div');
+      meta.className = 'dashSpeedMeta';
+      meta.innerHTML = '<div class="dashInlineSpeedLimit"><span class="dashInlineLimitWord">Speed limit</span><strong class="dashInlineLimitNumber">--</strong><span class="dashInlineLimitUnit">mph</span></div><span class="dashSpeedCornerStatus" aria-hidden="true">LIMIT SEARCH</span>';
+      widget.querySelector('.dashValue')?.after(meta);
     }
-
-    let status = gauge.querySelector('.dashSpeedCornerStatus');
-    if (!status) {
-      status = document.createElement('div');
-      status.className = 'dashSpeedCornerStatus';
-      status.setAttribute('aria-hidden','true');
-      status.textContent = 'LIMIT SEARCH';
-      gauge.appendChild(status);
-    }
+    const panel = meta.querySelector('.dashInlineSpeedLimit');
+    const status = meta.querySelector('.dashSpeedCornerStatus');
     return {panel,status};
   }
 
@@ -75,7 +68,7 @@
 
     const currentLimit = limit();
     const adaptive = compliance();
-    const {panel,status} = ensureLimitUi(gauge);
+    const {panel,status} = ensureLimitUi(widget);
     const signNumber = panel.querySelector('.dashInlineLimitNumber');
 
     widget.dataset.speedState = adaptive.state;

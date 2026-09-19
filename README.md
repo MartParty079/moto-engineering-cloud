@@ -1,6 +1,6 @@
 # Moto Engineering Cloud
 
-Moto Engineering Cloud is the software platform for the Moto Mission motorcycle data-logging and engineering program. It combines project management, motorcycle records, ride logging, telemetry, PCB planning, maintenance, parts, and field-work workflows in one installable web application.
+Moto Mission is a rider-focused motorcycle garage and ride logger. The web app keeps motorcycle records, service history, GPS ride capture, a fixed live sensor screen, and a simple map in one installable application.
 
 ## Current system
 
@@ -16,13 +16,12 @@ Moto Engineering Cloud is the software platform for the Moto Mission motorcycle 
 2. Safe vehicle power and communications interfaces
 3. Durable local storage and recovery from interrupted rides
 4. Authenticated cloud synchronization
-5. Traceable engineering work packages and test evidence
-6. K-Line integration without blocking the core logger
+5. A small, maintainable rider interface
 
 ## Repository structure
 
 - `index.html` — application shell and module loading
-- `src/` — browser modules and styles
+- `src/` — active rider modules and retained legacy source awaiting separate deletion review
 - `api/` — server-side provider and utility endpoints
 - `supabase/` — database migrations
 - `docs/` — architecture, operations, decisions, policy, and test guidance

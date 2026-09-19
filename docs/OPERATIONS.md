@@ -14,7 +14,7 @@ The current durable ride contract and its mandatory backend release prerequisite
 2. Confirm Vercel creates a production deployment.
 3. Confirm deployment state is `READY`.
 4. Review runtime error clusters for the deployment.
-5. Test the application shell, authentication, Garage, Ride Center, and one API endpoint.
+5. Test the application shell, authentication, Garage, Service, Ride History, Ride Center, Map, and one API endpoint.
 6. Run Supabase security and performance advisors after schema or permission changes.
 
 ## Smoke tests

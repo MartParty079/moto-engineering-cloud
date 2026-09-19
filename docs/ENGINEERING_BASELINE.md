@@ -6,7 +6,7 @@
 
 ## Mission
 
-September 2026 compatibility note: the current UI is rider-focused. Preserve newer main's invitation-only verified access, MFA, unified Ride OS and recording isolation. Do not reintroduce removed AI or engineering navigation during cleanup. Web use continues throughout the Swift port. Ride capture persists to owner/project-scoped IndexedDB; stopped-only uploads use client UUID deduplication while retaining numeric server sample IDs. Completion and mileage changes share an owner-scoped transaction. See RIDE_SYNC.md and DEPLOYMENT_RELEASE.md for evidence, rollback and limits. Browser persistence does not establish continuous iOS background capture or certified mileage.
+September 2026 compatibility note: the current UI is rider-focused. Engineering, AI, PCB, firmware, route-planning, Adventure Mode, theme selection, and editable ride displays are intentionally absent from the loaded web runtime. The active product surface is Garage, Service, Ride History, a fixed Ride Center, and a simple Map. Web use continues throughout the Swift port. Ride capture persists to owner/project-scoped IndexedDB; stopped-only uploads use client UUID deduplication while retaining numeric server sample IDs. Completion and mileage changes share an owner-scoped transaction. See RIDE_SYNC.md and DEPLOYMENT_RELEASE.md for evidence, rollback and limits. Browser persistence does not establish continuous iOS background capture or certified mileage.
 
 Build a safe, reliable motorcycle engineering platform that records rides, organizes vehicle development, and supports future ESP32-S3 telemetry hardware without overstating unfinished capability.
 
@@ -16,11 +16,10 @@ Build a safe, reliable motorcycle engineering platform that records rides, organ
 
 - User authentication and per-user data separation
 - Motorcycle profiles and garage records
-- Maintenance, parts, notes, and engineering work packages
+- Maintenance and motorcycle records
 - GPS ride sessions and ride summaries
 - IMU-ready telemetry data model
-- Route and road-information provider integration
-- PCB and connector planning
+- Base maps and speed-limit lookup
 - PWA installation and mobile-first field use
 - Supabase-backed storage and synchronization
 
@@ -126,8 +125,8 @@ This pass intentionally did **not** delete dormant standalone feature modules so
 
 ## Next architecture work
 
-1. Finish inventorying every remaining `src/` module as core, active feature, intentionally dormant feature, compatibility patch, or obsolete.
-2. Consolidate ride modules behind one ride-state service and reduce independently loaded Ride UI layers.
+1. Delete retained legacy rider and engineering source only after confirming no migration, test, or Swift-handoff dependency remains.
+2. Keep ride capture behind the existing ride-state service and the single fixed Ride Center.
 3. Replace global DOM observers with explicit lifecycle hooks wherever practical.
 4. Introduce a small automated smoke-test suite for shell load, auth, and API validation.
 5. Complete the ESP32 telemetry protocol and offline synchronization contract before production firmware implementation.

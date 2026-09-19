@@ -2,7 +2,7 @@
   "id": "/",
   "name": "Marty Moto Party",
   "short_name": "Marty Moto Party",
-  "description": "Motorcycle engineering, maintenance, ride, firmware, and project mission control.",
+  "description": "A simple motorcycle garage, ride recorder, and live map.",
   "start_url": "/?source=homescreen",
   "scope": "/",
   "display": "standalone",

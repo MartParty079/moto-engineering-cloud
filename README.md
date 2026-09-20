@@ -4,6 +4,8 @@ Moto Mission is a rider-focused motorcycle garage and ride logger. The web app k
 
 ## Current system
 
+The rider UI uses plain lists, standard controls, and compact sensor rows. It has no decorative dashboard cards, oversized gauges, or theme selection. This visual simplification leaves recording and stored records unchanged.
+
 - **Frontend:** static ES modules deployed on Vercel
 - **Backend:** Vercel serverless API routes
 - **Database, authentication, and storage:** Supabase

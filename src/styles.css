@@ -1,1 +1,38 @@
-:root{color-scheme:dark;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#0c0e12;color:#f7f7f8;--accent:#f4512c;--panel:#15181e;--line:#2b3038;--muted:#98a0ad}*{box-sizing:border-box}body{margin:0;min-width:320px;min-height:100vh;background:#0c0e12;color:#f7f7f8}button,input,select{font:inherit}button{min-height:44px;border:1px solid var(--line);border-radius:10px;background:#1c2027;color:#f7f7f8;padding:.7rem 1rem;font-weight:750;cursor:pointer}button:hover{border-color:#4a515d}.primary{background:var(--accent);border-color:var(--accent);color:#fff}.appHeader{height:72px;display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:0 clamp(1rem,4vw,3rem);border-bottom:1px solid var(--line);background:#101318;position:sticky;top:0;z-index:10}.wordmark{display:flex;align-items:center;gap:.7rem}.wordmark>span,.brandMark{display:grid;place-items:center;width:38px;height:38px;border-radius:11px;background:var(--accent);font-weight:900}.wordmark strong,.wordmark small{display:block}.wordmark small{color:var(--muted);font-size:.76rem}.headerActions{display:flex;gap:.55rem}.iconButton{width:44px;padding:0}.appBody{max-width:1080px;margin:auto;padding:1.5rem clamp(1rem,4vw,2.5rem) 5rem}.simpleNav{display:flex;gap:.4rem;margin-bottom:2.2rem;border-bottom:1px solid var(--line)}.simpleNav button{border:0;border-radius:0;background:transparent;color:var(--muted);padding:.85rem .9rem;border-bottom:2px solid transparent}.simpleNav button.active{color:#fff;border-bottom-color:var(--accent)}.sectionHead{display:flex;align-items:end;justify-content:space-between;gap:1rem;margin-bottom:1.25rem}.eyebrow{margin:0 0 .35rem;color:#f47b5e;font-size:.76rem;letter-spacing:.14em;font-weight:850}.sectionHead h1{margin:0;font-size:clamp(2rem,6vw,3.25rem);letter-spacing:-.04em}.cardGrid,.list{display:grid;gap:.8rem}.cardGrid{grid-template-columns:repeat(auto-fit,minmax(270px,1fr))}.bikeCard,.listRow,.emptyState{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.1rem}.bikeCard{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:1rem}.bikeIcon{display:grid;place-items:center;width:48px;height:48px;border-radius:12px;background:#252a33;color:#ff8264;font-weight:900}.bikeCard h2,.listRow h2{margin:0;font-size:1rem}.bikeCard p,.listRow p{margin:.3rem 0 0;color:var(--muted)}.listRow{display:flex;justify-content:space-between;gap:1rem}.listRow time{color:var(--muted);white-space:nowrap}.authPage{min-height:100vh;display:grid;place-items:center;padding:1.5rem}.authCard{width:min(100%,430px);background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:2rem}.authCard h1{font-size:2.2rem;letter-spacing:-.04em}.authCard form,.formGrid{display:grid;gap:1rem}.authCard label,.formGrid label{display:grid;gap:.4rem;color:#c8cdd5;font-size:.88rem;font-weight:700}input,select{width:100%;min-height:46px;padding:.75rem;border:1px solid #353b45;border-radius:9px;background:#0d1015;color:#fff}.statusText{min-height:1.4rem;color:#ff957c}.simpleDialog{width:min(92vw,520px);border:1px solid var(--line);border-radius:16px;background:#15181e;color:#fff;padding:1.25rem}.simpleDialog::backdrop{background:#000a}.dialogHead,.dialogActions{display:flex;justify-content:space-between;align-items:center;gap:1rem}.dialogHead h2{margin:0}.dialogHead button{border:0;background:transparent;font-size:1.5rem}.dialogActions{justify-content:flex-end;margin-top:1.25rem}.toast{position:fixed;left:50%;bottom:1.5rem;transform:translate(-50%,20px);opacity:0;background:#fff;color:#111;padding:.8rem 1rem;border-radius:10px;transition:.2s;z-index:100}.toast.show{transform:translate(-50%,0);opacity:1}@media(max-width:620px){.appHeader{height:auto;padding:.8rem 1rem;align-items:flex-start}.wordmark small{display:none}.headerActions button{padding:.65rem .8rem}.appBody{padding-top:1rem}.simpleNav{overflow:auto;margin-bottom:1.4rem}.simpleNav button{white-space:nowrap}.listRow{align-items:flex-start}.bikeCard{grid-template-columns:auto 1fr}.bikeCard>button{grid-column:1/-1}.authCard{padding:1.35rem}}
+:root { color-scheme: light; font: 16px/1.5 system-ui, sans-serif; color: #171717; background: #fff; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+button, input, select { font: inherit; }
+button { min-height: 44px; padding: .45rem .8rem; border: 1px solid #aaa; border-radius: 3px; background: #f5f5f5; color: #171717; cursor: pointer; }
+button:hover { background: #e9e9e9; }
+button:disabled { opacity: .6; cursor: wait; }
+:focus-visible { outline: 3px solid #145bb5; outline-offset: 2px; }
+.primary { background: #222; color: #fff; border-color: #222; }
+.primary:hover { background: #444; }
+input, select { min-height: 44px; max-width: 100%; padding: .4rem; border: 1px solid #888; border-radius: 3px; background: #fff; color: #171717; }
+h1 { font-size: 1.4rem; margin: 0; }
+h2 { font-size: 1rem; margin: 0; }
+p { margin: .25rem 0; }
+.appHeader, .appBody { max-width: 900px; margin: auto; padding: 1rem; }
+.appHeader { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; border-bottom: 1px solid #ddd; }
+.headerActions, .simpleNav { display: flex; flex-wrap: wrap; gap: .5rem; }
+.simpleNav { margin-bottom: 1.5rem; }
+.simpleNav .active { background: #222; color: #fff; border-color: #222; }
+.sectionHead, .dialogHead, .dialogActions { display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin-bottom: .75rem; }
+.cardGrid, .list { display: block; }
+.bikeCard, .listRow { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .85rem 0; border-bottom: 1px solid #ddd; }
+.bikeCard > div, .listRow > div { min-width: 0; overflow-wrap: anywhere; }
+.bikeCard p, .listRow p, time, .emptyState { color: #555; }
+time { font-size: .875rem; white-space: nowrap; }
+.emptyState { padding: 1rem 0; }
+.authPage { padding: 2rem 1rem; }
+.authCard { max-width: 360px; margin: auto; }
+.authCard h1 { margin: 1rem 0; }
+.authCard form, .formGrid { display: grid; gap: 1rem; }
+label { display: grid; gap: .25rem; }
+.statusText { color: #9b2020; }
+.simpleDialog, .mapPanel dialog { width: min(92vw, 440px); max-height: 90dvh; overflow: auto; border: 1px solid #888; border-radius: 3px; padding: 1rem; background: #fff; color: #171717; }
+dialog::backdrop { background: #0006; }
+.dialogActions { justify-content: flex-end; margin: 1rem 0 0; }
+.toast { display: none; position: fixed; bottom: 1rem; left: 1rem; right: 1rem; padding: .75rem; background: #222; color: #fff; z-index: 1100; }
+.toast.show { display: block; }
+@media (max-width: 420px) { .listRow { flex-wrap: wrap; gap: .25rem; } .appHeader, .appBody { padding: .75rem; } }

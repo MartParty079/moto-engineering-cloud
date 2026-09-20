@@ -15,15 +15,15 @@ function open() {
   const overlay = document.createElement('div');
   overlay.id = 'rideDashOverlay';
   overlay.innerHTML = `<main class="ridePanel">
-    <header><div><p>RIDE CENTER</p><h1>Sensors</h1></div><button id="rideClose" aria-label="Close">×</button></header>
-    <section class="rideStatus"><span id="rideDot"></span><div><strong id="rideStatus">Ready</strong><small id="rideBike">Choose a motorcycle</small></div><button id="rideToggle">Start ride</button></section>
+    <header><h1>Ride</h1><button id="rideClose" aria-label="Close">Close</button></header>
+    <section class="rideStatus"><div><strong id="rideStatus">Ready</strong><small id="rideBike">Choose a motorcycle</small></div><button id="rideToggle">Start ride</button></section>
     <section class="sensorGrid" aria-label="Live ride sensors">
-      <article class="speedSensor"><small>SPEED</small><strong id="sensorSpeed">--</strong><span>MPH</span></article>
-      <article><small>DISTANCE</small><strong id="sensorDistance">0.00</strong><span>MI</span></article>
-      <article><small>RIDE TIME</small><strong id="sensorTime">00:00:00</strong><span>H:M:S</span></article>
-      <article><small>HEADING</small><strong id="sensorHeading">--</strong><span>DEGREES</span></article>
-      <article><small>ALTITUDE</small><strong id="sensorAltitude">--</strong><span>FT</span></article>
-      <article><small>GPS ACCURACY</small><strong id="sensorAccuracy">--</strong><span>FT</span></article>
+      <article class="speedSensor"><small>Speed</small><strong id="sensorSpeed">--</strong><span>MPH</span></article>
+      <article><small>Distance</small><strong id="sensorDistance">0.00</strong><span>MI</span></article>
+      <article><small>Time</small><strong id="sensorTime">00:00:00</strong><span>H:M:S</span></article>
+      <article><small>Heading</small><strong id="sensorHeading">--</strong><span>DEGREES</span></article>
+      <article><small>Altitude</small><strong id="sensorAltitude">--</strong><span>FT</span></article>
+      <article><small>GPS accuracy</small><strong id="sensorAccuracy">--</strong><span>FT</span></article>
     </section>
     <div id="rideError" class="rideError" hidden></div>
     <footer><button id="rideMap">Open map</button><button id="rideDone">Done</button></footer>

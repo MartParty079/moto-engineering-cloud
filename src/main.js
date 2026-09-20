@@ -8,7 +8,7 @@ let view = localStorage.getItem('motoSimpleView') || 'garage';
 let state = { bikes: [], maintenance: [], rides: [] };
 
 function authScreen(message = '') {
-  app.innerHTML = `<main class="authPage"><section class="authCard"><div class="brandMark">M</div><p class="eyebrow">MOTO MISSION</p><h1>Your bikes and rides.<br>Nothing extra.</h1><form id="authForm"><label>Email<input name="email" type="email" autocomplete="email" required></label><label>Password<input name="password" type="password" autocomplete="current-password" required></label><button class="primary" type="submit">Sign in</button></form><p id="authMessage" class="statusText" role="status">${esc(message)}</p></section></main>`;
+  app.innerHTML = `<main class="authPage"><section class="authCard"><h1>Moto Mission — Sign in</h1><form id="authForm"><label>Email<input name="email" type="email" autocomplete="email" required></label><label>Password<input name="password" type="password" autocomplete="current-password" required></label><button class="primary" type="submit">Sign in</button></form><p id="authMessage" class="statusText" role="status">${esc(message)}</p></section></main>`;
   document.querySelector('#authForm').onsubmit = async event => {
     event.preventDefault();
     const form = event.currentTarget;
@@ -35,7 +35,7 @@ async function loadData() {
 }
 
 function renderShell() {
-  app.innerHTML = `<header class="appHeader"><div class="wordmark"><span>M</span><div><strong>Moto Mission</strong><small>Rider tools</small></div></div><div class="headerActions"><button id="openRide" class="primary">Ride</button><button id="openMap">Map</button><button id="logout" class="iconButton" aria-label="Sign out">↪</button></div></header><main class="appBody"><nav class="simpleNav" aria-label="Main navigation"><button data-view="garage" class="${view === 'garage' ? 'active' : ''}">Garage</button><button data-view="service" class="${view === 'service' ? 'active' : ''}">Service</button><button data-view="history" class="${view === 'history' ? 'active' : ''}">Ride history</button></nav><section id="content"></section></main><div id="toast" class="toast" role="status"></div>`;
+  app.innerHTML = `<header class="appHeader"><strong>Moto Mission</strong><div class="headerActions"><button id="openRide" class="primary">Ride</button><button id="openMap">Map</button><button id="logout" class="iconButton" aria-label="Sign out">Sign out</button></div></header><main class="appBody"><nav class="simpleNav" aria-label="Main navigation"><button data-view="garage" class="${view === 'garage' ? 'active' : ''}">Garage</button><button data-view="service" class="${view === 'service' ? 'active' : ''}">Service</button><button data-view="history" class="${view === 'history' ? 'active' : ''}">Ride history</button></nav><section id="content"></section></main><div id="toast" class="toast" role="status"></div>`;
   document.querySelectorAll('[data-view]').forEach(button => button.onclick = () => { view = button.dataset.view; localStorage.setItem('motoSimpleView', view); renderShell(); });
   document.querySelector('#openRide').onclick = () => window.MotoRideDash?.open?.();
   document.querySelector('#openMap').onclick = () => window.MotoMap?.open?.();
@@ -51,17 +51,17 @@ function renderView() {
 }
 
 function renderGarage(content) {
-  content.innerHTML = `<div class="sectionHead"><div><p class="eyebrow">YOUR MOTORCYCLES</p><h1>Garage</h1></div><button id="addBike" class="primary">Add bike</button></div><div class="cardGrid">${state.bikes.map(bike => `<article class="bikeCard"><div class="bikeIcon">${esc((bike.make || bike.name || 'M').slice(0, 1).toUpperCase())}</div><div><h2>${esc(bikeName(bike))}</h2><p>${Number(bike.odometer || 0).toLocaleString()} mi</p></div><button data-bike-edit="${bike.id}">Edit</button></article>`).join('') || '<div class="emptyState">No motorcycles yet.</div>'}</div>`;
+  content.innerHTML = `<div class="sectionHead"><div><h1>Garage</h1></div><button id="addBike" class="primary">Add bike</button></div><div class="cardGrid">${state.bikes.map(bike => `<article class="bikeCard"><div><h2>${esc(bikeName(bike))}</h2><p>${Number(bike.odometer || 0).toLocaleString()} mi</p></div><button data-bike-edit="${bike.id}">Edit</button></article>`).join('') || '<div class="emptyState">No motorcycles yet.</div>'}</div>`;
   document.querySelector('#addBike').onclick = () => bikeDialog();
   document.querySelectorAll('[data-bike-edit]').forEach(button => button.onclick = () => bikeDialog(state.bikes.find(bike => String(bike.id) === button.dataset.bikeEdit)));
 }
 
 function renderService(content) {
-  content.innerHTML = `<div class="sectionHead"><div><p class="eyebrow">MAINTENANCE</p><h1>Service</h1></div></div><div class="list">${state.maintenance.map(item => `<article class="listRow"><div><h2>${esc(item.service || item.title || item.name || 'Service record')}</h2><p>${esc(item.notes || item.status || '')}</p></div><time>${item.created_at ? new Date(item.created_at).toLocaleDateString() : ''}</time></article>`).join('') || '<div class="emptyState">No service records yet.</div>'}</div>`;
+  content.innerHTML = `<div class="sectionHead"><div><h1>Service</h1></div></div><div class="list">${state.maintenance.map(item => `<article class="listRow"><div><h2>${esc(item.service || item.title || item.name || 'Service record')}</h2><p>${esc(item.notes || item.status || '')}</p></div><time>${item.created_at ? new Date(item.created_at).toLocaleDateString() : ''}</time></article>`).join('') || '<div class="emptyState">No service records yet.</div>'}</div>`;
 }
 
 function renderHistory(content) {
-  content.innerHTML = `<div class="sectionHead"><div><p class="eyebrow">RECORDED RIDES</p><h1>Ride history</h1></div></div><div class="list">${state.rides.map(ride => `<article class="listRow"><div><h2>${esc(ride.bike_name || 'Ride')}</h2><p>${Number(ride.distance_miles || 0).toFixed(1)} mi · ${Math.round(Number(ride.duration_seconds || 0) / 60)} min · ${Math.round(Number(ride.average_speed_mph || 0))} mph avg</p></div><time>${ride.started_at ? new Date(ride.started_at).toLocaleDateString() : ''}</time></article>`).join('') || '<div class="emptyState">No recorded rides yet.</div>'}</div>`;
+  content.innerHTML = `<div class="sectionHead"><div><h1>Ride history</h1></div></div><div class="list">${state.rides.map(ride => `<article class="listRow"><div><h2>${esc(ride.bike_name || 'Ride')}</h2><p>${Number(ride.distance_miles || 0).toFixed(1)} mi · ${Math.round(Number(ride.duration_seconds || 0) / 60)} min · ${Math.round(Number(ride.average_speed_mph || 0))} mph avg</p></div><time>${ride.started_at ? new Date(ride.started_at).toLocaleDateString() : ''}</time></article>`).join('') || '<div class="emptyState">No recorded rides yet.</div>'}</div>`;
 }
 
 function bikeDialog(bike = {}) {

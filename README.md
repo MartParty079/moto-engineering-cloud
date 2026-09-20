@@ -4,6 +4,10 @@ Moto Mission is a rider-focused motorcycle garage and ride logger. The web app k
 
 ## Current system
 
+Lean tracking: Ride → Enable lean while stopped, grant orientation access, then hold the motorcycle upright and still for calibration. Mount the phone with its screen facing the rider and near vertical; flat mounts are rejected. This is an experimental phone-tilt estimate, not validated motorcycle bank-angle telemetry. Check left/right response while stationary. Cornering acceleration, mount pitch, vibration and browser sensor fusion affect accuracy. Invalid readings, screen rotation, backgrounding and sensor gaps require explicit recalibration. Local left/right peaks reset at ride start; lean samples and peaks are not uploaded or saved to ride history. Only the new domain import is active; legacy motion patches remain unloaded.
+
+Reference for axes and permission handling: https://www.w3.org/TR/orientation-event/
+
 The rider UI uses plain lists, standard controls, and compact sensor rows. It has no decorative dashboard cards, oversized gauges, or theme selection. This visual simplification leaves recording and stored records unchanged.
 
 The basic navigation contains Ride, Map, Garage, Service, and Ride history. Motorcycle and service forms use the same plain controls; canceling a motorcycle form never saves it. Ride uses an inline motorcycle selector and exposes local recovery actions. Map retains base layers, speed limits, location follow, and wake lock only. The install guide also uses the plain UI.

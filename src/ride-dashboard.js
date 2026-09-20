@@ -1,5 +1,18 @@
 const esc = (value = '') => String(value ?? '').replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[character]));
 const numeric = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
+import { createLeanTracker } from './lean-tracker.js';
+const leanTracker = createLeanTracker(renderLean);
+let leanRideId = null;
+function renderLean() {
+  const lean = leanTracker.getState();
+  value('sensorLean', lean.lean === null ? '--' : Math.abs(lean.lean) < .5 ? '0°' : `${Math.abs(lean.lean).toFixed(1)}° ${lean.lean < 0 ? 'L' : 'R'}`);
+  value('sensorLeanMax', `L ${lean.left.toFixed(1)}° / R ${lean.right.toFixed(1)}°`);
+  value('leanStatus', lean.status);
+  const enable = document.querySelector('#leanEnable');
+  if (enable) { enable.textContent = lean.enabled ? 'Disable lean' : 'Enable lean'; enable.disabled = lean.pending || (!lean.enabled && Boolean(state().recording)); }
+  const calibrate = document.querySelector('#leanCalibrate');
+  if (calibrate) calibrate.disabled = !lean.enabled || Boolean(state().recording);
+}
 let busy = false;
 let latestGps = null;
 
@@ -27,6 +40,14 @@ function open() {
       <article><small>Heading</small><strong id="sensorHeading">--</strong><span>DEGREES</span></article>
       <article><small>Altitude</small><strong id="sensorAltitude">--</strong><span>FT</span></article>
       <article><small>GPS accuracy</small><strong id="sensorAccuracy">--</strong><span>FT</span></article>
+      <article><small>Lean estimate</small><strong id="sensorLean">--</strong><span>DEG</span></article>
+    </section>
+    <section aria-label="Lean tracking">
+      <p>Peak lean: <span id="sensorLeanMax">--</span></p>
+      <p id="leanStatus" role="status">Lean disabled</p>
+      <button id="leanEnable" type="button">Enable lean</button>
+      <button id="leanCalibrate" type="button">Calibrate upright</button>
+      <p class="leanHint">Before starting: mount the phone securely, screen facing you and nearly vertical. Hold the bike upright and still. Check left/right while stationary. Phone estimate only; vibration and cornering can distort readings. Peaks stay in this session, not ride history.</p>
     </section>
     <div id="rideError" class="rideError" hidden></div>
     <footer><button id="rideMap">Open map</button><button id="rideDone">Done</button></footer>
@@ -36,6 +57,8 @@ function open() {
   overlay.querySelector('#rideDone').onclick = close;
   overlay.querySelector('#rideMap').onclick = () => { close(); window.MotoMap?.open?.(); };
   overlay.querySelector('#rideToggle').onclick = toggle;
+  overlay.querySelector('#leanEnable').onclick = () => leanTracker.getState().enabled ? leanTracker.stop() : leanTracker.enable();
+  overlay.querySelector('#leanCalibrate').onclick = () => leanTracker.calibrate();
   overlay.querySelectorAll('[data-recover]').forEach(button => button.onclick = async () => {
     if (busy) return;
     const action = button.dataset.recover;
@@ -46,9 +69,10 @@ function open() {
     finally { busy = false; update(); }
   });
   update(ride);
+  renderLean();
 }
 
-function close() { document.querySelector('#rideDashOverlay')?.remove(); }
+function close() { if (!state().recording) leanTracker.stop(); document.querySelector('#rideDashOverlay')?.remove(); }
 
 async function chooseBike() {
   const bikes = window.MotoRide?.getBikes?.() || [];
@@ -101,6 +125,15 @@ function update(ride = state()) {
 }
 
 window.addEventListener('moto-gps-fix', event => { latestGps = event.detail; update(); });
-window.addEventListener('moto-ride-state', event => update(event.detail));
+window.addEventListener('moto-ride-state', event => {
+  const ride = event.detail;
+  if (ride.recording && ride.sessionId !== leanRideId) {
+    leanRideId = ride.sessionId;
+    leanTracker.resetPeaks();
+  }
+  if (!ride.recording && !document.querySelector('#rideDashOverlay')) leanTracker.stop();
+  update(ride); renderLean();
+});
+window.addEventListener('pagehide', () => leanTracker.stop());
 window.addEventListener('moto-ride-open-request', open);
 window.MotoRideDash = { open, close };

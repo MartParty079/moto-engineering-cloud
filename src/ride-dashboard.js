@@ -1,4 +1,5 @@
 const esc = (value = '') => String(value ?? '').replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[character]));
+const numeric = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
 let busy = false;
 let latestGps = null;
 
@@ -17,6 +18,8 @@ function open() {
   overlay.innerHTML = `<main class="ridePanel">
     <header><h1>Ride</h1><button id="rideClose" aria-label="Close">Close</button></header>
     <section class="rideStatus"><div><strong id="rideStatus">Ready</strong><small id="rideBike">Choose a motorcycle</small></div><button id="rideToggle">Start ride</button></section>
+    <label>Motorcycle<select id="rideBikeSelect"><option value="">Choose a motorcycle</option>${(window.MotoRide?.getBikes?.() || []).map(bike => `<option value="${esc(bike.id)}">${esc(bike.name)}</option>`).join('')}</select></label>
+    <section id="rideRecovery" class="rideRecovery" hidden><p id="recoveryStatus"></p><button data-recover="resume">Resume</button><button data-recover="retry">Retry upload</button><button data-recover="export">Export backup</button><button data-recover="discard">Discard</button></section>
     <section class="sensorGrid" aria-label="Live ride sensors">
       <article class="speedSensor"><small>Speed</small><strong id="sensorSpeed">--</strong><span>MPH</span></article>
       <article><small>Distance</small><strong id="sensorDistance">0.00</strong><span>MI</span></article>
@@ -33,6 +36,15 @@ function open() {
   overlay.querySelector('#rideDone').onclick = close;
   overlay.querySelector('#rideMap').onclick = () => { close(); window.MotoMap?.open?.(); };
   overlay.querySelector('#rideToggle').onclick = toggle;
+  overlay.querySelectorAll('[data-recover]').forEach(button => button.onclick = async () => {
+    if (busy) return;
+    const action = button.dataset.recover;
+    if (action === 'discard' && !confirm('Discard this local ride? Export a backup first if needed.')) return;
+    busy = true; update();
+    try { await window.MotoRide[action](); }
+    catch (error) { const node = overlay.querySelector('#rideError'); node.hidden = false; node.textContent = error.message; }
+    finally { busy = false; update(); }
+  });
   update(ride);
 }
 
@@ -41,11 +53,9 @@ function close() { document.querySelector('#rideDashOverlay')?.remove(); }
 async function chooseBike() {
   const bikes = window.MotoRide?.getBikes?.() || [];
   if (!bikes.length) throw new Error('Add a motorcycle in Garage first.');
-  if (bikes.length === 1) return bikes[0].id;
-  const options = bikes.map((bike, index) => `${index + 1}. ${bike.name}`).join('\n');
-  const choice = Number(prompt(`Choose a motorcycle:\n${options}`, '1')) - 1;
-  if (!bikes[choice]) throw new Error('No motorcycle selected.');
-  return bikes[choice].id;
+  const id = document.querySelector('#rideBikeSelect')?.value;
+  if (!id) throw new Error('Choose a motorcycle first.');
+  return id;
 }
 
 async function toggle() {
@@ -66,15 +76,27 @@ async function toggle() {
 
 function update(ride = state()) {
   if (!document.querySelector('#rideDashOverlay')) return;
+  const selection = document.querySelector('#rideBikeSelect');
+  selection.disabled = busy || ride.recording;
+  if (ride.bikeId) selection.value = ride.bikeId;
+  else if (!selection.value && selection.options.length === 2) selection.selectedIndex = 1;
+  const recovery = document.querySelector('#rideRecovery');
+  const interrupted = ride.status === 'interrupted';
+  const pending = ride.status === 'pending' || ride.status === 'stopped';
+  recovery.hidden = !(interrupted || pending);
+  value('recoveryStatus', interrupted ? 'An interrupted ride is saved on this device.' : 'This ride is saved locally and waiting for upload.');
+  recovery.querySelector('[data-recover="resume"]').hidden = !interrupted;
+  recovery.querySelector('[data-recover="retry"]').hidden = !pending;
+  document.querySelectorAll('#rideDashOverlay button').forEach(button => { if (button.id === 'rideToggle' || button.dataset.recover) button.disabled = busy; });
   value('rideStatus', busy ? 'Working…' : ride.recording ? 'Recording' : 'Ready');
   value('rideBike', ride.bikeName || 'Choose a motorcycle');
   value('rideToggle', busy ? 'Please wait' : ride.recording ? 'Stop ride' : 'Start ride');
-  value('sensorSpeed', Number.isFinite(Number(ride.speedMph)) ? String(Math.round(Number(ride.speedMph))) : '--');
+  value('sensorSpeed', numeric(ride.speedMph) ? String(Math.round(Number(ride.speedMph))) : '--');
   value('sensorDistance', Number(ride.distanceMiles || 0).toFixed(2));
   value('sensorTime', ride.elapsedText || '00:00:00');
-  value('sensorHeading', Number.isFinite(Number(latestGps?.heading ?? ride.heading)) ? `${Math.round(Number(latestGps?.heading ?? ride.heading))}°` : '--');
-  value('sensorAltitude', Number.isFinite(Number(latestGps?.altitude)) ? String(Math.round(Number(latestGps.altitude) * 3.28084)) : Number.isFinite(Number(ride.altitudeFt)) ? String(Math.round(Number(ride.altitudeFt))) : '--');
-  value('sensorAccuracy', Number.isFinite(Number(latestGps?.accuracy)) ? String(Math.round(Number(latestGps.accuracy) * 3.28084)) : Number.isFinite(Number(ride.accuracyFt)) ? String(Math.round(Number(ride.accuracyFt))) : '--');
+  value('sensorHeading', numeric(latestGps?.heading ?? ride.heading) ? `${Math.round(Number(latestGps?.heading ?? ride.heading))}°` : '--');
+  value('sensorAltitude', numeric(latestGps?.altitude) ? String(Math.round(Number(latestGps.altitude) * 3.28084)) : numeric(ride.altitudeFt) ? String(Math.round(Number(ride.altitudeFt))) : '--');
+  value('sensorAccuracy', numeric(latestGps?.accuracy) ? String(Math.round(Number(latestGps.accuracy) * 3.28084)) : numeric(ride.accuracyFt) ? String(Math.round(Number(ride.accuracyFt))) : '--');
   document.querySelector('#rideDot')?.classList.toggle('active', Boolean(ride.recording));
 }
 

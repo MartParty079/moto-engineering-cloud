@@ -2,6 +2,9 @@ import { supabase } from './supabase.js';
 
 const MAP_STORE = 'motoSimpleMapLayer';
 let map = null;
+let gpsWatch = null;
+let lookupBusy = false;
+const numeric = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
 let marker = null;
 let latestFix = null;
 let road = null;
@@ -42,27 +45,31 @@ async function open() {
   try {
     await ensureLeaflet();
     if (!overlay.isConnected) return;
-    map = window.L.map('simpleMap', { zoomControl: true, attributionControl: false }).setView([31, -99], 6);
+    map = window.L.map('simpleMap', { zoomControl: true, attributionControl: true }).setView([31, -99], 6);
     setLayer(select.value);
     if (latestFix) updateFix(latestFix);
-    else navigator.geolocation?.getCurrentPosition(position => updateFix({ ...position.coords, timestamp: position.timestamp }), () => {}, { enableHighAccuracy: true, timeout: 12000 });
+    gpsWatch = navigator.geolocation?.watchPosition(position => updateFix({
+      latitude: position.coords.latitude, longitude: position.coords.longitude,
+      accuracy: position.coords.accuracy, heading: position.coords.heading,
+      speed: numeric(position.coords.speed) ? position.coords.speed * 2.236936 : null
+    }), () => { const node = document.querySelector('#mapGps'); if (node) node.textContent = 'Unavailable'; }, { enableHighAccuracy: true, timeout: 12000 });
   } catch {
     overlay.querySelector('#simpleMap').innerHTML = '<div class="mapLoading">Map unavailable. Check your connection.</div>';
   }
 }
 
-function close() { map?.remove(); map = null; marker = null; document.querySelector('#motoMapOverlay')?.remove(); }
-function setLayer(id) { if (!map || !window.L) return; map.eachLayer(layer => { if (layer !== marker) map.removeLayer(layer); }); const item = layers[id] || layers.street; window.L.tileLayer(item.url, { maxZoom: item.maxZoom }).addTo(map); if (marker) marker.addTo(map); }
+function close() { if (gpsWatch != null) navigator.geolocation.clearWatch(gpsWatch); gpsWatch = null; clearTimeout(lookupTimer); void toggleWakeLock(false); map?.remove(); map = null; marker = null; document.querySelector('#motoMapOverlay')?.remove(); }
+function setLayer(id) { if (!map || !window.L) return; map.eachLayer(layer => { if (layer !== marker) map.removeLayer(layer); }); const item = layers[id] || layers.street; window.L.tileLayer(item.url, { maxZoom: item.maxZoom, attribution: id === 'satellite' ? 'Tiles © Esri' : id === 'terrain' ? '© OpenStreetMap contributors · © OpenTopoMap' : '© OpenStreetMap contributors' }).addTo(map); if (marker) marker.addTo(map); }
 function center() { if (map && latestFix) map.setView([latestFix.latitude, latestFix.longitude], Math.max(map.getZoom(), 16)); }
 
 function updateFix(detail) {
-  if (!Number.isFinite(Number(detail?.latitude)) || !Number.isFinite(Number(detail?.longitude))) return;
+  if (!numeric(detail?.latitude) || !numeric(detail?.longitude) || Math.abs(Number(detail.latitude)) > 90 || Math.abs(Number(detail.longitude)) > 180) return;
   latestFix = detail;
-  const mph = Number.isFinite(Number(detail.speed)) ? Number(detail.speed) * 2.23694 : window.MotoRide?.getState?.().speedMph;
-  const speed = document.querySelector('#mapSpeed'); if (speed) speed.textContent = Number.isFinite(Number(mph)) ? String(Math.round(Number(mph))) : '--';
-  const gps = document.querySelector('#mapGps'); if (gps) gps.textContent = Number.isFinite(Number(detail.accuracy)) ? `±${Math.round(Number(detail.accuracy) * 3.28084)} FT` : '--';
-  if (map && window.L) { const point = [Number(detail.latitude), Number(detail.longitude)]; if (!marker) marker = window.L.circleMarker(point, { radius: 9, color: '#fff', weight: 3, fillColor: '#f4512c', fillOpacity: 1 }).addTo(map); else marker.setLatLng(point); if (document.querySelector('#mapFollow')?.checked) map.setView(point, Math.max(map.getZoom(), 16)); }
-  scheduleRoadLookup();
+  const mph = numeric(detail.speed) ? Number(detail.speed) : window.MotoRide?.getState?.().speedMph;
+  const speed = document.querySelector('#mapSpeed'); if (speed) speed.textContent = numeric(mph) ? String(Math.round(Number(mph))) : '--';
+  const gps = document.querySelector('#mapGps'); if (gps) gps.textContent = numeric(detail.accuracy) ? `±${Math.round(Number(detail.accuracy) * 3.28084)} FT` : '--';
+  if (map && window.L) { const point = [Number(detail.latitude), Number(detail.longitude)]; if (!marker) marker = window.L.circleMarker(point, { radius: 9, color: '#fff', weight: 3, fillColor: '#222', fillOpacity: 1 }).addTo(map); else marker.setLatLng(point); if (document.querySelector('#mapFollow')?.checked) map.setView(point, Math.max(map.getZoom(), 16)); }
+  if (map) scheduleRoadLookup();
 }
 
 function scheduleRoadLookup() {
@@ -72,7 +79,8 @@ function scheduleRoadLookup() {
 }
 
 async function lookupRoad() {
-  if (!latestFix) return;
+  if (!latestFix || !map || lookupBusy) return;
+  lookupBusy = true;
   lastLookupAt = Date.now();
   try {
     const { data: { session } } = await supabase.auth.getSession();
@@ -81,13 +89,14 @@ async function lookupRoad() {
     if (!response.ok) throw new Error('Road lookup failed');
     road = await response.json();
   } catch { road = null; }
+  finally { lookupBusy = false; }
   const raw = road?.limit?.mph ?? road?.limit_mph ?? road?.speedLimit;
-  const limit = Number(raw);
+  const limit = numeric(raw) && Number(raw) > 0 ? Number(raw) : NaN;
   const node = document.querySelector('#mapLimit'); if (node) node.textContent = Number.isFinite(limit) ? String(Math.round(limit)) : '--';
   const source = document.querySelector('#mapLimitSource'); if (source) source.textContent = Number.isFinite(limit) ? String(road.source || 'LIVE').toUpperCase() : 'UNKNOWN';
 }
 
 let wakeLock = null;
-async function toggleWakeLock(enabled) { try { if (enabled) wakeLock = await navigator.wakeLock?.request('screen'); else { await wakeLock?.release(); wakeLock = null; } } catch { const input = document.querySelector('#mapWake'); if (input) input.checked = false; } }
+async function toggleWakeLock(enabled) { try { if (enabled) { if (!navigator.wakeLock) throw new Error('Unavailable'); wakeLock = await navigator.wakeLock.request('screen'); } else { await wakeLock?.release(); wakeLock = null; } } catch { const input = document.querySelector('#mapWake'); if (input) input.checked = false; } }
 window.addEventListener('moto-gps-fix', event => updateFix(event.detail));
 window.MotoMap = { open, close };

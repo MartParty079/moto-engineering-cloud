@@ -22,7 +22,7 @@ function showInstallGuide() {
   document.querySelector('#iosInstallOverlay')?.remove();
   const overlay = document.createElement('div');
   overlay.id = 'iosInstallOverlay';
-  overlay.innerHTML = `<section class="iosInstallCard"><button type="button" class="iosInstallClose" aria-label="Close">×</button><img src="/app-icon.svg" alt="Moto Mission icon"><div><small>INSTALL ON IPHONE</small><h2>Add Moto Mission to your Home Screen</h2><ol><li>Tap Share in Safari.</li><li>Tap Add to Home Screen.</li><li>Tap Add.</li></ol></div></section>`;
+  overlay.innerHTML = `<section class="iosInstallCard"><button type="button" class="iosInstallClose" aria-label="Close">×</button><div><h2>Add Moto Mission to your Home Screen</h2><ol><li>Tap Share in Safari.</li><li>Tap Add to Home Screen.</li><li>Tap Add.</li></ol></div></section>`;
   document.body.appendChild(overlay);
   overlay.querySelector('button').onclick = () => overlay.remove();
   overlay.onclick = event => { if (event.target === overlay) overlay.remove(); };

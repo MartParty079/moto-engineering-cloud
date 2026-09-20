@@ -4,6 +4,8 @@ const app = document.querySelector('#app');
 const esc = (value = '') => String(value ?? '').replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[character]));
 const bikeName = bike => [bike.year, bike.make, bike.model].filter(Boolean).join(' ') || bike.name || 'Motorcycle';
 let session = null;
+let loadVersion = 0;
+let loadError = '';
 let view = localStorage.getItem('motoSimpleView') || 'garage';
 let state = { bikes: [], maintenance: [], rides: [] };
 
@@ -17,29 +19,36 @@ function authScreen(message = '') {
     const fields = new FormData(form);
     button.disabled = true;
     messageNode.textContent = 'Signing in…';
-    const { error } = await supabase.auth.signInWithPassword({ email: fields.get('email'), password: fields.get('password') });
-    if (error) { messageNode.textContent = error.message; button.disabled = false; }
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email: fields.get('email'), password: fields.get('password') });
+      if (error) throw error;
+    } catch (error) { messageNode.textContent = error.message || 'Unable to connect. Try again.'; }
+    finally { button.disabled = false; }
   };
 }
 
 async function loadData() {
   if (!session?.user) return;
+  const version = ++loadVersion;
   const owner = session.user.id;
   const [bikes, maintenance, rides] = await Promise.all([
     supabase.from('bikes').select('*').eq('user_id', owner).order('created_at'),
     supabase.from('maintenance').select('*').eq('user_id', owner).order('created_at', { ascending: false }).limit(50),
     supabase.from('ride_sessions').select('*').eq('user_id', owner).order('started_at', { ascending: false }).limit(50)
   ]);
+  if (version !== loadVersion || session?.user.id !== owner) return;
+  loadError = [bikes, maintenance, rides].some(result => result.error) ? 'Some records could not be loaded. Please retry.' : '';
   state = { bikes: bikes.data || [], maintenance: maintenance.data || [], rides: rides.data || [] };
   renderShell();
 }
 
 function renderShell() {
-  app.innerHTML = `<header class="appHeader"><strong>Moto Mission</strong><div class="headerActions"><button id="openRide" class="primary">Ride</button><button id="openMap">Map</button><button id="logout" class="iconButton" aria-label="Sign out">Sign out</button></div></header><main class="appBody"><nav class="simpleNav" aria-label="Main navigation"><button data-view="garage" class="${view === 'garage' ? 'active' : ''}">Garage</button><button data-view="service" class="${view === 'service' ? 'active' : ''}">Service</button><button data-view="history" class="${view === 'history' ? 'active' : ''}">Ride history</button></nav><section id="content"></section></main><div id="toast" class="toast" role="status"></div>`;
+  app.innerHTML = `<header class="appHeader"><strong>Moto Mission</strong><div class="headerActions"><button id="logout" class="iconButton" aria-label="Sign out">Sign out</button></div></header><main class="appBody"><nav class="simpleNav" aria-label="Main navigation"><button id="openRide">Ride</button><button id="openMap">Map</button><button data-view="garage" class="${view === 'garage' ? 'active' : ''}">Garage</button><button data-view="service" class="${view === 'service' ? 'active' : ''}">Service</button><button data-view="history" class="${view === 'history' ? 'active' : ''}">Ride history</button></nav>${loadError ? `<p role="alert">${esc(loadError)} <button id="retryLoad">Retry</button></p>` : ''}<section id="content"></section></main><div id="toast" class="toast" role="status"></div>`;
   document.querySelectorAll('[data-view]').forEach(button => button.onclick = () => { view = button.dataset.view; localStorage.setItem('motoSimpleView', view); renderShell(); });
   document.querySelector('#openRide').onclick = () => window.MotoRideDash?.open?.();
   document.querySelector('#openMap').onclick = () => window.MotoMap?.open?.();
-  document.querySelector('#logout').onclick = () => supabase.auth.signOut();
+  document.querySelector('#logout').onclick = async () => { const { error } = await supabase.auth.signOut(); if (error) toast(error.message); };
+  document.querySelector('#retryLoad')?.addEventListener('click', loadData);
   renderView();
 }
 
@@ -57,7 +66,9 @@ function renderGarage(content) {
 }
 
 function renderService(content) {
-  content.innerHTML = `<div class="sectionHead"><div><h1>Service</h1></div></div><div class="list">${state.maintenance.map(item => `<article class="listRow"><div><h2>${esc(item.service || item.title || item.name || 'Service record')}</h2><p>${esc(item.notes || item.status || '')}</p></div><time>${item.created_at ? new Date(item.created_at).toLocaleDateString() : ''}</time></article>`).join('') || '<div class="emptyState">No service records yet.</div>'}</div>`;
+  content.innerHTML = `<div class="sectionHead"><div><h1>Service</h1></div><button id="addService">Add service</button></div><div class="list">${state.maintenance.map(item => `<article class="listRow"><div><h2>${esc(item.service || item.title || item.name || 'Service record')}</h2><p>${esc(item.notes || item.status || '')}</p></div><time>${esc(item.service_date || (item.created_at ? new Date(item.created_at).toLocaleDateString() : ''))}</time><button data-service-edit="${esc(item.id)}">Edit</button></article>`).join('') || '<div class="emptyState">No service records yet.</div>'}</div>`;
+  document.querySelector('#addService').onclick = () => serviceDialog();
+  document.querySelectorAll('[data-service-edit]').forEach(button => button.onclick = () => serviceDialog(state.maintenance.find(item => String(item.id) === button.dataset.serviceEdit)));
 }
 
 function renderHistory(content) {
@@ -67,11 +78,12 @@ function renderHistory(content) {
 function bikeDialog(bike = {}) {
   const dialog = document.createElement('dialog');
   dialog.className = 'simpleDialog';
-  dialog.innerHTML = `<form method="dialog" id="bikeForm"><div class="dialogHead"><h2>${bike.id ? 'Edit motorcycle' : 'Add motorcycle'}</h2><button value="cancel" aria-label="Close">×</button></div><div class="formGrid"><label>Year<input name="year" inputmode="numeric" value="${esc(bike.year || '')}"></label><label>Make<input name="make" value="${esc(bike.make || '')}" required></label><label>Model<input name="model" value="${esc(bike.model || '')}" required></label><label>Odometer (mi)<input name="odometer" type="number" min="0" step="1" value="${esc(bike.odometer || 0)}"></label></div><div class="dialogActions"><button value="cancel">Cancel</button><button class="primary" value="default">Save</button></div></form>`;
+  dialog.innerHTML = `<form method="dialog" id="bikeForm"><div class="dialogHead"><h2>${bike.id ? 'Edit motorcycle' : 'Add motorcycle'}</h2><button value="cancel" formnovalidate aria-label="Close">×</button></div><div class="formGrid"><label>Year<input name="year" inputmode="numeric" value="${esc(bike.year || '')}"></label><label>Make<input name="make" value="${esc(bike.make || '')}" required></label><label>Model<input name="model" value="${esc(bike.model || '')}" required></label><label>Odometer (mi)<input name="odometer" type="number" min="0" step="1" value="${esc(bike.odometer || 0)}"></label></div><div class="dialogActions"><button value="cancel">Cancel</button><button class="primary" value="default">Save</button></div></form>`;
   document.body.appendChild(dialog);
   dialog.addEventListener('close', () => dialog.remove());
   dialog.querySelector('#bikeForm').onsubmit = async event => {
     event.preventDefault();
+    if (event.submitter?.value === 'cancel') { dialog.close(); return; }
     const record = Object.fromEntries(new FormData(event.currentTarget));
     record.user_id = session.user.id;
     record.odometer = Number(record.odometer || 0);
@@ -83,6 +95,44 @@ function bikeDialog(bike = {}) {
   dialog.showModal();
 }
 
+function serviceDialog(item = {}) {
+  const dialog = document.createElement('dialog');
+  dialog.className = 'simpleDialog';
+  dialog.innerHTML = `<form><div class="dialogHead"><h2>${item.id ? 'Edit service' : 'Add service'}</h2></div>
+    <div class="formGrid">
+      <label>Service<input name="service" value="${esc(item.service || '')}" required></label>
+      <label>Motorcycle<select name="bike"><option value="">Unspecified</option>${state.bikes.map(bike => `<option ${item.bike === bikeName(bike) ? 'selected' : ''}>${esc(bikeName(bike))}</option>`).join('')}</select></label>
+      <label>Date<input name="service_date" type="date" value="${esc(item.service_date || new Date().toISOString().slice(0,10))}" required></label>
+      <label>Odometer (mi)<input name="odometer" type="number" min="0" value="${Number(item.odometer || 0)}"></label>
+      <label>Cost ($)<input name="cost" type="number" min="0" step=".01" value="${Number(item.cost || 0)}"></label>
+      <label>Notes<textarea name="notes">${esc(item.notes || '')}</textarea></label>
+    </div><p role="status"></p><div class="dialogActions"><button type="button" data-cancel>Cancel</button><button type="submit">Save</button></div></form>`;
+  document.body.appendChild(dialog);
+  dialog.onclose = () => dialog.remove();
+  dialog.querySelector('[data-cancel]').onclick = () => dialog.close();
+  dialog.querySelector('form').onsubmit = async event => {
+    event.preventDefault();
+    const button = event.submitter;
+    button.disabled = true;
+    try {
+      const record = Object.fromEntries(new FormData(event.currentTarget));
+      record.cost = Number(record.cost);
+      record.odometer = Number(record.odometer);
+      record.user_id = session.user.id;
+      const result = item.id
+        ? await supabase.from('maintenance').update(record).eq('id', item.id).eq('user_id', session.user.id)
+        : await supabase.from('maintenance').insert(record);
+      if (result.error) throw result.error;
+      dialog.close();
+      await loadData();
+    } catch (error) { dialog.querySelector('[role="status"]').textContent = error.message; }
+    finally { button.disabled = false; }
+  };
+  dialog.showModal();
+}
+
+window.addEventListener('moto-ride-complete', () => { if (session) loadData(); });
+
 function toast(message) {
   const node = document.querySelector('#toast');
   if (!node) return;
@@ -91,7 +141,7 @@ function toast(message) {
   setTimeout(() => node.classList.remove('show'), 2800);
 }
 
-supabase.auth.onAuthStateChange((_event, nextSession) => { session = nextSession; if (session) loadData(); else authScreen(); });
+supabase.auth.onAuthStateChange((_event, nextSession) => { session = nextSession; setTimeout(() => { if (session) loadData(); else { ++loadVersion; state = { bikes: [], maintenance: [], rides: [] }; window.MotoRideDash?.close(); window.MotoMap?.close(); document.querySelectorAll('dialog').forEach(dialog => dialog.remove()); authScreen(); } }, 0); });
 const { data } = await supabase.auth.getSession();
 session = data.session;
 if (session) await loadData(); else authScreen();

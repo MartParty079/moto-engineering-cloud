@@ -12,6 +12,8 @@ The rider UI uses plain lists, standard controls, and compact sensor rows. It ha
 
 The basic navigation contains Ride, Map, Garage, Service, and Ride history. Motorcycle and service forms use the same plain controls; canceling a motorcycle form never saves it. Ride uses an inline motorcycle selector and exposes local recovery actions. Map retains base layers, speed limits, location follow, and wake lock only. The install guide also uses the plain UI.
 
+iOS status bar: the shell requests the default opaque status bar, respects device safe-area insets, and paints a non-interactive white backing above scrolling content. After deployment, reload online and fully close/reopen the installed app. Verify the header and navigation in portrait/landscape, then scroll Garage, Service, Ride and Map; check that controls do not overlap the status bar. Installed iOS status-bar appearance remains device-unverified. No service-worker or routing behavior changed; HTML and worker responses retain revalidation headers. Rollback: revert the status-bar meta and shell CSS changes, reload online, and reopen the app.
+
 Validation: the local audit and 11 offline regression tests pass. Live map providers, device GPS, and desktop/mobile visual checks still require browser verification; the available browser download timed out in this environment. No database migration is required. Preview deployment does not constitute production release approval.
 
 - **Frontend:** static ES modules deployed on Vercel

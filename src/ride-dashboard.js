@@ -29,9 +29,9 @@ function open() {
   const overlay = document.createElement('div');
   overlay.id = 'rideDashOverlay';
   overlay.innerHTML = `<main class="ridePanel">
-    <header><h1>Ride</h1><button id="rideClose" aria-label="Close">Close</button></header>
+    <header><div><span class="rideEyebrow">MOTO MISSION / INSTRUMENTS</span><h1>Ride center</h1></div><button id="rideClose" aria-label="Close ride center">Close</button></header>
     <section class="rideStatus"><div><strong id="rideStatus">Ready</strong><small id="rideBike">Choose a motorcycle</small></div><button id="rideToggle">Start ride</button></section>
-    <label>Motorcycle<select id="rideBikeSelect"><option value="">Choose a motorcycle</option>${(window.MotoRide?.getBikes?.() || []).map(bike => `<option value="${esc(bike.id)}">${esc(bike.name)}</option>`).join('')}</select></label>
+    <label class="rideBikeField">Motorcycle<select id="rideBikeSelect"><option value="">Choose a motorcycle</option>${(window.MotoRide?.getBikes?.() || []).map(bike => `<option value="${esc(bike.id)}">${esc(bike.name)}</option>`).join('')}</select></label>
     <section id="rideRecovery" class="rideRecovery" hidden><p id="recoveryStatus"></p><button data-recover="resume">Resume</button><button data-recover="retry">Retry upload</button><button data-recover="export">Export backup</button><button data-recover="discard">Discard</button></section>
     <section class="sensorGrid" aria-label="Live ride sensors">
       <article class="speedSensor"><small>Speed</small><strong id="sensorSpeed">--</strong><span>MPH</span></article>
@@ -40,14 +40,16 @@ function open() {
       <article><small>Heading</small><strong id="sensorHeading">--</strong><span>DEGREES</span></article>
       <article><small>Altitude</small><strong id="sensorAltitude">--</strong><span>FT</span></article>
       <article><small>GPS accuracy</small><strong id="sensorAccuracy">--</strong><span>FT</span></article>
-      <article><small>Lean estimate</small><strong id="sensorLean">--</strong><span>DEG</span></article>
+      <article class="leanSensor"><small>Lean estimate</small><strong id="sensorLean">--</strong><span>PHONE · EXPERIMENTAL</span></article>
     </section>
     <section aria-label="Lean tracking">
-      <p>Peak lean: <span id="sensorLeanMax">--</span></p>
+      <div class="leanSectionHead"><h2>Lean tracking</h2><span class="rideChip">Experimental</span></div>
+      <p class="leanPeaks">Session peaks <span id="sensorLeanMax">--</span></p>
       <p id="leanStatus" role="status">Lean disabled</p>
       <button id="leanEnable" type="button">Enable lean</button>
       <button id="leanCalibrate" type="button">Calibrate upright</button>
-      <p class="leanHint">Before starting: mount the phone securely, screen facing you and nearly vertical. Hold the bike upright and still. Check left/right while stationary. Phone estimate only; vibration and cornering can distort readings. Peaks stay in this session, not ride history.</p>
+      <p class="leanHint">Calibrate while stopped and upright. Phone estimate only—not verified motorcycle lean.</p>
+      <details class="leanHelp"><summary>Mounting &amp; accuracy</summary><p>Mount the phone securely, screen facing you and nearly vertical. Hold the bike upright and still. Check left/right while stationary. Vibration and cornering can distort readings. Peaks stay in this session, not ride history.</p></details>
     </section>
     <div id="rideError" class="rideError" hidden></div>
     <footer><button id="rideMap">Open map</button><button id="rideDone">Done</button></footer>
@@ -100,6 +102,7 @@ async function toggle() {
 
 function update(ride = state()) {
   if (!document.querySelector('#rideDashOverlay')) return;
+  document.querySelector('.ridePanel').dataset.recording = String(Boolean(ride.recording));
   const selection = document.querySelector('#rideBikeSelect');
   selection.disabled = busy || ride.recording;
   if (ride.bikeId) selection.value = ride.bikeId;

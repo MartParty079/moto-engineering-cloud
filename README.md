@@ -4,6 +4,8 @@ Moto Mission is a rider-focused motorcycle garage and ride logger. The web app k
 
 ## Current system
 
+Ride's status/home-indicator backing and root background now match its dark canvas, and browser theme color changes on Ride open/close. GPS speed and speed limit occupy the first instrument row together at phone and desktop widths. Reload online and fully reopen the installed app to check iOS chrome; Safari controls remain OS-managed. No service-worker or routing change is included.
+
 Ride Center includes mapped speed limit, road name/type, surface, lanes, source and match confidence from the existing road API's OpenStreetMap path. Road-class speed estimates are withheld. Lookups run only while Ride is visible with fresh GPS, at most once per 15 seconds; requests time out, cancel on close/background, and discard responses after significant movement. Missing/stale data stays unknown. No new paid API or database writes are involved. Map framing and the app's white status-area backing are removed only while Map is open; the OS status bar remains system-controlled and map controls still respect safe areas.
 
 The Ride instruments use a Torque-inspired dark dashboard with a GPS speed dial, a live phone-lean indicator and digital sensor tiles; missing data hides the needles and keeps `--` values. The speed dial is scaled 0–120 MPH; its needle caps at the scale while the numeric readout remains uncapped. This does not add OBD/ECU telemetry. Map uses a Waze/onX-inspired map-first presentation, a pale-blue search/tools pill, zoom controls, and speed directly beside the top-right speed limit. This adds no navigation, trail/private-land data or offline maps. Device appearance and live provider behavior still require verification.

@@ -69,6 +69,7 @@ function open() {
     <footer><button id="rideMap">Open map</button><button id="rideDone">Done</button></footer>
   </main>`;
   document.body.appendChild(overlay);
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#0b1219');
   roadTracker.start();
   overlay.querySelector('#rideClose').onclick = close;
   overlay.querySelector('#rideDone').onclick = close;
@@ -89,7 +90,7 @@ function open() {
   renderLean();
 }
 
-function close() { roadTracker.stop(); if (!state().recording) leanTracker.stop(); document.querySelector('#rideDashOverlay')?.remove(); }
+function close() { roadTracker.stop(); if (!state().recording) leanTracker.stop(); document.querySelector('#rideDashOverlay')?.remove(); document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#ffffff'); }
 
 async function chooseBike() {
   const bikes = window.MotoRide?.getBikes?.() || [];

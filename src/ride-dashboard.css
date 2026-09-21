@@ -1,4 +1,7 @@
-#rideDashOverlay { --ink: #edf6fa; --muted: #a6bac5; --line: #30434f; --accent: #087e78; color-scheme: dark; position: fixed; inset: 0; z-index: 1000; background: #0b1219; color: var(--ink); overflow: auto; }
+html:has(#rideDashOverlay), body:has(#rideDashOverlay) { background: #0b1219; color-scheme: dark; overscroll-behavior: none; }
+body:has(#rideDashOverlay)::before { background: #0b1219; }
+body:has(#rideDashOverlay)::after { content: ""; position: fixed; bottom: 0; left: 0; right: 0; height: env(safe-area-inset-bottom, 0px); background: #0b1219; z-index: 1200; pointer-events: none; }
+#rideDashOverlay { --ink: #edf6fa; --muted: #a6bac5; --line: #30434f; --accent: #087e78; color-scheme: dark; position: fixed; inset: 0; z-index: 1000; background: #0b1219; color: var(--ink); overflow: auto; overscroll-behavior: contain; }
 .ridePanel button, .ridePanel select { background: #1c2b36; border-color: #3b525f; color: #edf6fa; }
 .ridePanel button:hover { background: #2c4351; }
 .ridePanel #rideToggle { background: #137971; border-color: #218f87; }
@@ -28,7 +31,7 @@
 .dialNeedle { fill: #ffb14d; transform-origin: 100px 100px; opacity: 0; }
 .dialValue { position: absolute; inset: 43% 0 0; display: flex; flex-direction: column; align-items: center; }
 .speedSensor strong { font-size: clamp(2.4rem, 9vw, 4.5rem); line-height: 1.05; font-weight: 650; }
-.sensorGrid .leanSensor { order: 1; align-items: center; justify-content: center; background: #101b24; text-align: center; padding: .75rem; }
+.sensorGrid .leanSensor { order: 2; align-items: center; justify-content: center; background: #101b24; text-align: center; padding: .75rem; }
 .leanInstrument { position: relative; width: 100%; max-width: 200px; aspect-ratio: 1.4; overflow: hidden; }
 .leanAxis { position: absolute; inset: 0; display: flex; align-items: center; gap: .4rem; padding: .5rem; }
 .leanAxis i { height: 1px; flex: 1; background: #56707f; }
@@ -48,7 +51,7 @@
 .ridePanel footer { margin-top: 0; display: flex; gap: .75rem; padding-top: .25rem; }
 .rideError { margin-top: 1rem; color: #ffb1b1; }
 .ridePanel footer button { flex: 1; }
-.sensorGrid .rideLimitSensor { border-color: #637785; background: #202d37; }
+.sensorGrid .rideLimitSensor { order: 1; align-items: center; justify-content: center; gap: 1rem; border-color: #637785; background: #202d37; }
 .rideLimitSensor strong { color: #fff; font-size: 2.4rem; }
 .rideRoadData { grid-column: 1 / -1; padding: 1.25rem; background: #13202a; border: 1px solid var(--line); border-radius: 12px; }
 .rideRoadData h2 { overflow-wrap: anywhere; }
@@ -60,7 +63,7 @@
   .ridePanel > header, .sensorGrid, .rideRecovery, .rideError { grid-column: 1 / -1; }
   .rideBikeField { align-self: center; }
   .sensorGrid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
-  .sensorGrid .speedSensor, .sensorGrid .leanSensor { grid-column: span 2; }
+  .sensorGrid .speedSensor, .sensorGrid .rideLimitSensor { grid-column: span 2; }
   .sensorGrid article { min-height: 132px; padding: 1.4rem; }
   .ridePanel footer { align-self: end; }
 }

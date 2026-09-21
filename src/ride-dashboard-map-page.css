@@ -1,11 +1,11 @@
-#motoMapOverlay { position: fixed; inset: 0; z-index: 1000; background: #fff; color: #171717; overflow: auto; }
-.mapPanel { min-height: 100%; height: 100dvh; display: grid; grid-template-rows: auto auto minmax(240px, 1fr) auto; padding: calc(.75rem + env(safe-area-inset-top)) .75rem calc(.75rem + env(safe-area-inset-bottom)); gap: .75rem; }
+#motoMapOverlay { position: fixed; inset: 0; z-index: 1000; background: #f3f6f7; color: var(--ink); overflow: auto; }
+.mapPanel { max-width: 1400px; margin: auto; min-height: 100%; height: 100dvh; display: grid; grid-template-rows: auto auto minmax(240px, 1fr) auto; padding: calc(1rem + env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) calc(1rem + env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left)); gap: .85rem; }
 .mapPanel > header { display: flex; justify-content: space-between; align-items: center; }
 .mapToolbar { display: flex; flex-wrap: wrap; gap: .5rem; align-items: end; }
 .mapToolbar label { font-size: .875rem; }
-.mapCanvas { min-height: 240px; border: 1px solid #aaa; background: #eee; }
+.mapCanvas { min-height: 240px; border: 1px solid var(--line); border-radius: 18px; overflow: hidden; background: #e5ecee; box-shadow: var(--shadow); }
 .mapLoading { padding: 1rem; }
-.mapReadout { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; }
+.mapReadout { display: flex; flex-wrap: wrap; gap: .75rem 1.5rem; padding: 1rem; border: 1px solid var(--line); border-radius: 16px; background: #fff; }
 .mapReadout article { display: flex; flex-wrap: wrap; align-items: baseline; gap: .4rem; }
 .mapReadout small, .mapReadout span { font-size: .875rem; }
 .mapReadout span { color: #555; overflow-wrap: anywhere; }

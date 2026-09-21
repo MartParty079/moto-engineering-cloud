@@ -8,7 +8,7 @@ Lean tracking: Ride → Enable lean while stopped, grant orientation access, the
 
 Reference for axes and permission handling: https://www.w3.org/TR/orientation-event/
 
-The rider UI uses plain lists, standard controls, and compact sensor rows. It has no decorative dashboard cards, oversized gauges, or theme selection. This visual simplification leaves recording and stored records unchanged.
+The rider UI uses a single light visual system: navy text, teal actions, soft bordered cards and consistent touch controls. Five-column navigation keeps the existing destinations together. Ride has one prominent speed readout and a two-column sensor grid, with lean controls below; Map remains one screen with its existing controls. There is no theme selection or added feature surface. Styling changes leave recording and stored records unchanged, and preserve the opaque iOS status-bar backing. Verify narrow mobile/landscape layouts and installed iOS appearance before production promotion.
 
 The basic navigation contains Ride, Map, Garage, Service, and Ride history. Motorcycle and service forms use the same plain controls; canceling a motorcycle form never saves it. Ride uses an inline motorcycle selector and exposes local recovery actions. Map retains base layers, speed limits, location follow, and wake lock only. The install guide also uses the plain UI.
 

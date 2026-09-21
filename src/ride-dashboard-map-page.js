@@ -41,7 +41,7 @@ async function open() {
     <section class="mapCanvas" id="simpleMap" aria-label="Interactive map"><div class="mapLoading">Loading map…</div></section>
     <button id="mapClose" class="mapExit" aria-label="Close map">← Back</button>
     <div class="mapTools">
-      <button id="mapToolsToggle" aria-expanded="false" aria-controls="mapToolsPanel">☰ Tools</button>
+      <button id="mapToolsToggle" aria-expanded="false" aria-controls="mapToolsPanel">⌕ Search &amp; tools</button>
       <section id="mapToolsPanel" hidden aria-label="Map tools">
         <div class="mapToolTabs"><button id="mapSearchTab" aria-pressed="true">Search</button><button id="mapSettings" aria-pressed="false">Settings</button></div>
         <section id="mapSearchPane"><form id="mapSearchForm"><label>Find a place<input id="mapQuery" type="search" placeholder="City, address or place" required minlength="3" maxlength="200"></label><button class="primary" id="mapSearchSubmit">Search</button></form><p id="mapSearchStatus" role="status"></p><div id="mapSearchResults"></div><small>Search by Google Maps. No routes.</small></section>
@@ -49,11 +49,14 @@ async function open() {
       </section>
     </div>
     <section class="mapReadout" aria-label="Driving information"><article class="mapSpeedBadge"><strong id="mapSpeed">--</strong><span>MPH</span></article><article class="mapLimitBadge" aria-label="Speed limit in miles per hour"><small>SPEED<br>LIMIT</small><strong id="mapLimit">--</strong></article></section>
+    <div class="mapZoom" aria-label="Map zoom"><button id="mapZoomIn" aria-label="Zoom in">+</button><button id="mapZoomOut" aria-label="Zoom out">−</button></div>
     <button id="mapCenter" class="mapLocate" aria-label="Center on my location">⌖ Locate</button>
   </main>`;
   document.body.appendChild(overlay);
   overlay.querySelector('#mapClose').onclick = close;
   overlay.querySelector('#mapCenter').onclick = center;
+  overlay.querySelector('#mapZoomIn').onclick = () => map?.zoomIn();
+  overlay.querySelector('#mapZoomOut').onclick = () => map?.zoomOut();
   const toolsPanel = overlay.querySelector('#mapToolsPanel');
   const toolsToggle = overlay.querySelector('#mapToolsToggle');
   toolsToggle.onclick = () => { toolsPanel.hidden = !toolsPanel.hidden; toolsToggle.setAttribute('aria-expanded', String(!toolsPanel.hidden)); };

@@ -8,6 +8,8 @@ function renderLean() {
   value('sensorLean', lean.lean === null ? '--' : Math.abs(lean.lean) < .5 ? '0°' : `${Math.abs(lean.lean).toFixed(1)}° ${lean.lean < 0 ? 'L' : 'R'}`);
   value('sensorLeanMax', `L ${lean.left.toFixed(1)}° / R ${lean.right.toFixed(1)}°`);
   value('leanStatus', lean.status);
+  const leanNeedle = document.querySelector('#leanNeedle');
+  if (leanNeedle) { leanNeedle.style.transform = `rotate(${lean.lean ?? 0}deg)`; leanNeedle.style.opacity = lean.lean === null ? '0' : '1'; }
   const enable = document.querySelector('#leanEnable');
   if (enable) { enable.textContent = lean.enabled ? 'Disable lean' : 'Enable lean'; enable.disabled = lean.pending || (!lean.enabled && Boolean(state().recording)); }
   const calibrate = document.querySelector('#leanCalibrate');
@@ -34,13 +36,13 @@ function open() {
     <label class="rideBikeField">Motorcycle<select id="rideBikeSelect"><option value="">Choose a motorcycle</option>${(window.MotoRide?.getBikes?.() || []).map(bike => `<option value="${esc(bike.id)}">${esc(bike.name)}</option>`).join('')}</select></label>
     <section id="rideRecovery" class="rideRecovery" hidden><p id="recoveryStatus"></p><button data-recover="resume">Resume</button><button data-recover="retry">Retry upload</button><button data-recover="export">Export backup</button><button data-recover="discard">Discard</button></section>
     <section class="sensorGrid" aria-label="Live ride sensors">
-      <article class="speedSensor"><small>Speed</small><strong id="sensorSpeed">--</strong><span>MPH</span></article>
+      <article class="speedSensor"><small>GPS SPEED</small><div class="instrumentDial"><svg viewBox="0 0 200 200" aria-hidden="true"><circle class="dialTrack" cx="100" cy="100" r="76" pathLength="100" stroke-dasharray="75 25" transform="rotate(135 100 100)"/><circle class="dialTicks" cx="100" cy="100" r="67" pathLength="100" stroke-dasharray=".5 5.75"/><text x="47" y="160">0</text><text x="100" y="43">60</text><text x="153" y="160">120</text><g id="speedNeedle" class="dialNeedle"><path d="M97 92 L100 49 L103 92 Z"/></g></svg><div class="dialValue"><strong id="sensorSpeed">--</strong><span>MPH</span></div></div></article>
       <article><small>Distance</small><strong id="sensorDistance">0.00</strong><span>MI</span></article>
       <article><small>Time</small><strong id="sensorTime">00:00:00</strong><span>H:M:S</span></article>
       <article><small>Heading</small><strong id="sensorHeading">--</strong><span>DEGREES</span></article>
       <article><small>Altitude</small><strong id="sensorAltitude">--</strong><span>FT</span></article>
       <article><small>GPS accuracy</small><strong id="sensorAccuracy">--</strong><span>FT</span></article>
-      <article class="leanSensor"><small>Lean estimate</small><strong id="sensorLean">--</strong><span>PHONE · EXPERIMENTAL</span></article>
+      <article class="leanSensor"><small>LEAN ESTIMATE</small><div class="leanInstrument" aria-hidden="true"><span class="leanAxis">L <i></i> R</span><div id="leanNeedle"><span></span></div></div><strong id="sensorLean">--</strong><span>PHONE · EXPERIMENTAL</span></article>
     </section>
     <section aria-label="Lean tracking">
       <div class="leanSectionHead"><h2>Lean tracking</h2><span class="rideChip">Experimental</span></div>
@@ -119,6 +121,8 @@ function update(ride = state()) {
   value('rideBike', ride.bikeName || 'Choose a motorcycle');
   value('rideToggle', busy ? 'Please wait' : ride.recording ? 'Stop ride' : 'Start ride');
   value('sensorSpeed', numeric(ride.speedMph) ? String(Math.round(Number(ride.speedMph))) : '--');
+  const speedNeedle = document.querySelector('#speedNeedle');
+  if (speedNeedle) { speedNeedle.style.transform = `rotate(${-135 + Math.min(120, Math.max(0, Number(ride.speedMph) || 0)) / 120 * 270}deg)`; speedNeedle.style.opacity = numeric(ride.speedMph) ? '1' : '0'; }
   value('sensorDistance', Number(ride.distanceMiles || 0).toFixed(2));
   value('sensorTime', ride.elapsedText || '00:00:00');
   value('sensorHeading', numeric(latestGps?.heading ?? ride.heading) ? `${Math.round(Number(latestGps?.heading ?? ride.heading))}°` : '--');

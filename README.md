@@ -4,6 +4,8 @@ Moto Mission is a rider-focused motorcycle garage and ride logger. The web app k
 
 ## Current system
 
+Map now fills the viewport with floating speed and posted-limit readouts. Tools expands to Search and Settings; settings retain base layers, follow location and wake lock. Manual place searches use the existing authenticated Google Places quota path (no autocomplete), with a 1.5-second client cooldown, bounded session cache and an 18-second timeout. Search requires a configured Places key and available usage allowance; it fails visibly rather than substituting unrelated nearby results. Search terms are sent to Google; results center a pin, not a route. Selecting a result or dragging pauses following; Locate resumes it. Validate live search, provider attribution requirements, mobile keyboard/landscape and GPS readouts on-device before promotion. No public Nominatim integration is used.
+
 Lean tracking: Ride → Enable lean while stopped, grant orientation access, then hold the motorcycle upright and still for calibration. Mount the phone with its screen facing the rider and near vertical; flat mounts are rejected. This is an experimental phone-tilt estimate, not validated motorcycle bank-angle telemetry. Check left/right response while stationary. Cornering acceleration, mount pitch, vibration and browser sensor fusion affect accuracy. Invalid readings, screen rotation, backgrounding and sensor gaps require explicit recalibration. Local left/right peaks reset at ride start; lean samples and peaks are not uploaded or saved to ride history. Only the new domain import is active; legacy motion patches remain unloaded.
 
 Reference for axes and permission handling: https://www.w3.org/TR/orientation-event/

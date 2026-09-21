@@ -10,6 +10,10 @@ let latestFix = null;
 let road = null;
 let lookupTimer = 0;
 let lastLookupAt = 0;
+let searchMarker = null;
+let searchRequest = null;
+let lastSearchAt = 0;
+const searchCache = new Map();
 
 const layers = {
   street: { label: 'Street', url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', maxZoom: 19 },
@@ -33,11 +37,36 @@ async function open() {
   close();
   const overlay = document.createElement('div');
   overlay.id = 'motoMapOverlay';
-  overlay.innerHTML = `<main class="mapPanel"><header><h1>Map</h1><button id="mapClose" aria-label="Close">Close</button></header><section class="mapToolbar"><label>Base map<select id="mapLayer">${Object.entries(layers).map(([id, layer]) => `<option value="${id}">${layer.label}</option>`).join('')}</select></label><button id="mapCenter">Center</button><button id="mapSettings">Settings</button></section><section class="mapCanvas" id="simpleMap"><div class="mapLoading">Loading map…</div></section><section class="mapReadout"><article><small>Speed</small><strong id="mapSpeed">--</strong><span>MPH</span></article><article><small>Limit</small><strong id="mapLimit">--</strong><span id="mapLimitSource">UNKNOWN</span></article><article><small>GPS</small><strong id="mapGps">--</strong><span>ACCURACY</span></article></section><dialog id="mapSettingsDialog"><form method="dialog"><div class="dialogHead"><h2>Map settings</h2><button value="cancel">×</button></div><label class="switchRow">Follow location<input id="mapFollow" type="checkbox" checked></label><label class="switchRow">Keep screen awake<input id="mapWake" type="checkbox"></label><button class="primary" value="default">Done</button></form></dialog></main>`;
+  overlay.innerHTML = `<main class="mapPanel" aria-label="Map">
+    <section class="mapCanvas" id="simpleMap" aria-label="Interactive map"><div class="mapLoading">Loading map…</div></section>
+    <button id="mapClose" class="mapExit" aria-label="Close map">← Back</button>
+    <div class="mapTools">
+      <button id="mapToolsToggle" aria-expanded="false" aria-controls="mapToolsPanel">☰ Tools</button>
+      <section id="mapToolsPanel" hidden aria-label="Map tools">
+        <div class="mapToolTabs"><button id="mapSearchTab" aria-pressed="true">Search</button><button id="mapSettings" aria-pressed="false">Settings</button></div>
+        <section id="mapSearchPane"><form id="mapSearchForm"><label>Find a place<input id="mapQuery" type="search" placeholder="City, address or place" required minlength="3" maxlength="200"></label><button class="primary" id="mapSearchSubmit">Search</button></form><p id="mapSearchStatus" role="status"></p><div id="mapSearchResults"></div><small>Search by Google Maps. No routes.</small></section>
+        <section id="mapSettingsPane" hidden><label>Base map<select id="mapLayer">${Object.entries(layers).map(([id, layer]) => `<option value="${id}">${layer.label}</option>`).join('')}</select></label><label class="switchRow">Follow location<input id="mapFollow" type="checkbox" checked></label><label class="switchRow">Keep screen awake<input id="mapWake" type="checkbox"></label><p>GPS accuracy: <span id="mapGps">--</span></p><p>Speed limit source: <span id="mapLimitSource">UNKNOWN</span></p><small>Always follow posted road signs.</small></section>
+      </section>
+    </div>
+    <section class="mapReadout" aria-label="Driving information"><article class="mapSpeedBadge"><strong id="mapSpeed">--</strong><span>MPH</span></article><article class="mapLimitBadge" aria-label="Speed limit in miles per hour"><small>SPEED<br>LIMIT</small><strong id="mapLimit">--</strong></article></section>
+    <button id="mapCenter" class="mapLocate" aria-label="Center on my location">⌖ Locate</button>
+  </main>`;
   document.body.appendChild(overlay);
   overlay.querySelector('#mapClose').onclick = close;
   overlay.querySelector('#mapCenter').onclick = center;
-  overlay.querySelector('#mapSettings').onclick = () => overlay.querySelector('#mapSettingsDialog').showModal();
+  const toolsPanel = overlay.querySelector('#mapToolsPanel');
+  const toolsToggle = overlay.querySelector('#mapToolsToggle');
+  toolsToggle.onclick = () => { toolsPanel.hidden = !toolsPanel.hidden; toolsToggle.setAttribute('aria-expanded', String(!toolsPanel.hidden)); };
+  const showPane = settings => {
+    overlay.querySelector('#mapSettingsPane').hidden = !settings;
+    overlay.querySelector('#mapSearchPane').hidden = settings;
+    overlay.querySelector('#mapSettings').setAttribute('aria-pressed', String(settings));
+    overlay.querySelector('#mapSearchTab').setAttribute('aria-pressed', String(!settings));
+  };
+  overlay.querySelector('#mapSettings').onclick = () => showPane(true);
+  overlay.querySelector('#mapSearchTab').onclick = () => showPane(false);
+  overlay.querySelector('#mapSearchForm').onsubmit = event => { event.preventDefault(); void searchPlaces(overlay); };
+  overlay.addEventListener('keydown', event => { if (event.key === 'Escape') { toolsPanel.hidden = true; toolsToggle.setAttribute('aria-expanded', 'false'); toolsToggle.focus(); } });
   const select = overlay.querySelector('#mapLayer');
   select.value = localStorage.getItem(MAP_STORE) || 'street';
   select.onchange = () => { localStorage.setItem(MAP_STORE, select.value); setLayer(select.value); };
@@ -45,7 +74,8 @@ async function open() {
   try {
     await ensureLeaflet();
     if (!overlay.isConnected) return;
-    map = window.L.map('simpleMap', { zoomControl: true, attributionControl: true }).setView([31, -99], 6);
+    map = window.L.map('simpleMap', { zoomControl: false, attributionControl: true }).setView([31, -99], 6);
+    map.on('dragstart', () => { overlay.querySelector('#mapFollow').checked = false; });
     setLayer(select.value);
     if (latestFix) updateFix(latestFix);
     gpsWatch = navigator.geolocation?.watchPosition(position => updateFix({
@@ -58,9 +88,59 @@ async function open() {
   }
 }
 
-function close() { if (gpsWatch != null) navigator.geolocation.clearWatch(gpsWatch); gpsWatch = null; clearTimeout(lookupTimer); void toggleWakeLock(false); map?.remove(); map = null; marker = null; document.querySelector('#motoMapOverlay')?.remove(); }
-function setLayer(id) { if (!map || !window.L) return; map.eachLayer(layer => { if (layer !== marker) map.removeLayer(layer); }); const item = layers[id] || layers.street; window.L.tileLayer(item.url, { maxZoom: item.maxZoom, attribution: id === 'satellite' ? 'Tiles © Esri' : id === 'terrain' ? '© OpenStreetMap contributors · © OpenTopoMap' : '© OpenStreetMap contributors' }).addTo(map); if (marker) marker.addTo(map); }
-function center() { if (map && latestFix) map.setView([latestFix.latitude, latestFix.longitude], Math.max(map.getZoom(), 16)); }
+function close() { searchRequest?.abort(); searchRequest = null; if (gpsWatch != null) navigator.geolocation.clearWatch(gpsWatch); gpsWatch = null; clearTimeout(lookupTimer); void toggleWakeLock(false); map?.remove(); map = null; marker = null; searchMarker = null; document.querySelector('#motoMapOverlay')?.remove(); }
+function setLayer(id) { if (!map || !window.L) return; map.eachLayer(layer => { if (layer !== marker && layer !== searchMarker) map.removeLayer(layer); }); const item = layers[id] || layers.street; window.L.tileLayer(item.url, { maxZoom: item.maxZoom, attribution: id === 'satellite' ? 'Tiles © Esri' : id === 'terrain' ? '© OpenStreetMap contributors · © OpenTopoMap' : '© OpenStreetMap contributors' }).addTo(map); if (marker) marker.addTo(map); }
+function center() { if (map && latestFix) { document.querySelector('#mapFollow').checked = true; map.setView([latestFix.latitude, latestFix.longitude], Math.max(map.getZoom(), 16)); } }
+
+async function searchPlaces(overlay) {
+  const query = overlay.querySelector('#mapQuery').value.trim();
+  const status = overlay.querySelector('#mapSearchStatus');
+  const results = overlay.querySelector('#mapSearchResults');
+  if (!map) { status.textContent = 'Wait for the map to load.'; return; }
+  if (query.length < 3) return;
+  if (Date.now() - lastSearchAt < 1500) { status.textContent = 'Please wait a moment before searching again.'; return; }
+  lastSearchAt = Date.now();
+  searchRequest?.abort();
+  const controller = new AbortController(); searchRequest = controller;
+  const timer = setTimeout(() => controller.abort(), 18000);
+  const button = overlay.querySelector('#mapSearchSubmit');
+  button.disabled = true; status.textContent = 'Searching…'; results.replaceChildren();
+  try {
+    let items = searchCache.get(query.toLowerCase());
+    if (!items) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('Sign in to search');
+      const origin = map.getCenter();
+      const params = new URLSearchParams({ q: query, lat: origin.lat, lon: origin.lng });
+      const response = await fetch(`/api/poi-nearby?${params}`, { signal: controller.signal, headers: { Authorization: `Bearer ${session.access_token}` } });
+      if (!response.ok) throw new Error('Search unavailable');
+      const data = await response.json();
+      if (!Array.isArray(data.places)) throw new Error('Invalid search response');
+      items = data.places.filter(item => numeric(item.lat) && numeric(item.lon) && Math.abs(Number(item.lat)) <= 90 && Math.abs(Number(item.lon)) <= 180).slice(0, 5).map(item => ({ ...item, display_name: [item.name, item.address].filter(Boolean).join(' · ') }));
+      if (searchCache.size >= 30) searchCache.delete(searchCache.keys().next().value);
+      searchCache.set(query.toLowerCase(), items);
+    }
+    if (!overlay.isConnected || controller.signal.aborted) return;
+    status.textContent = items.length ? 'Choose a result to view it on the map.' : 'No places found. Try a city or full address.';
+    for (const item of items) {
+      const result = document.createElement('button'); result.type = 'button'; result.textContent = item.display_name || 'Place';
+      result.onclick = () => {
+        if (!map) return;
+        overlay.querySelector('#mapFollow').checked = false;
+        const point = [Number(item.lat), Number(item.lon)];
+        if (searchMarker) map.removeLayer(searchMarker);
+        searchMarker = window.L.circleMarker(point, { radius: 10, color: '#fff', weight: 3, fillColor: '#087e78', fillOpacity: 1 }).addTo(map);
+        const label = document.createElement('span'); label.textContent = item.display_name || 'Place'; searchMarker.bindPopup(label).openPopup();
+        map.setView(point, 15);
+        overlay.querySelector('#mapToolsPanel').hidden = true;
+        overlay.querySelector('#mapToolsToggle').setAttribute('aria-expanded', 'false');
+        overlay.querySelector('#mapToolsToggle').focus();
+      };
+      results.appendChild(result);
+    }
+  } catch { if (overlay.isConnected) status.textContent = 'Search unavailable. Check your connection, sign-in or Places usage allowance.'; }
+  finally { clearTimeout(timer); button.disabled = false; if (searchRequest === controller) searchRequest = null; }
+}
 
 function updateFix(detail) {
   if (!numeric(detail?.latitude) || !numeric(detail?.longitude) || Math.abs(Number(detail.latitude)) > 90 || Math.abs(Number(detail.longitude)) > 180) return;

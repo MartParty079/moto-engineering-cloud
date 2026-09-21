@@ -96,12 +96,12 @@ function normalizeGooglePlace(place, origin) {
   };
 }
 
-async function googlePlaces(category, lat, lon, radius) {
+async function googlePlaces(category, lat, lon, radius, query = '') {
   const key = process.env.GOOGLE_PLACES_API_KEY;
   if (!key) throw new Error('Google Places key not configured');
 
   const config = CATEGORIES[category];
-  const isTextSearch = Boolean(config.googleText);
+  const isTextSearch = Boolean(query || config.googleText);
   const endpoint = isTextSearch
     ? 'https://places.googleapis.com/v1/places:searchText'
     : 'https://places.googleapis.com/v1/places:searchNearby';
@@ -113,7 +113,7 @@ async function googlePlaces(category, lat, lon, radius) {
   };
   const body = isTextSearch
     ? {
-        textQuery: config.googleText,
+        textQuery: query || config.googleText,
         maxResultCount: 20,
         locationBias: location
       }
@@ -227,6 +227,8 @@ export default async function handler(req, res) {
   const category = CATEGORIES[req.query.category] ? req.query.category : 'fuel';
   const authorization = req.headers.authorization;
   const attempts = [];
+  const query = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+  if (req.query.q !== undefined && (query.length < 3 || query.length > 200)) return res.status(400).json({ error: 'Search must contain 3–200 characters' });
 
   if (!validCoordinates(lat, lon)) {
     return res.status(400).json({ error: 'Invalid coordinates' });
@@ -236,7 +238,7 @@ export default async function handler(req, res) {
     const quota = await consumePlacesRequest(authorization).catch(() => ({ allowed: false, reason: 'Usage counter unavailable' }));
     if (quota.allowed) {
       try {
-        const places = await googlePlaces(category, lat, lon, radius);
+        const places = await googlePlaces(category, lat, lon, radius, query);
         return res.status(200).json({
           category,
           label: CATEGORIES[category].label,
@@ -260,6 +262,8 @@ export default async function handler(req, res) {
     attempts.push('Google Places: key not configured');
   }
 
+  // Free category lookup cannot answer arbitrary address searches.
+  if (query) return res.status(503).json({ error: 'Place search unavailable. Check Google Places configuration and usage allowance.' });
   try {
     const result = await openStreetMapPlaces(category, lat, lon, radius);
     return res.status(200).json({

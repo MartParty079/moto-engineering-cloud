@@ -48,6 +48,13 @@
 .ridePanel footer { margin-top: 0; display: flex; gap: .75rem; padding-top: .25rem; }
 .rideError { margin-top: 1rem; color: #ffb1b1; }
 .ridePanel footer button { flex: 1; }
+.sensorGrid .rideLimitSensor { border-color: #637785; background: #202d37; }
+.rideLimitSensor strong { color: #fff; font-size: 2.4rem; }
+.rideRoadData { grid-column: 1 / -1; padding: 1.25rem; background: #13202a; border: 1px solid var(--line); border-radius: 12px; }
+.rideRoadData h2 { overflow-wrap: anywhere; }
+.rideRoadData dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin: 1rem 0; }
+.rideRoadData dt, #rideRoadSource, #rideRoadStatus { color: var(--muted); font-size: .75rem; }
+.rideRoadData dd { margin: .35rem 0 0; font-size: .9rem; overflow-wrap: anywhere; }
 @media (min-width: 760px) {
   .ridePanel { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.5rem; padding-left: max(2rem, env(safe-area-inset-left)); padding-right: max(2rem, env(safe-area-inset-right)); }
   .ridePanel > header, .sensorGrid, .rideRecovery, .rideError { grid-column: 1 / -1; }

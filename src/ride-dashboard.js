@@ -1,6 +1,16 @@
 const esc = (value = '') => String(value ?? '').replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[character]));
 const numeric = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
 import { createLeanTracker } from './lean-tracker.js';
+import { createRideRoadData } from './ride-road-data.js';
+const roadTracker = createRideRoadData((data, status) => {
+  value('rideSpeedLimit', data?.limit || '--');
+  value('rideRoadName', data?.name || 'Road unavailable');
+  value('rideRoadType', data?.type || '--');
+  value('rideRoadSurface', data?.surface || '--');
+  value('rideRoadLanes', data?.lanes || '--');
+  value('rideRoadSource', data ? `${data.source} · ${data.confidence} confidence` : 'No current match');
+  value('rideRoadStatus', status);
+});
 const leanTracker = createLeanTracker(renderLean);
 let leanRideId = null;
 function renderLean() {
@@ -43,7 +53,9 @@ function open() {
       <article><small>Altitude</small><strong id="sensorAltitude">--</strong><span>FT</span></article>
       <article><small>GPS accuracy</small><strong id="sensorAccuracy">--</strong><span>FT</span></article>
       <article class="leanSensor"><small>LEAN ESTIMATE</small><div class="leanInstrument" aria-hidden="true"><span class="leanAxis">L <i></i> R</span><div id="leanNeedle"><span></span></div></div><strong id="sensorLean">--</strong><span>PHONE · EXPERIMENTAL</span></article>
+      <article class="rideLimitSensor"><small>SPEED LIMIT</small><strong id="rideSpeedLimit">--</strong><span>MPH · MAPPED</span></article>
     </section>
+    <section class="rideRoadData" aria-label="Road data"><div class="leanSectionHead"><h2 id="rideRoadName">Road unavailable</h2><span class="rideChip">ROAD DATA</span></div><dl><div><dt>Road type</dt><dd id="rideRoadType">--</dd></div><div><dt>Surface</dt><dd id="rideRoadSurface">--</dd></div><div><dt>Lanes</dt><dd id="rideRoadLanes">--</dd></div></dl><p id="rideRoadSource">No current match</p><p id="rideRoadStatus" role="status">Waiting for GPS</p></section>
     <section aria-label="Lean tracking">
       <div class="leanSectionHead"><h2>Lean tracking</h2><span class="rideChip">Experimental</span></div>
       <p class="leanPeaks">Session peaks <span id="sensorLeanMax">--</span></p>
@@ -57,6 +69,7 @@ function open() {
     <footer><button id="rideMap">Open map</button><button id="rideDone">Done</button></footer>
   </main>`;
   document.body.appendChild(overlay);
+  roadTracker.start();
   overlay.querySelector('#rideClose').onclick = close;
   overlay.querySelector('#rideDone').onclick = close;
   overlay.querySelector('#rideMap').onclick = () => { close(); window.MotoMap?.open?.(); };
@@ -76,7 +89,7 @@ function open() {
   renderLean();
 }
 
-function close() { if (!state().recording) leanTracker.stop(); document.querySelector('#rideDashOverlay')?.remove(); }
+function close() { roadTracker.stop(); if (!state().recording) leanTracker.stop(); document.querySelector('#rideDashOverlay')?.remove(); }
 
 async function chooseBike() {
   const bikes = window.MotoRide?.getBikes?.() || [];
@@ -131,7 +144,7 @@ function update(ride = state()) {
   document.querySelector('#rideDot')?.classList.toggle('active', Boolean(ride.recording));
 }
 
-window.addEventListener('moto-gps-fix', event => { latestGps = event.detail; update(); });
+window.addEventListener('moto-gps-fix', event => { latestGps = event.detail; update(); roadTracker.update(event.detail); });
 window.addEventListener('moto-ride-state', event => {
   const ride = event.detail;
   if (ride.recording && ride.sessionId !== leanRideId) {
@@ -141,6 +154,10 @@ window.addEventListener('moto-ride-state', event => {
   if (!ride.recording && !document.querySelector('#rideDashOverlay')) leanTracker.stop();
   update(ride); renderLean();
 });
-window.addEventListener('pagehide', () => leanTracker.stop());
+window.addEventListener('pagehide', () => { leanTracker.stop(); roadTracker.stop(); });
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) roadTracker.stop();
+  else if (document.querySelector('#rideDashOverlay')) roadTracker.start();
+});
 window.addEventListener('moto-ride-open-request', open);
 window.MotoRideDash = { open, close };

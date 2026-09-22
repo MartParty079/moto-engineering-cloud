@@ -6,6 +6,8 @@
 
 ## Mission
 
+2026-09-22 cleanup: the rider preview now includes GPX import/conversion/export and experimental live phone lean. Unreachable legacy frontend modules and duplicate assets were removed after reference review; migrations and published API contracts remain. Current product scope and native port requirements are defined in SWIFT_PORT_HANDOFF.md; CLEANUP_REVIEW.md records deletion scope and validation limits. Historical engineering domains below are not active UI requirements.
+
 September 2026 compatibility note: the current UI is rider-focused. Engineering, AI, PCB, firmware, route-planning, Adventure Mode, theme selection, and editable ride displays are intentionally absent from the loaded web runtime. The active product surface is Garage, Service, Ride History, a fixed Ride Center, and a simple Map. Web use continues throughout the Swift port. Ride capture persists to owner/project-scoped IndexedDB; stopped-only uploads use client UUID deduplication while retaining numeric server sample IDs. Completion and mileage changes share an owner-scoped transaction. See RIDE_SYNC.md and DEPLOYMENT_RELEASE.md for evidence, rollback and limits. Browser persistence does not establish continuous iOS background capture or certified mileage.
 
 Build a safe, reliable motorcycle engineering platform that records rides, organizes vehicle development, and supports future ESP32-S3 telemetry hardware without overstating unfinished capability.

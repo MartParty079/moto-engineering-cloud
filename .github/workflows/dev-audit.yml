@@ -84,54 +84,20 @@ jobs:
       - name: Start production preview
         shell: bash
         run: |
-          npm run preview -- --host 127.0.0.1 > vite-preview.log 2>&1 &
+          VITE_SUPABASE_URL=http://127.0.0.1:54321 VITE_SUPABASE_PUBLISHABLE_KEY=local-test npm run dev -- --host 127.0.0.1 > vite-preview.log 2>&1 &
           echo $! > vite-preview.pid
           for attempt in {1..40}; do
-            if curl --fail --silent http://127.0.0.1:4173/ >/dev/null; then exit 0; fi
+            if curl --fail --silent http://127.0.0.1:5173/ >/dev/null; then exit 0; fi
             sleep 1
           done
           cat vite-preview.log
           exit 1
-      - name: Stress recording and capture Chromium proof
-        env:
-          E2E_BASE_URL: http://127.0.0.1:4173
-          E2E_BROWSER: chromium
-        run: node scripts/e2e-proof.mjs
-      - name: Verify Chromium recorder scrolling
-        env:
-          E2E_BASE_URL: http://127.0.0.1:4173
-          E2E_BROWSER: chromium
-        run: node scripts/e2e-recorder-scroll.mjs
-      - name: Verify Chromium speed limits
-        env:
-          E2E_BASE_URL: http://127.0.0.1:4173
-          E2E_BROWSER: chromium
-        run: node scripts/e2e-road-context.mjs
-      - name: Verify Chromium AI removal
-        env:
-          E2E_BASE_URL: http://127.0.0.1:4173
-          E2E_BROWSER: chromium
-        run: node scripts/e2e-ai-removed.mjs
-      - name: Stress recording and capture WebKit proof
-        env:
-          E2E_BASE_URL: http://127.0.0.1:4173
-          E2E_BROWSER: webkit
-        run: node scripts/e2e-proof.mjs
-      - name: Verify WebKit recorder scrolling
-        env:
-          E2E_BASE_URL: http://127.0.0.1:4173
-          E2E_BROWSER: webkit
-        run: node scripts/e2e-recorder-scroll.mjs
-      - name: Verify WebKit speed limits
-        env:
-          E2E_BASE_URL: http://127.0.0.1:4173
-          E2E_BROWSER: webkit
-        run: node scripts/e2e-road-context.mjs
-      - name: Verify WebKit AI removal
-        env:
-          E2E_BASE_URL: http://127.0.0.1:4173
-          E2E_BROWSER: webkit
-        run: node scripts/e2e-ai-removed.mjs
+      - name: Verify current shell and durable recovery in both engines
+        run: |
+          for engine in chromium webkit; do
+            E2E_BROWSER=$engine npm run test:browser
+            E2E_BROWSER=$engine npm run test:browser:rides
+          done
       - name: Upload screenshot and diagnostic proof
         if: always()
         uses: actions/upload-artifact@v4

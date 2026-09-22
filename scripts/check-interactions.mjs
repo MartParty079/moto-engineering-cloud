@@ -83,7 +83,7 @@ if(duplicateIndexIds.length)failures.push(`index.html contains duplicate ids: ${
 
 if(aggressiveObserverCount)warnings.push(`${aggressiveObserverCount} body attribute observer(s) can run during button-state changes`);
 if(inlineHtmlClickCount)warnings.push(`${inlineHtmlClickCount} inline HTML onclick handler(s) remain`);
-if(missingTypeCount)warnings.push(`${missingTypeCount} generated button(s) omit type; app-interaction-stability normalizes non-submit controls at runtime`);
+if(missingTypeCount)warnings.push(`${missingTypeCount} generated button(s) omit type; review controls inside forms for intentional submit behavior`);
 
 console.log('Interaction audit');
 console.log(`- Files scanned: ${rows.length}`);

@@ -63,26 +63,6 @@ test('GPS validity and freshness preserve zero and unknown readings', () => {
   assert.equal(freshPosition(fix, Infinity, 99999), false);
 });
 
-test('provider wrapper rewrites only exact same-origin endpoints', async () => {
-  const source = await readFile(new URL('../src/provider-auth-fix.js', import.meta.url), 'utf8');
-  const start = source.indexOf('const nativeFetch');
-  const end = source.indexOf('\n};', start) + 3;
-  const calls = [];
-  let authCalls = 0;
-  const window = { fetch: async (input, init) => { calls.push({ url: String(input.url || input), init }); return new Response('{}'); } };
-  const context = vm.createContext({ window, URL, Request, Response, Headers, console, location: { href: 'https://app.test/', origin: 'https://app.test' }, supabase: { auth: { getSession: async () => { authCalls++; return { data: { session: { access_token: 'local-test' } } }; } } } });
-  vm.runInContext(source.slice(start, end), context);
-  await window.fetch('/api/road-info?lat=0&lon=0');
-  await window.fetch('/api/road-info-live?lat=0&lon=0');
-  await window.fetch('https://other.test/api/road-info');
-  await window.fetch('/api/road-info-other');
-  assert.equal(calls[0].url, 'https://app.test/api/road-info-live?lat=0&lon=0');
-  assert.equal(calls[1].url, calls[0].url);
-  assert.equal(calls[0].init.headers.get('Authorization'), 'Bearer local-test');
-  assert.equal(calls[2].init.headers, undefined);
-  assert.equal(authCalls, 2);
-});
-
 test('service worker bypasses API navigation and preserves unrelated caches', async () => {
   const listeners = {}, deleted = [];
   const context = vm.createContext({ self: { addEventListener: (name, fn) => { listeners[name] = fn; }, clients: { claim: async () => {} } }, URL, location: { origin: 'https://app.test' }, caches: { keys: async () => ['other-app', 'motocloud-shell-v4', 'motocloud-app-v48', 'motocloud-app-v49', 'motocloud-app-v50'], delete: async key => { deleted.push(key); } } });

@@ -10,7 +10,7 @@ for (const dir of ['src', 'api', 'server']) {
 }
 const html = await readFile('index.html', 'utf8');
 const entrypoints = [...html.matchAll(/(?:src|href)="\/(src\/[^"?]+)(?:\?[^"]*)?"/g)].map(m => m[1]);
-const imports = text => [...text.matchAll(/import\s+(?:[^;]*?from\s+)?['"]([^'"]+)['"]/g)].map(m => m[1]);
+const imports = text => [...text.matchAll(/import\s+(?:[^;]*?from\s+)?['"]([^'"]+)['"]|import\s*\(\s*['"]([^'"]+)['"]/g)].map(m => m[1] || m[2]);
 const reachable = new Set();
 function visit(file) {
   if (reachable.has(file)) return;

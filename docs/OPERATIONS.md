@@ -1,6 +1,6 @@
 # Production Operations
 
-The current durable ride contract and its mandatory backend release prerequisites are documented in [RIDE_SYNC.md](RIDE_SYNC.md). The additive completion migration is not remotely applied; reconcile the authoritative development schema before deployment.
+The current durable ride contract and backend release prerequisites are documented in [RIDE_SYNC.md](RIDE_SYNC.md). DEPLOYMENT_RELEASE.md records the historical migration application receipt; verify the authorized development schema before integration rather than assuming that receipt describes every environment.
 
 ## Services
 

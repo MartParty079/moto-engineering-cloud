@@ -1,6 +1,7 @@
 # Moto Mission Documentation
 
-- [Swift port handoff](../SWIFT_PORT_HANDOFF.txt)
+- [Project definition and Swift port handoff](SWIFT_PORT_HANDOFF.md)
+- [Final rider cleanup review](CLEANUP_REVIEW.md)
 - [Web and Swift parallel-use requirements](WEB_SWIFT_COEXISTENCE.md)
 - [Frontend refresh](FRONTEND_REDESIGN.md)
 - [Generated app inventory](APP_INVENTORY.txt)

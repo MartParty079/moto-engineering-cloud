@@ -5,330 +5,42 @@ Reachability follows index.html and static ES imports. Unloaded files may suppor
 .from() captures include Storage buckets as well as table names. Dynamic table names in main.js require reading its tables array. SQL declarations below are base definitions; ALTER statements in later files also apply.
 
 1. HTML LOAD ORDER (CSS + MODULES)
-1. src/mobile-fix.css
-2. src/access-control.css
-3. src/access-bootstrap.css
-4. src/pwa.css
-5. src/ride-center.css
-6. src/ride-safe-enhancements.css
-7. src/adventure-mode.css
-8. src/ride-hud.css
-9. src/ride-analytics.css
-10. src/adventure-tools.css
-11. src/adventure-ride-control.css
-12. src/ride-dashboard.css
-13. src/ride-dashboard-compact.css
-14. src/ride-dashboard-header-controls.css
-15. src/ride-dashboard-map-page.css
-16. src/ride-dashboard-themes.css
-17. src/ride-experience-v2.css
-18. src/ride-experience-hotfix.css
-19. src/ride-os-v3.css
-20. src/ride-picker-stability.css
-21. src/ride-lean-bridge.css
-22. src/ui-polish.css
-23. src/motorcycle-profiles.css
-24. src/site-audit.css
-25. src/garage-health.css
-26. src/garage-compact.css
-27. src/ui-system-v2.css
-28. src/adaptive-layout.css
-29. src/mobile-workflow-fixes.css
-30. src/garage-center.css
-31. src/security-center.css
-32. src/mobile-layout-hotfix.css
-33. src/ride-dash-live-hotfix.css
-34. src/recorder-features-v42.css
-35. src/app-interaction-stability.css
-36. src/marty-brand.css
-37. src/adaptive-layout.js
-38. src/road-provider-default.js
-39. src/remove-ai-integration.js
-40. src/main.js
-41. src/navigation-state.js
-42. src/cirkit-link.js
-43. src/access-control.js
-44. src/access-bootstrap.js
-45. src/pwa.js
-46. src/gps-shared.js
-47. src/recorder-features-v42.js
-48. src/recording-isolation.js
-49. src/ios-motion-disable.js
-50. src/startup-permissions.js
-51. src/ride-center.js
-52. src/ride-start-guard.js
-53. src/provider-auth-fix.js
-54. src/ride-safe-enhancements.js
-55. src/ride-lean-bridge.js
-56. src/garage-observer-guard.js
-57. src/garage-health.js
-58. src/garage-compact.js
-59. src/adventure-mode.js
-60. src/ride-hud.js
-61. src/ride-analytics.js
-62. src/adventure-tools.js
-63. src/adventure-ride-control.js
-64. src/ride-dashboard.js
-65. src/ride-dashboard-header-controls.js
-66. src/ride-dashboard-map-page.js
-67. src/bike-editor-fix.js
-68. src/ride-log-bridge.js
-69. src/ride-delete.js
-70. src/motorcycle-profiles.js
-71. src/marty-brand.js
-72. src/ui-polish.js
-73. src/ride-experience-safety.js
-74. src/ride-os-v3.js
-75. src/provider-dashboard.js
-76. src/ui-system-v2.js
-77. src/mobile-workflow-fixes.js
-78. src/garage-center.js
-79. src/security-center.js
-80. src/security-admin-guard.js
-81. src/mobile-layout-hotfix.js
-82. src/app-interaction-stability.js
+1. src/styles.css
+2. src/pwa.css
+3. src/ride-dashboard.css
+4. src/ride-dashboard-map-page.css
+5. src/main.js
+6. src/pwa.js
+7. src/gps-shared.js
+8. src/ride-center.js
+9. src/ride-dashboard.js
+10. src/ride-dashboard-map-page.js
 
 2. FILE INVENTORY
-
-src/access-bootstrap.css [Loaded browser source; 3 lines]
-
-src/access-bootstrap.js [Loaded browser source; 110 lines]
-  Imports: ./supabase.js
-  Tables/buckets (literal references): feature_flags, user_feature_access, user_profiles
-  Events observed: click
-  Uses MutationObserver; native port should use explicit observable state.
-
-src/access-control.css [Loaded browser source; 24 lines]
-
-src/access-control.js [Loaded browser source; 39 lines]
-  Imports: ./supabase.js
-  Tables/buckets (literal references): feature_flags, user_activity_events, user_feature_access, user_profiles
-  RPCs: get_admin_user_metrics
-  Events observed: click
-  Uses MutationObserver; native port should use explicit observable state.
-
-src/access-diagnostics.js [Not loaded by current shell; 66 lines]
-  Tables/buckets (literal references): feature_flags, user_profiles
-  Events observed: DOMContentLoaded, click, error, unhandledrejection
-
-src/adaptive-layout.css [Loaded browser source; 101 lines]
-
-src/adaptive-layout.js [Loaded browser source; 33 lines]
-  Events observed: orientationchange, pageshow, resize, scroll
-
-src/add-record-fix.js [Not loaded by current shell; 20 lines]
-  Events emitted: marty-direct-add
-  Events observed: click
-  Uses MutationObserver; native port should use explicit observable state.
-
-src/adventure-integration-v2.js [Not loaded by current shell; 83 lines]
-  Events emitted: moto-route-update
-  Uses MutationObserver; native port should use explicit observable state.
-
-src/adventure-mode.css [Loaded browser source; 50 lines]
-
-src/adventure-mode.js [Loaded browser source; 126 lines]
-  Imports: ./supabase.js
-  Tables/buckets (literal references): adventure_routes
-  Declared storage-key constants: motoAdventureOrientationV1
-  Events observed: error, load, moto-gps-fix, moto-road-update
-  Uses MutationObserver; native port should use explicit observable state.
-
-src/adventure-ride-control.css [Loaded browser source; 1 lines]
-
-src/adventure-ride-control.js [Loaded browser source; 14 lines]
-  Events observed: moto-ride-state
-  Uses MutationObserver; native port should use explicit observable state.
-
-src/adventure-tools.css [Loaded browser source; 1 lines]
-
-src/adventure-tools.js [Loaded browser source; 14 lines]
-  Imports: ./supabase.js
-  Tables/buckets (literal references): bikes, fuel_entries
-  Local/session storage keys (literal): motoActiveRide, selectedBikeId
-
-src/app-interaction-stability.css [Loaded browser source; 125 lines]
-
-src/app-interaction-stability.js [Loaded browser source; 260 lines]
-  Events emitted: moto-ui-stability-ready
-  Events observed: DOMContentLoaded, click, keydown, pagehide, pageshow, pointercancel, pointerdown, pointermove, pointerup, visibilitychange
-  Uses MutationObserver; native port should use explicit observable state.
-
-src/bike-editor-fix.js [Loaded browser source; 39 lines]
-  Imports: ./supabase.js
-  Tables/buckets (literal references): bike-images, bikes
-  Events observed: click
-  Uses MutationObserver; native port should use explicit observable state.
-
-src/cirkit-link.js [Loaded browser source; 28 lines]
-  Uses MutationObserver; native port should use explicit observable state.
-
-src/cost-sheet.js [Not loaded by current shell; 104 lines]
-  Imports: ./supabase.js
-  Tables/buckets (literal references): parts
-  Events observed: DOMContentLoaded
-  Uses MutationObserver; native port should use explicit observable state.
-
-src/garage-center.css [Loaded browser source; 41 lines]
-
-src/garage-center.js [Loaded browser source; 706 lines]
-  Imports: ./supabase.js
-  Tables/buckets (literal references): bike-images, bike_mods, bikes, fuel_entries, maintenance, maintenance_intervals, ride_sessions, tire_profiles
-  Events observed: click, keydown, moto-ride-complete
-  Uses MutationObserver; native port should use explicit observable state.
-
-src/garage-compact.css [Loaded browser source; 1 lines]
-
-src/garage-compact.js [Loaded browser source; 59 lines]
-  Events observed: DOMContentLoaded, click, toggle
-  Uses MutationObserver; native port should use explicit observable state.
-
-src/garage-health.css [Loaded browser source; 4 lines]
-
-src/garage-health.js [Loaded browser source; 215 lines]
-  Imports: ./supabase.js
-  Tables/buckets (literal references): bike_trip_settings, bikes, fuel_entries, maintenance_intervals, tire_profiles
-  Events emitted: motocloud:open-ride-log
-  Events observed: click
-  Uses MutationObserver; native port should use explicit observable state.
-
-src/garage-observer-guard.js [Loaded browser source; 5 lines]
-  Events emitted: moto-garage-observer-guard-ready
 
 src/gps-shared.js [Loaded browser source; 221 lines]
   Imports: ./location-validity.js
   Events emitted: moto-gps-fix
   Events observed: moto-gps-fix, moto-recording-isolation-change
 
-src/ios-motion-disable.js [Loaded browser source; 139 lines]
-  Declared storage-key constants: moto-startup-permissions-v1
-  Events emitted: moto-iphone-motion-disabled, moto-motion-update
-  Events observed: moto-ride-dash-opened, moto-ride-dash-refreshed, moto-ride-dash-rendered, moto-ride-tools-ready, pageshow, visibilitychange
+src/gpx.js [Loaded browser source; 126 lines]
 
-src/iphone-ui-cleanup.css [Not loaded by current shell; 61 lines]
+src/lean-tracker.js [Loaded browser source; 84 lines]
+  Events observed: deviceorientation
 
 src/location-validity.js [Loaded browser source; 14 lines]
 
-src/main.js [Loaded browser source; 467 lines]
-  Imports: ./styles.css, ./supabase.js
-  Tables/buckets (literal references): notes, parts, project-media, task_attachments, task_dependencies, tasks
-  Edge functions: ai-apply-proposal, ai-chat
-  Local/session storage keys (literal): garageTaskId, pcbProjectId, pcbTab
-  Events emitted: moto-view-rendered
-  Events observed: keydown
-
-src/marty-brand.css [Loaded browser source; 225 lines]
-
-src/marty-brand.js [Loaded browser source; 13 lines]
-  Uses MutationObserver; native port should use explicit observable state.
-
-src/mobile-fix.css [Loaded browser source; 43 lines]
-
-src/mobile-layout-hotfix.css [Loaded browser source; 171 lines]
-
-src/mobile-layout-hotfix.js [Loaded browser source; 31 lines]
-  Events observed: popstate
-  Uses MutationObserver; native port should use explicit observable state.
-
-src/mobile-workflow-fixes.css [Loaded browser source; 20 lines]
-
-src/mobile-workflow-fixes.js [Loaded browser source; 110 lines]
-  Events observed: click, moto-page-ready, moto-ride-dash-closed, moto-ride-dash-opened, pagehide, pageshow
-  Uses MutationObserver; native port should use explicit observable state.
-
-src/motorcycle-profiles.css [Loaded browser source; 1 lines]
-
-src/motorcycle-profiles.js [Loaded browser source; 168 lines]
+src/main.js [Loaded browser source; 150 lines]
   Imports: ./supabase.js
-  Tables/buckets (literal references): bikes, ride_sessions
-  Events observed: click, keydown, moto-ride-complete
+  Tables/buckets (literal references): bikes, maintenance, ride_sessions
+  Local/session storage keys (literal): motoSimpleView
+  Events observed: click, close, moto-ride-complete
+
+src/pwa.css [Loaded browser source; 6 lines]
+
+src/pwa.js [Loaded browser source; 45 lines]
+  Events observed: load, updatefound
   Uses MutationObserver; native port should use explicit observable state.
-
-src/navigation-state.js [Loaded browser source; 54 lines]
-  Declared storage-key constants: motoCurrentView
-  Events observed: click, hashchange
-  Uses MutationObserver; native port should use explicit observable state.
-
-src/offline-cache.css [Not loaded by current shell; 14 lines]
-
-src/offline-cache.js [Not loaded by current shell; 402 lines]
-  Imports: ./supabase.js
-  Tables/buckets (literal references): adventure_routes
-  Declared storage-key constants: road_context, route_packs
-  Events emitted: moto-offline-route-ready, moto-road-update
-  Events observed: click, moto-gps-fix, moto-ride-state, moto-road-update, online
-  Uses MutationObserver; native port should use explicit observable state.
-
-src/overview-last-updated.js [Loaded browser source; 102 lines]
-  Declared storage-key constants: motoOverviewLastUpdated
-  Events observed: focus
-  Uses MutationObserver; native port should use explicit observable state.
-
-src/premium-visibility.css [Not loaded by current shell; 259 lines]
-
-src/premium-visibility.js [Not loaded by current shell; 219 lines]
-  Events observed: click, moto-ride-dash-opened, moto-ride-dash-refreshed, moto-ride-dash-rendered
-  Uses MutationObserver; native port should use explicit observable state.
-
-src/provider-auth-fix.js [Loaded browser source; 59 lines]
-  Imports: ./overview-last-updated.js, ./supabase.js
-  RPCs: consume_road_api_request
-  Declared storage-key constants: motoRoadProvider
-  Events observed: change
-  Uses MutationObserver; native port should use explicit observable state.
-
-src/provider-dashboard.js [Loaded browser source; 93 lines]
-  Imports: ./supabase.js
-  Tables/buckets (literal references): road_api_usage, road_provider_settings
-  Uses MutationObserver; native port should use explicit observable state.
-
-src/pwa.css [Loaded browser source; 2 lines]
-
-src/pwa.js [Loaded browser source; 34 lines]
-  Imports: ./recorder-scroll-v43.css, ./recorder-road-context-v45.js?v=2, ./recorder-phase4-v44.js?v=1
-  Local/session storage keys (literal): motoPwaBuild, motocloud-install-seen
-  Events emitted: moto-app-cache-updated
-  Events observed: controllerchange, load, statechange, updatefound
-  Uses MutationObserver; native port should use explicit observable state.
-
-src/recorder-features-v42.css [Loaded browser source; 69 lines]
-
-src/recorder-features-v42.js [Loaded browser source; 144 lines]
-  Events observed: moto-gps-fix, moto-recording-isolation-change, moto-road-update, moto-route-update, moto-weather-update
-
-src/recorder-phase4-v44.js [Not loaded by current shell; 21 lines]
-  Events emitted: moto-phase4-summary-ready, moto-ride-history-refresh
-  Events observed: moto-gps-fix, moto-recording-isolation-change, moto-ride-state, online
-
-src/recorder-road-context-compat-v45.js [Not loaded by current shell; 25 lines]
-  Events observed: moto-road-update
-
-src/recorder-road-context-v45.js [Not loaded by current shell; 381 lines]
-  Imports: ./supabase.js
-  Local/session storage keys (literal): motoRoadProvider
-  Events emitted: moto-road-update
-  Events observed: moto-gps-fix, moto-recording-isolation-change, offline, online
-
-src/recorder-scroll-v43.css [Loaded browser source; 8 lines]
-
-src/recording-isolation.js [Loaded browser source; 302 lines]
-  Local/session storage keys (literal): motoRecordingDiagnosticsV41
-  Events emitted: moto-recording-isolation-change
-  Events observed: moto-gps-fix, moto-ride-state, moto-road-update, pagehide
-
-src/remove-ai-integration.js [Loaded browser source; 112 lines]
-  Imports: ./rider-welcome-ui.js, ./supabase.js
-  Events observed: click
-  Uses MutationObserver; native port should use explicit observable state.
-
-src/ride-analytics.css [Loaded browser source; 1 lines]
-
-src/ride-analytics.js [Loaded browser source; 106 lines]
-  Imports: ./supabase.js
-  Tables/buckets (literal references): ride_samples, ride_sessions
-  Events observed: moto-open-ride-analytics
-
-src/ride-center.css [Loaded browser source; 1 lines]
 
 src/ride-center.js [Loaded browser source; 92 lines]
   Imports: ./supabase.js, ./ride-runtime.js
@@ -337,216 +49,46 @@ src/ride-center.js [Loaded browser source; 92 lines]
   Events emitted: moto-ride-open-request, moto-ride-state, moto-rides-update
   Events observed: moto-ride-complete, online, pagehide, pageshow
 
-src/ride-dash-live-hotfix.css [Loaded browser source; 90 lines]
+src/ride-dashboard-map-page.css [Loaded browser source; 47 lines]
 
-src/ride-dashboard-compact.css [Loaded browser source; 255 lines]
+src/ride-dashboard-map-page.js [Loaded browser source; 202 lines]
+  Imports: ./supabase.js, ./gpx.js
+  Declared storage-key constants: motoSimpleMapLayer
+  Events observed: keydown, load, moto-gps-fix
 
-src/ride-dashboard-header-controls.css [Loaded browser source; 328 lines]
+src/ride-dashboard.css [Loaded browser source; 75 lines]
 
-src/ride-dashboard-header-controls.js [Loaded browser source; 126 lines]
-  Events observed: click, moto-ride-dash-closed, moto-ride-dash-opened, moto-ride-dash-refreshed, moto-ride-dash-rendered
-
-src/ride-dashboard-map-page.css [Loaded browser source; 268 lines]
-
-src/ride-dashboard-map-page.js [Loaded browser source; 350 lines]
-  Declared storage-key constants: motoAdventureOrientationV1
-  Events observed: error, load, moto-gps-fix, moto-ride-dash-closed, moto-ride-dash-opened, moto-ride-dash-page, moto-ride-dash-refreshed, moto-ride-dash-rendered, moto-ride-state, scroll
-
-src/ride-dashboard-themes.css [Loaded browser source; 151 lines]
-
-src/ride-dashboard.css [Loaded browser source; 752 lines]
-
-src/ride-dashboard.js [Loaded browser source; 659 lines]
-  Local/session storage keys (literal): motoEstimatedRange
-  Declared storage-key constants: motoRideDashLayoutV1, motoRideDashLayoutV2, motoRideDashStyleV1
-  Events emitted: moto-ride-dash-closed, moto-ride-dash-opened, moto-ride-dash-page, moto-ride-dash-refreshed, moto-ride-dash-rendered
-  Events observed: click, moto-gps-fix, moto-motion-update, moto-ride-open-request, moto-ride-state, moto-rides-update, moto-road-update, moto-weather-update
-  Uses MutationObserver; native port should use explicit observable state.
-
-src/ride-delete.js [Loaded browser source; 69 lines]
-  Imports: ./supabase.js
-  Tables/buckets (literal references): ride_samples, ride_sessions
-  Local/session storage keys (literal): motoActiveRide, motoRideHiddenAt, motoRideInterrupted
-  Events observed: click, moto-open-ride
-  Uses MutationObserver; native port should use explicit observable state.
-
-src/ride-experience-hotfix.css [Loaded browser source; 184 lines]
-
-src/ride-experience-safety.js [Loaded browser source; 76 lines]
-  Events observed: moto-ride-dash-opened, moto-ride-dash-rendered
-  Uses MutationObserver; native port should use explicit observable state.
-
-src/ride-experience-v2.css [Loaded browser source; 105 lines]
-
-src/ride-experience-v2.js [Not loaded by current shell; 183 lines]
-  Events emitted: moto-ride-mode-change
-  Events observed: moto-gps-fix, moto-motion-update, moto-ride-dash-opened, moto-ride-dash-refreshed, moto-ride-dash-rendered, moto-ride-state, moto-road-update, moto-route-update, moto-tools-update, release, visibilitychange
-  Uses MutationObserver; native port should use explicit observable state.
-
-src/ride-hud.css [Loaded browser source; 1 lines]
-
-src/ride-hud.js [Loaded browser source; 102 lines]
-  Events observed: moto-gps-fix
-
-src/ride-intelligence.css [Not loaded by current shell; 1 lines]
+src/ride-dashboard.js [Loaded browser source; 165 lines]
+  Imports: ./lean-tracker.js, ./ride-road-data.js
+  Events observed: moto-gps-fix, moto-ride-open-request, moto-ride-state, pagehide, visibilitychange
 
 src/ride-journal.js [Loaded browser source; 169 lines]
   Imports: ./location-validity.js
 
-src/ride-layout-cleanup.css [Not loaded by current shell; 244 lines]
-
-src/ride-layout-cleanup.js [Not loaded by current shell; 163 lines]
-  Events observed: moto-ride-dash-opened, moto-ride-dash-refreshed, moto-ride-dash-rendered, moto-route-update
-  Uses MutationObserver; native port should use explicit observable state.
-
-src/ride-lean-bridge.css [Loaded browser source; 149 lines]
-
-src/ride-lean-bridge.js [Loaded browser source; 91 lines]
-  Events observed: click, keydown, moto-lean-calibrated, moto-lean-calibration-started, moto-motion-update, moto-permissions-change, moto-ride-dash-opened, moto-ride-dash-rendered, moto-ride-tools-ready
-
-src/ride-lean-v2.js [Not loaded by current shell; 367 lines]
-  Declared storage-key constants: moto-startup-permissions-v1
-  Events emitted: moto-lean-calibrated, moto-motion-update
-  Events observed: click, devicemotion, deviceorientation, deviceorientationabsolute, keydown, moto-permissions-change, moto-ride-dash-opened, moto-ride-dash-refreshed, moto-ride-dash-rendered, orientationchange, pagehide
-
-src/ride-log-bridge.css [Not loaded by current shell; 1 lines]
-
-src/ride-log-bridge.js [Loaded browser source; 73 lines]
-  Imports: ./supabase.js
-  Tables/buckets (literal references): ride_samples, ride_sessions
-  Events emitted: moto-open-ride-analytics
-  Events observed: click, moto-ride-complete, moto-rides-update
-  Uses MutationObserver; native port should use explicit observable state.
-
-src/ride-os-v3.css [Loaded browser source; 45 lines]
-
-src/ride-os-v3.js [Loaded browser source; 190 lines]
-  Imports: ./supabase.js
-  Tables/buckets (literal references): adventure_routes
-  Events emitted: moto-ride-v3-mode
-  Events observed: click, load, moto-gps-fix, moto-motion-update, moto-ride-dash-opened, moto-ride-dash-rendered, moto-ride-mode-change, moto-ride-state, moto-road-update, moto-route-update, moto-tools-update
-  Uses MutationObserver; native port should use explicit observable state.
-
-src/ride-performance-guard.js [Not loaded by current shell; 32 lines]
-  Events observed: moto-ride-dash-opened, moto-ride-dash-rendered, moto-ride-v3-mode
-
-src/ride-picker-stability.css [Loaded browser source; 234 lines]
-
-src/ride-picker-stability.js [Not loaded by current shell; 172 lines]
-  Events observed: click, moto-ride-dash-closed, moto-ride-state
-  Uses MutationObserver; native port should use explicit observable state.
-
 src/ride-recorder.js [Loaded browser source; 113 lines]
+
+src/ride-road-data.js [Loaded browser source; 62 lines]
 
 src/ride-runtime.js [Loaded browser source; 59 lines]
   Imports: ./supabase.js, ./ride-journal.js, ./ride-recorder.js, ./ride-sync.js
   Events emitted: moto-ride-complete
 
-src/ride-safe-enhancements.css [Loaded browser source; 2 lines]
-
-src/ride-safe-enhancements.js [Loaded browser source; 563 lines]
-  Imports: ./supabase.js, ./ride-runtime.js
-  Tables/buckets (literal references): bikes, fuel_entries, ride_notes, ride_samples, ride_sessions, road_condition_tags
-  Local/session storage keys (literal): motoActiveRide, motoEstimatedRange, motoLeanCalibrationV2, motoRoadProvider
-  Declared storage-key constants: moto-startup-permissions-v1
-  Events emitted: moto-lean-calibrated, moto-lean-calibration-started, moto-motion-update, moto-position, moto-ride-tools-ready, moto-road-update, moto-sensors-enabled, moto-tools-update, moto-weather-update
-  Events observed: devicemotion, deviceorientation, moto-gps-fix, moto-permissions-change, moto-ride-complete, moto-ride-state, pagehide, pageshow, visibilitychange
-
-src/ride-speed-cell.css [Not loaded by current shell; 177 lines]
-
-src/ride-speed-cell.js [Not loaded by current shell; 117 lines]
-  Events observed: moto-gps-fix, moto-ride-dash-opened, moto-ride-dash-refreshed, moto-ride-dash-rendered, moto-ride-state, moto-road-update, storage
-
-src/ride-start-guard.js [Loaded browser source; 184 lines]
-  Declared storage-key constants: moto-startup-permissions-v1
-  Events emitted: moto-gps-waiting, moto-permissions-change, moto-ride-start-progress
-  Events observed: moto-ride-dash-opened
-
 src/ride-sync.js [Loaded browser source; 55 lines]
   Tables/buckets (literal references): ride_samples, ride_sessions
   RPCs: complete_ride_v1
 
-src/ride-tools.js [Not loaded by current shell; 25 lines]
-  Imports: ./supabase.js
-  Tables/buckets (literal references): bike_trip_settings, bikes, emergency_profiles, fuel_entries, maintenance_intervals, ride_alert_settings, ride_notes, ride_sessions, road_condition_tags, tire_profiles
-  Events observed: moto-refresh-ride-tools, moto-ride-layout-ready
-  Uses MutationObserver; native port should use explicit observable state.
+src/styles.css [Loaded browser source; 52 lines]
 
-src/ride-weather.css [Not loaded by current shell; 1 lines]
-
-src/ride-weather.js [Not loaded by current shell; 29 lines]
-  Imports: ./supabase.js
-  Declared storage-key constants: motoRoadProvider
-  Events emitted: moto-refresh-ride-tools, moto-ride-layout-ready
-  Events observed: click, touchend, touchstart
-  Uses MutationObserver; native port should use explicit observable state.
-
-src/rider-welcome-ui.js [Loaded browser source; 234 lines]
-  Imports: ./supabase.js
-  Tables/buckets (literal references): bikes, maintenance
-  Local/session storage keys (literal): motoOpenAfterReload
-  Events emitted: moto-ride-open-request
-  Events observed: DOMContentLoaded, input, moto-page-ready, pageshow
-  Uses MutationObserver; native port should use explicit observable state.
-
-src/road-provider-default.js [Loaded browser source; 11 lines]
-  Declared storage-key constants: motoRoadProvider, motoRoadProviderAutoDefaultV1
-
-src/security-admin-guard.js [Loaded browser source; 48 lines]
-  Imports: ./supabase.js
-  RPCs: admin_set_feature_grant, admin_set_user_role, admin_update_feature_flag
-  Events observed: change
-
-src/security-center.css [Loaded browser source; 13 lines]
-
-src/security-center.js [Loaded browser source; 422 lines]
-  Imports: ./supabase.js
-  Tables/buckets (literal references): admin_audit_log, user_profiles
-  RPCs: admin_set_feature_grant, admin_set_user_role, admin_update_feature_flag
-  Edge functions: admin-invite-user, auth-recover
-  Events observed: click, submit
-  Uses MutationObserver; native port should use explicit observable state.
-
-src/site-audit.css [Loaded browser source; 79 lines]
-
-src/startup-permissions.js [Loaded browser source; 240 lines]
-  Declared storage-key constants: moto-startup-permissions-v1
-  Events emitted: moto-gps-waiting, moto-permissions-change
-  Events observed: DOMContentLoaded, click, moto-ride-tools-ready
-
-src/styles.css [Loaded browser source; 111 lines]
-
-src/supabase-mock.js [Not loaded by current shell; 100 lines]
+src/supabase-mock.js [Loaded browser source; 100 lines]
 
 src/supabase.js [Loaded browser source; 16 lines]
-  Imports: @supabase/supabase-js
+  Imports: @supabase/supabase-js, ./supabase-mock.js
   Environment variable names: VITE_SUPABASE_ANON_KEY, VITE_SUPABASE_PUBLISHABLE_KEY, VITE_SUPABASE_URL
-
-src/ui-polish.css [Loaded browser source; 26 lines]
-
-src/ui-polish.js [Loaded browser source; 168 lines]
-  Events observed: click, moto-ride-dash-closed, moto-ride-dash-opened, moto-route-update, touchmove
-  Uses MutationObserver; native port should use explicit observable state.
-
-src/ui-system-v2.css [Loaded browser source; 92 lines]
-
-src/ui-system-v2.js [Loaded browser source; 132 lines]
-  Events observed: click, error, moto-page-loading, moto-page-ready, pagehide, pageshow, unhandledrejection
-  Uses MutationObserver; native port should use explicit observable state.
-
-src/vehicle-data.css [Not loaded by current shell; 1 lines]
-
-src/vehicle-data.js [Not loaded by current shell; 25 lines]
-  Imports: ./supabase.js
-  Tables/buckets (literal references): bikes, vehicle_data_sources, vehicle_telemetry_samples
-  Local/session storage keys (literal): motoActiveRide
-  Events emitted: moto-telemetry-updated
-  Uses MutationObserver; native port should use explicit observable state.
 
 api/fuel-nearby.js [Server endpoint; 7 lines]
   Imports: ../server/request-validation.js
 
-api/poi-nearby.js [Server endpoint; 278 lines]
+api/poi-nearby.js [Server endpoint; 282 lines]
   Imports: ../server/request-validation.js
   Environment variable names: GOOGLE_PLACES_API_KEY, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_SUPABASE_PUBLISHABLE_KEY, VITE_SUPABASE_URL
 
@@ -567,95 +109,17 @@ server/request-validation.js [Server helper; 18 lines]
 
 3. TABLE/BUCKET REFERENCES AND SCHEMA COVERAGE
 
-admin_audit_log: NO BASE TABLE DECLARATION FOUND (may be storage bucket or deployed-only object)
-  Callers: src/security-center.js
-
-adventure_routes: NO BASE TABLE DECLARATION FOUND (may be storage bucket or deployed-only object)
-  Callers: src/adventure-mode.js, src/offline-cache.js, src/ride-os-v3.js
-
-bike_mods: base CREATE TABLE in supabase/migrations/20260719014500_garage_phase_two.sql
-  Callers: src/garage-center.js
-
-bike_trip_settings: NO BASE TABLE DECLARATION FOUND (may be storage bucket or deployed-only object)
-  Callers: src/garage-health.js, src/ride-tools.js
-
-bike-images: NO BASE TABLE DECLARATION FOUND (may be storage bucket or deployed-only object)
-  Callers: src/bike-editor-fix.js, src/garage-center.js
-
 bikes: base CREATE TABLE in supabase/schema.sql
-  Callers: src/adventure-tools.js, src/bike-editor-fix.js, src/garage-center.js, src/garage-health.js, src/motorcycle-profiles.js, src/ride-center.js, src/ride-safe-enhancements.js, src/ride-tools.js, src/rider-welcome-ui.js, src/vehicle-data.js
-
-emergency_profiles: NO BASE TABLE DECLARATION FOUND (may be storage bucket or deployed-only object)
-  Callers: src/ride-tools.js
-
-feature_flags: base CREATE TABLE in supabase/migration_v9_access_release_manager.sql
-  Callers: src/access-bootstrap.js, src/access-control.js, src/access-diagnostics.js
-
-fuel_entries: NO BASE TABLE DECLARATION FOUND (may be storage bucket or deployed-only object)
-  Callers: src/adventure-tools.js, src/garage-center.js, src/garage-health.js, src/ride-safe-enhancements.js, src/ride-tools.js
+  Callers: src/main.js, src/ride-center.js
 
 maintenance: base CREATE TABLE in supabase/schema.sql
-  Callers: src/garage-center.js, src/rider-welcome-ui.js
-
-maintenance_intervals: NO BASE TABLE DECLARATION FOUND (may be storage bucket or deployed-only object)
-  Callers: src/garage-center.js, src/garage-health.js, src/ride-tools.js
-
-notes: base CREATE TABLE in supabase/schema.sql
   Callers: src/main.js
-
-parts: base CREATE TABLE in supabase/schema.sql
-  Callers: src/cost-sheet.js, src/main.js
-
-project-media: NO BASE TABLE DECLARATION FOUND (may be storage bucket or deployed-only object)
-  Callers: src/main.js
-
-ride_alert_settings: NO BASE TABLE DECLARATION FOUND (may be storage bucket or deployed-only object)
-  Callers: src/ride-tools.js
-
-ride_notes: NO BASE TABLE DECLARATION FOUND (may be storage bucket or deployed-only object)
-  Callers: src/ride-safe-enhancements.js, src/ride-tools.js
 
 ride_samples: NO BASE TABLE DECLARATION FOUND (may be storage bucket or deployed-only object)
-  Callers: src/ride-analytics.js, src/ride-delete.js, src/ride-log-bridge.js, src/ride-safe-enhancements.js, src/ride-sync.js
+  Callers: src/ride-sync.js
 
 ride_sessions: NO BASE TABLE DECLARATION FOUND (may be storage bucket or deployed-only object)
-  Callers: src/garage-center.js, src/motorcycle-profiles.js, src/ride-analytics.js, src/ride-center.js, src/ride-delete.js, src/ride-log-bridge.js, src/ride-safe-enhancements.js, src/ride-sync.js, src/ride-tools.js
-
-road_api_usage: NO BASE TABLE DECLARATION FOUND (may be storage bucket or deployed-only object)
-  Callers: src/provider-dashboard.js
-
-road_condition_tags: NO BASE TABLE DECLARATION FOUND (may be storage bucket or deployed-only object)
-  Callers: src/ride-safe-enhancements.js, src/ride-tools.js
-
-road_provider_settings: NO BASE TABLE DECLARATION FOUND (may be storage bucket or deployed-only object)
-  Callers: src/provider-dashboard.js
-
-task_attachments: base CREATE TABLE in supabase/migration_v4.sql
-  Callers: src/main.js
-
-task_dependencies: base CREATE TABLE in supabase/migration_v4.sql
-  Callers: src/main.js
-
-tasks: base CREATE TABLE in supabase/schema.sql
-  Callers: src/main.js
-
-tire_profiles: NO BASE TABLE DECLARATION FOUND (may be storage bucket or deployed-only object)
-  Callers: src/garage-center.js, src/garage-health.js, src/ride-tools.js
-
-user_activity_events: NO BASE TABLE DECLARATION FOUND (may be storage bucket or deployed-only object)
-  Callers: src/access-control.js
-
-user_feature_access: base CREATE TABLE in supabase/migration_v9_access_release_manager.sql
-  Callers: src/access-bootstrap.js, src/access-control.js
-
-user_profiles: base CREATE TABLE in supabase/migration_v9_access_release_manager.sql
-  Callers: src/access-bootstrap.js, src/access-control.js, src/access-diagnostics.js, src/security-center.js
-
-vehicle_data_sources: NO BASE TABLE DECLARATION FOUND (may be storage bucket or deployed-only object)
-  Callers: src/vehicle-data.js
-
-vehicle_telemetry_samples: NO BASE TABLE DECLARATION FOUND (may be storage bucket or deployed-only object)
-  Callers: src/vehicle-data.js
+  Callers: src/main.js, src/ride-center.js, src/ride-sync.js
 
 4. CHECKED-IN BASE TABLE DEFINITIONS (NOT A COMPLETE CURRENT SCHEMA)
 

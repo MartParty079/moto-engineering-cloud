@@ -20,7 +20,7 @@ p { margin: .25rem 0; }
 .appHeader strong::before { content: "M"; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: var(--ink); color: #fff; font-size: 18px; font-style: italic; }
 .headerActions { display: flex; gap: .5rem; }
 .headerActions button { font-size: .8rem; background: transparent; }
-.simpleNav { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .3rem; padding: .35rem; border: 1px solid var(--line); border-radius: 16px; background: #eaf0f2; margin-bottom: 2rem; }
+.simpleNav { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: .3rem; padding: .35rem; border: 1px solid var(--line); border-radius: 16px; background: #eaf0f2; margin-bottom: 2rem; }
 .simpleNav button { min-width: 0; padding: .65rem .25rem; background: transparent; border-color: transparent; font-size: .85rem; color: var(--muted); }
 .simpleNav .active { background: #fff; color: #066660; border-color: var(--line); box-shadow: 0 2px 5px #182b3808; }
 #openRide { color: #066660; }

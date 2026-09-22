@@ -47,6 +47,8 @@ function renderShell() {
   document.querySelectorAll('[data-view]').forEach(button => button.onclick = () => { view = button.dataset.view; localStorage.setItem('motoSimpleView', view); renderShell(); });
   document.querySelector('#openRide').onclick = () => window.MotoRideDash?.open?.();
   document.querySelector('#openMap').onclick = () => window.MotoMap?.open?.();
+  document.querySelector('#openMap').insertAdjacentHTML('afterend', '<button id="openGpx">GPX</button>');
+  document.querySelector('#openGpx').onclick = () => window.MotoMap?.open?.({ tab: 'gpx' });
   document.querySelector('#logout').onclick = async () => { const { error } = await supabase.auth.signOut(); if (error) toast(error.message); };
   document.querySelector('#retryLoad')?.addEventListener('click', loadData);
   renderView();

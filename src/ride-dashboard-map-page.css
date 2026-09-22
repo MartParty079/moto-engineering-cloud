@@ -4,6 +4,14 @@
 /* Map imagery reaches the viewport edges; only controls retain safe-area insets. */
 #motoMapOverlay, .mapPanel { border: 0; border-radius: 0; margin: 0; padding: 0; max-width: none; box-shadow: none; }
 body:has(#motoMapOverlay)::before { display: none; }
+html:has(#motoMapOverlay), body:has(#motoMapOverlay) { background: #e5ecee; padding: 0; margin: 0; overflow: hidden; overscroll-behavior: none; }
+.mapFullscreen { position: absolute; z-index: 2; left: max(.75rem, env(safe-area-inset-left)); top: calc(4.25rem + env(safe-area-inset-top)); font-size: .75rem; }
+@media (display-mode: fullscreen) { .mapFullscreen { display: none; } }
+@media (display-mode: standalone) { body::before { background: #0b1219; } }
+.gpxActions { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin: .75rem 0; }
+.gpxActions button { font-size: .8rem; }
+.gpxNote, #gpxMessage, #gpxStats { font-size: .8rem; color: var(--muted); margin: .75rem 0; }
+#gpxEditor > label { margin-top: .75rem; }
 .mapLoading { position: absolute; top: 40%; left: 10%; right: 10%; padding: 1rem; text-align: center; background: #fff; border-radius: 12px; }
 .mapExit, .mapTools, .mapLocate, .mapReadout { position: absolute; z-index: 2; }
 .mapExit { top: calc(.75rem + env(safe-area-inset-top)); }
@@ -15,7 +23,7 @@ body:has(#motoMapOverlay)::before { display: none; }
 .mapZoom { position: absolute; z-index: 2; right: max(.75rem, env(safe-area-inset-right)); bottom: calc(6rem + env(safe-area-inset-bottom)); display: grid; border-radius: 16px; overflow: hidden; box-shadow: 0 3px 18px #182b3826; }
 .mapZoom button { border-radius: 0; width: 48px; height: 46px; font-size: 1.4rem; background: #fff; }
 #mapToolsPanel { position: absolute; bottom: calc(100% + .65rem); left: 0; width: min(340px, calc(100vw - 1.5rem - env(safe-area-inset-left) - env(safe-area-inset-right))); max-height: calc(100dvh - 180px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); overflow: auto; overscroll-behavior: contain; padding: 1rem; border: 1px solid var(--line); border-radius: 18px; background: #fff; box-shadow: 0 12px 40px #182b3830; }
-.mapToolTabs { display: grid; grid-template-columns: 1fr 1fr; gap: .35rem; margin-bottom: 1rem; }
+.mapToolTabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: .35rem; margin-bottom: 1rem; }
 .mapToolTabs [aria-pressed="true"] { background: #123d4b; color: #fff; }
 #mapSearchForm { display: grid; gap: .65rem; }
 #mapSearchStatus, #mapSettingsPane p, #mapToolsPanel small { font-size: .8rem; color: var(--muted); }

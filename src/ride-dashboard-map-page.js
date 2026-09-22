@@ -1,4 +1,5 @@
 import { supabase } from './supabase.js';
+import { createGpxTools, clearGpxSession } from './gpx.js';
 
 const MAP_STORE = 'motoSimpleMapLayer';
 let map = null;
@@ -13,6 +14,7 @@ let lastLookupAt = 0;
 let searchMarker = null;
 let searchRequest = null;
 let lastSearchAt = 0;
+let gpxTools = null;
 const searchCache = new Map();
 
 const layers = {
@@ -33,7 +35,7 @@ function ensureLeaflet() {
   });
 }
 
-async function open() {
+async function open(options = {}) {
   close();
   const overlay = document.createElement('div');
   overlay.id = 'motoMapOverlay';
@@ -43,7 +45,8 @@ async function open() {
     <div class="mapTools">
       <button id="mapToolsToggle" aria-expanded="false" aria-controls="mapToolsPanel">⌕ Search &amp; tools</button>
       <section id="mapToolsPanel" hidden aria-label="Map tools">
-        <div class="mapToolTabs"><button id="mapSearchTab" aria-pressed="true">Search</button><button id="mapSettings" aria-pressed="false">Settings</button></div>
+        <div class="mapToolTabs"><button id="mapSearchTab" aria-pressed="true">Search</button><button id="mapGpxTab" aria-pressed="false">GPX</button><button id="mapSettings" aria-pressed="false">Settings</button></div>
+        <section id="mapGpxPane" hidden></section>
         <section id="mapSearchPane"><form id="mapSearchForm"><label>Find a place<input id="mapQuery" type="search" placeholder="City, address or place" required minlength="3" maxlength="200"></label><button class="primary" id="mapSearchSubmit">Search</button></form><p id="mapSearchStatus" role="status"></p><div id="mapSearchResults"></div><small>Search by Google Maps. No routes.</small></section>
         <section id="mapSettingsPane" hidden><label>Base map<select id="mapLayer">${Object.entries(layers).map(([id, layer]) => `<option value="${id}">${layer.label}</option>`).join('')}</select></label><label class="switchRow">Follow location<input id="mapFollow" type="checkbox" checked></label><label class="switchRow">Keep screen awake<input id="mapWake" type="checkbox"></label><p>GPS accuracy: <span id="mapGps">--</span></p><p>Speed limit source: <span id="mapLimitSource">UNKNOWN</span></p><small>Always follow posted road signs.</small></section>
       </section>
@@ -51,8 +54,16 @@ async function open() {
     <section class="mapReadout" aria-label="Driving information"><article class="mapSpeedBadge"><strong id="mapSpeed">--</strong><span>MPH</span></article><article class="mapLimitBadge" aria-label="Speed limit in miles per hour"><small>SPEED<br>LIMIT</small><strong id="mapLimit">--</strong></article></section>
     <div class="mapZoom" aria-label="Map zoom"><button id="mapZoomIn" aria-label="Zoom in">+</button><button id="mapZoomOut" aria-label="Zoom out">−</button></div>
     <button id="mapCenter" class="mapLocate" aria-label="Center on my location">⌖ Locate</button>
+    <button id="mapFullscreen" class="mapFullscreen">Fullscreen</button>
   </main>`;
   document.body.appendChild(overlay);
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#e5ecee');
+  const fullscreen = overlay.querySelector('#mapFullscreen');
+  fullscreen.hidden = !document.documentElement.requestFullscreen;
+  fullscreen.onclick = async () => {
+    try { if (document.fullscreenElement) await document.exitFullscreen(); else await document.documentElement.requestFullscreen(); map?.invalidateSize(); }
+    catch { fullscreen.textContent = 'Fullscreen unavailable'; }
+  };
   overlay.querySelector('#mapClose').onclick = close;
   overlay.querySelector('#mapCenter').onclick = center;
   overlay.querySelector('#mapZoomIn').onclick = () => map?.zoomIn();
@@ -60,14 +71,17 @@ async function open() {
   const toolsPanel = overlay.querySelector('#mapToolsPanel');
   const toolsToggle = overlay.querySelector('#mapToolsToggle');
   toolsToggle.onclick = () => { toolsPanel.hidden = !toolsPanel.hidden; toolsToggle.setAttribute('aria-expanded', String(!toolsPanel.hidden)); };
-  const showPane = settings => {
-    overlay.querySelector('#mapSettingsPane').hidden = !settings;
-    overlay.querySelector('#mapSearchPane').hidden = settings;
-    overlay.querySelector('#mapSettings').setAttribute('aria-pressed', String(settings));
-    overlay.querySelector('#mapSearchTab').setAttribute('aria-pressed', String(!settings));
+  const showPane = name => {
+    for (const [pane, button] of [['Search', 'mapSearchTab'], ['Gpx', 'mapGpxTab'], ['Settings', 'mapSettings']]) {
+      overlay.querySelector(`#map${pane}Pane`).hidden = name !== pane;
+      overlay.querySelector(`#${button}`).setAttribute('aria-pressed', String(name === pane));
+    }
   };
-  overlay.querySelector('#mapSettings').onclick = () => showPane(true);
-  overlay.querySelector('#mapSearchTab').onclick = () => showPane(false);
+  overlay.querySelector('#mapSettings').onclick = () => showPane('Settings');
+  overlay.querySelector('#mapSearchTab').onclick = () => showPane('Search');
+  overlay.querySelector('#mapGpxTab').onclick = () => showPane('Gpx');
+  gpxTools = createGpxTools(overlay, () => map, () => { overlay.querySelector('#mapFollow').checked = false; });
+  if (options.tab === 'gpx') { showPane('Gpx'); toolsPanel.hidden = false; toolsToggle.setAttribute('aria-expanded', 'true'); }
   overlay.querySelector('#mapSearchForm').onsubmit = event => { event.preventDefault(); void searchPlaces(overlay); };
   overlay.addEventListener('keydown', event => { if (event.key === 'Escape') { toolsPanel.hidden = true; toolsToggle.setAttribute('aria-expanded', 'false'); toolsToggle.focus(); } });
   const select = overlay.querySelector('#mapLayer');
@@ -81,6 +95,7 @@ async function open() {
     map.on('dragstart', () => { overlay.querySelector('#mapFollow').checked = false; });
     setLayer(select.value);
     if (latestFix) updateFix(latestFix);
+    gpxTools?.restore();
     gpsWatch = navigator.geolocation?.watchPosition(position => updateFix({
       latitude: position.coords.latitude, longitude: position.coords.longitude,
       accuracy: position.coords.accuracy, heading: position.coords.heading,
@@ -91,8 +106,8 @@ async function open() {
   }
 }
 
-function close() { searchRequest?.abort(); searchRequest = null; if (gpsWatch != null) navigator.geolocation.clearWatch(gpsWatch); gpsWatch = null; clearTimeout(lookupTimer); void toggleWakeLock(false); map?.remove(); map = null; marker = null; searchMarker = null; document.querySelector('#motoMapOverlay')?.remove(); }
-function setLayer(id) { if (!map || !window.L) return; map.eachLayer(layer => { if (layer !== marker && layer !== searchMarker) map.removeLayer(layer); }); const item = layers[id] || layers.street; window.L.tileLayer(item.url, { maxZoom: item.maxZoom, attribution: id === 'satellite' ? 'Tiles © Esri' : id === 'terrain' ? '© OpenStreetMap contributors · © OpenTopoMap' : '© OpenStreetMap contributors' }).addTo(map); if (marker) marker.addTo(map); }
+function close() { gpxTools?.clearDrawing(); gpxTools = null; searchRequest?.abort(); searchRequest = null; if (gpsWatch != null) navigator.geolocation.clearWatch(gpsWatch); gpsWatch = null; clearTimeout(lookupTimer); void toggleWakeLock(false); map?.remove(); map = null; marker = null; searchMarker = null; document.querySelector('#motoMapOverlay')?.remove(); document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#ffffff'); }
+function setLayer(id) { if (!map || !window.L) return; map.eachLayer(layer => { if (layer instanceof window.L.TileLayer) map.removeLayer(layer); }); const item = layers[id] || layers.street; window.L.tileLayer(item.url, { maxZoom: item.maxZoom, attribution: id === 'satellite' ? 'Tiles © Esri' : id === 'terrain' ? '© OpenStreetMap contributors · © OpenTopoMap' : '© OpenStreetMap contributors' }).addTo(map); if (marker) marker.addTo(map); }
 function center() { if (map && latestFix) { document.querySelector('#mapFollow').checked = true; map.setView([latestFix.latitude, latestFix.longitude], Math.max(map.getZoom(), 16)); } }
 
 async function searchPlaces(overlay) {
@@ -183,3 +198,4 @@ let wakeLock = null;
 async function toggleWakeLock(enabled) { try { if (enabled) { if (!navigator.wakeLock) throw new Error('Unavailable'); wakeLock = await navigator.wakeLock.request('screen'); } else { await wakeLock?.release(); wakeLock = null; } } catch { const input = document.querySelector('#mapWake'); if (input) input.checked = false; } }
 window.addEventListener('moto-gps-fix', event => updateFix(event.detail));
 window.MotoMap = { open, close };
+supabase.auth.onAuthStateChange(event => { if (event === 'SIGNED_OUT') { clearGpxSession(); close(); } });

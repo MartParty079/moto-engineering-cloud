@@ -1,6 +1,6 @@
 # Moto Mission — project definition and Swift port handoff
 
-Updated: 2026-09-22. This document describes the simplified rider app on `feat/slim-rider-app`, based on commit `e1da08e` plus the accompanying cleanup. It supersedes the September 15 handoff. It is a source review, not certification of the live database, sensors, or iPhone behavior.
+Updated: 2026-09-23. This document describes the simplified rider app on `feat/slim-rider-app`, based on commit `e1da08e` plus the accompanying cleanup. It supersedes the September 15 handoff. It is a source review, not certification of the live database, sensors, or iPhone behavior.
 
 ## 1. Product and scope
 
@@ -165,9 +165,9 @@ Paid providers call Supabase `consume_road_api_request(p_provider)` using user b
 
 Map search: manual submit, 1.5-second cooldown, 18-second timeout, 30-query in-memory cache. Current cache is keyed by text, not location; native should include location to avoid reusing results after moving. Results place a marker only, not a navigable route.
 
-Ride road lookup: at most once per 15 seconds, fresh received fixes ≤15 seconds, 12-second timeout, discard matches if moved >150 m during request, cancel on close/background. Only mapped/relation limits are shown; estimates are withheld. Follow posted signs.
+Shared Map/Ride refresh: at most once per 30 seconds, fresh received fixes ≤15 seconds, 12-second timeout, cancel on close/background. Retain the whole last successful road during requests/errors/no-match responses. Show Updating during a fresh refresh and Last known after errors, GPS loss, age >45 seconds or displacement >150 m. Expire after 120 seconds from request start or displacement >3 km. A new valid road replaces all fields, even when its limit is unavailable. Only mapped/relation limits are shown; estimates are withheld. Follow posted signs.
 
-Known difference: Map currently uses auto provider and does not apply Ride's limitKind filtering or the same stale-response protections. Native should share one validity/provenance policy rather than copy that inconsistency. Mapped limits and road matches are advisory, not authoritative traffic-sign recognition.
+Map uses auto provider with existing bearer authentication; Ride uses OSM. Both now share the same display retention, expiry, cancellation and limitKind filtering. Mapped limits and road matches are advisory, not authoritative traffic-sign recognition.
 
 ## 7. GPX contract
 
@@ -240,7 +240,7 @@ Cleanup validation: 17 offline tests, eight recording static checks, syntax/inte
 - Full current maintenance/storage/auth schema export is still required.
 - Bike form omits name despite the inspected NOT NULL contract; integration validation must resolve it.
 - Active web auth lacks recovery/MFA UI; existing backend requirements still apply.
-- Map speed-limit provenance/staleness differs from Ride.
+- Map and Ride now share bounded last-known display behavior; physical-device/provider latency verification remains required.
 - GPX parser browser success paths need richer fixture/browser coverage; current offline unit tests cover export/math and early input rejection.
 - Current phone lean is not validated motorcycle lean; not persisted.
 - Preview “READY” confirms a deployment build, not sensor accuracy or user workflow acceptance.

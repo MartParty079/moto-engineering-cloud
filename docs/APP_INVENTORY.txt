@@ -51,15 +51,15 @@ src/ride-center.js [Loaded browser source; 92 lines]
 
 src/ride-dashboard-map-page.css [Loaded browser source; 47 lines]
 
-src/ride-dashboard-map-page.js [Loaded browser source; 202 lines]
-  Imports: ./supabase.js, ./gpx.js
+src/ride-dashboard-map-page.js [Loaded browser source; 194 lines]
+  Imports: ./supabase.js, ./gpx.js, ./ride-road-data.js
   Declared storage-key constants: motoSimpleMapLayer
-  Events observed: keydown, load, moto-gps-fix
+  Events observed: keydown, load, moto-gps-fix, pagehide, visibilitychange
 
 src/ride-dashboard.css [Loaded browser source; 75 lines]
 
-src/ride-dashboard.js [Loaded browser source; 165 lines]
-  Imports: ./lean-tracker.js, ./ride-road-data.js
+src/ride-dashboard.js [Loaded browser source; 169 lines]
+  Imports: ./lean-tracker.js, ./ride-road-data.js, ./supabase.js
   Events observed: moto-gps-fix, moto-ride-open-request, moto-ride-state, pagehide, visibilitychange
 
 src/ride-journal.js [Loaded browser source; 169 lines]
@@ -67,7 +67,7 @@ src/ride-journal.js [Loaded browser source; 169 lines]
 
 src/ride-recorder.js [Loaded browser source; 113 lines]
 
-src/ride-road-data.js [Loaded browser source; 62 lines]
+src/ride-road-data.js [Loaded browser source; 89 lines]
 
 src/ride-runtime.js [Loaded browser source; 59 lines]
   Imports: ./supabase.js, ./ride-journal.js, ./ride-recorder.js, ./ride-sync.js

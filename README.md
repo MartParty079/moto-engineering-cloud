@@ -40,6 +40,10 @@ Override BOTH Supabase URL and public key: existing fallback configuration point
 
 Browser suites require Playwright plus browser binaries, a localhost Vite server at port 5173, and localhost Supabase test configuration at port 54321. They intercept backend traffic; no real account is needed. Run `npm run test:browser` and `npm run test:browser:rides`. Set `E2E_BROWSER=webkit` for WebKit.
 
+## Road display refresh
+
+Map and Ride refresh road matches in the background every 30 seconds. Last successful road details stay visible during lookups and temporary failures, with Updating or Last known labels. Matches expire after two minutes from request time or 3 km from the request location; a new matched road replaces all fields together, including clearing an unavailable limit. Both screens withhold estimated road-class limits. Closing/backgrounding cancels requests; sign-out clears retained matches.
+
 ## Map and iOS
 
 The map fills the viewport with safe-area-aware controls. The manifest requests fullscreen with standalone fallback, and iOS uses black-translucent status-bar metadata. Safari chrome is OS-controlled; use the Home Screen installation. Reload online and relaunch after an update; existing installs may retain older metadata. Physical iPhone verification remains required.

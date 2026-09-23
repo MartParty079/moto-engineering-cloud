@@ -2,8 +2,10 @@ const esc = (value = '') => String(value ?? '').replace(/[&<>"']/g, character =>
 const numeric = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
 import { createLeanTracker } from './lean-tracker.js';
 import { createRideRoadData } from './ride-road-data.js';
-const roadTracker = createRideRoadData((data, status) => {
+import { supabase } from './supabase.js';
+const roadTracker = createRideRoadData((data, status, label) => {
   value('rideSpeedLimit', data?.limit || '--');
+  value('rideLimitStatus', label || '');
   value('rideRoadName', data?.name || 'Road unavailable');
   value('rideRoadType', data?.type || '--');
   value('rideRoadSurface', data?.surface || '--');
@@ -53,7 +55,7 @@ function open() {
       <article><small>Altitude</small><strong id="sensorAltitude">--</strong><span>FT</span></article>
       <article><small>GPS accuracy</small><strong id="sensorAccuracy">--</strong><span>FT</span></article>
       <article class="leanSensor"><small>LEAN ESTIMATE</small><div class="leanInstrument" aria-hidden="true"><span class="leanAxis">L <i></i> R</span><div id="leanNeedle"><span></span></div></div><strong id="sensorLean">--</strong><span>PHONE · EXPERIMENTAL</span></article>
-      <article class="rideLimitSensor"><small>SPEED LIMIT</small><strong id="rideSpeedLimit">--</strong><span>MPH · MAPPED</span></article>
+      <article class="rideLimitSensor"><small>SPEED LIMIT</small><strong id="rideSpeedLimit">--</strong><span>MPH · MAPPED</span><small id="rideLimitStatus" role="status"></small></article>
     </section>
     <section class="rideRoadData" aria-label="Road data"><div class="leanSectionHead"><h2 id="rideRoadName">Road unavailable</h2><span class="rideChip">ROAD DATA</span></div><dl><div><dt>Road type</dt><dd id="rideRoadType">--</dd></div><div><dt>Surface</dt><dd id="rideRoadSurface">--</dd></div><div><dt>Lanes</dt><dd id="rideRoadLanes">--</dd></div></dl><p id="rideRoadSource">No current match</p><p id="rideRoadStatus" role="status">Waiting for GPS</p></section>
     <section aria-label="Lean tracking">
@@ -162,3 +164,5 @@ document.addEventListener('visibilitychange', () => {
 });
 window.addEventListener('moto-ride-open-request', open);
 window.MotoRideDash = { open, close };
+
+supabase.auth.onAuthStateChange(event => { if (event === 'SIGNED_OUT') roadTracker.clear(); });

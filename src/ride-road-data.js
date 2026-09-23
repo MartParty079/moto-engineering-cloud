@@ -15,47 +15,74 @@ export function roadReadout(data) {
   };
 }
 
-export function createRideRoadData(onChange) {
-  let active = false, request = null, lastLookup = 0, fix = null, timer = null, receivedAt = 0;
-  let generation = 0;
-  const clear = message => onChange(null, message);
+// The match belongs to the request location/time, never to its eventual arrival time.
+const distance = (a, b) => !a || !b ? 0 : Math.hypot(
+  (Number(a.latitude) - Number(b.latitude)) * 111320,
+  (Number(a.longitude) - Number(b.longitude)) * 111320 * Math.cos(Number(a.latitude) * Math.PI / 180));
+export class RoadDisplay {
+  constructor() { this.match = null; }
+  accept(data, point, at) { this.match = data ? { data, point: { ...point }, at } : this.match; }
+  read(point, now, phase = 'ready') {
+    const match = this.match;
+    if (match && (now - match.at > 120000 || distance(point, match.point) > 3000)) this.match = null;
+    const data = this.match?.data || null;
+    const stale = Boolean(data && (phase === 'error' || phase === 'gps' || phase === 'unmatched' || now - match.at > 45000 || distance(point, match.point) > 150));
+    const label = data ? stale ? 'Last known' : phase === 'loading' ? 'Updating' : '' : '';
+    const status = data ? `${label ? label + ' · ' : ''}${data.note}`
+      : phase === 'loading' ? 'Looking up road…' : phase === 'gps' ? 'Waiting for fresh GPS' : 'Road data unavailable';
+    return { data, status, label };
+  }
+}
+
+export function createRideRoadData(onChange, { requestRoad } = {}) {
+  let active = false, request = null, lastLookup = -Infinity, fix = null, timer = null, receivedAt = 0;
+  let generation = 0, phase = 'gps';
+  const display = new RoadDisplay();
+  const publish = () => {
+    const result = display.read(fix, Date.now(), phase);
+    onChange(result.data, result.status, result.label);
+  };
   async function lookup() {
-    if (!active || !fix || request || Date.now() - receivedAt > 15000 || Date.now() - lastLookup < 15000) return;
+    if (!active || !fix || request || Date.now() - receivedAt > 15000 || Date.now() - lastLookup < 30000) return;
     lastLookup = Date.now();
-    const version = generation;
-    const point = { ...fix };
+    const requestedAt = lastLookup, version = generation, point = { ...fix };
     const controller = new AbortController(); request = controller;
     const timeout = setTimeout(() => controller.abort(), 12000);
-    clear('Looking up road…');
+    phase = 'loading'; publish();
     try {
-      const params = new URLSearchParams({ lat: point.latitude, lon: point.longitude, provider: 'osm' });
-      if (number(point.heading)) params.set('heading', point.heading);
-      if (number(point.speed)) params.set('speed', point.speed);
-      const response = await fetch(`/api/road-info?${params}`, { signal: controller.signal });
-      if (!response.ok) throw new Error('Road lookup unavailable');
-      const result = roadReadout(await response.json());
-      if (!active || version !== generation) return;
-      // Discard a result if the bike moved substantially while it was loading.
-      const moved = Math.hypot((Number(fix.latitude) - Number(point.latitude)) * 111320,
-        (Number(fix.longitude) - Number(point.longitude)) * 111320 * Math.cos(Number(point.latitude) * Math.PI / 180));
-      if (Date.now() - receivedAt > 15000 || moved > 150) { clear('Road data needs a fresh match'); return; }
-      onChange(result, result ? result.note : 'No mapped road found');
-    } catch { if (active && version === generation) clear('Road data unavailable'); }
+      let payload;
+      if (requestRoad) payload = await requestRoad(point, controller.signal);
+      else {
+        const params = new URLSearchParams({ lat: point.latitude, lon: point.longitude, provider: 'osm' });
+        if (number(point.heading)) params.set('heading', point.heading);
+        if (number(point.speed)) params.set('speed', point.speed);
+        const response = await fetch(`/api/road-info?${params}`, { signal: controller.signal });
+        if (!response.ok) throw new Error('Road lookup unavailable');
+        payload = await response.json();
+      }
+      if (!active || version !== generation || controller.signal.aborted) return;
+      const result = roadReadout(payload);
+      // Commit the whole road at once. Never carry an old limit onto a newly matched road.
+      display.accept(result, point, requestedAt);
+      phase = Date.now() - receivedAt > 15000 ? 'gps' : result ? 'ready' : 'unmatched';
+      publish();
+    } catch { if (active && version === generation) { phase = 'error'; publish(); } }
     finally { clearTimeout(timeout); if (request === controller) request = null; }
   }
   return {
     start() {
-      this.stop(); active = true; clear('Waiting for GPS');
+      this.stop(); active = true; phase = 'gps'; publish();
       timer = setInterval(() => {
-        if (!fix || Date.now() - receivedAt > 15000) { clear('Waiting for fresh GPS'); return; }
-        void lookup();
+        if (!fix || Date.now() - receivedAt > 15000) { phase = 'gps'; publish(); return; }
+        publish(); void lookup();
       }, 1000);
     },
     update(detail) {
       if (!active || !number(detail?.latitude) || !number(detail?.longitude)
         || Math.abs(Number(detail.latitude)) > 90 || Math.abs(Number(detail.longitude)) > 180) return;
-      fix = detail; receivedAt = Date.now(); void lookup();
+      fix = { ...detail }; receivedAt = Date.now(); publish(); void lookup();
     },
-    stop() { active = false; generation++; clearInterval(timer); timer = null; request?.abort(); request = null; fix = null; lastLookup = 0; }
+    stop() { active = false; generation++; clearInterval(timer); timer = null; request?.abort(); request = null; fix = null; lastLookup = -Infinity; },
+    clear() { this.stop(); display.match = null; }
   };
 }

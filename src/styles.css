@@ -1,46 +1,46 @@
-:root { color-scheme: light; font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #182b38; background: #f3f6f7; --ink: #182b38; --muted: #536873; --accent: #087e78; --line: #dce5e8; --shadow: 0 8px 28px #193a4908; }
+:root { color-scheme: light; font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #182b38; background: #f3f6f7; --ink: #182b38; --muted: #536873; --accent: #087e78; --line: #cfdee5; --shadow: 0 12px 32px #25485c10, 0 2px 6px #25485c08, inset 0 1px 0 #ffffff; --glass: linear-gradient(135deg, #ffffffed, #f6fbffdf); }
 * { box-sizing: border-box; }
-body { margin: 0; min-height: 100dvh; background: #f3f6f7; padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); -webkit-font-smoothing: antialiased; }
+body { margin: 0; min-height: 100dvh; background: radial-gradient(ellipse at 0 0, #d5eeec, transparent 55%), radial-gradient(ellipse at 100% 30%, #e0e6fb, transparent 55%), #f3f6f7; padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); -webkit-font-smoothing: antialiased; }
 /* Keep scrolling content behind a solid surface, not the iOS status-bar blur. */
 body::before { content: ""; position: fixed; top: 0; left: 0; right: 0; height: env(safe-area-inset-top, 0px); background: #fff; z-index: 1200; pointer-events: none; }
 button, input, select { font: inherit; }
-button { min-height: 46px; padding: .6rem 1rem; border: 1px solid var(--line); border-radius: 12px; background: #fff; color: var(--ink); font-weight: 600; cursor: pointer; touch-action: manipulation; }
+button { min-height: 46px; padding: .6rem 1rem; border: 1px solid var(--line); border-radius: 16px; background: linear-gradient(#fff, #f5f9fb); box-shadow: 0 3px 8px #25485c0a, inset 0 1px #fff; color: var(--ink); transition: background-color 160ms, box-shadow 160ms; font-weight: 600; cursor: pointer; touch-action: manipulation; }
 button:hover { background: #eaf2f3; border-color: #b7cccf; }
 button:disabled { opacity: .6; cursor: wait; }
 :focus-visible { outline: 3px solid #145bb5; outline-offset: 2px; }
-.primary, #addService, #rideToggle, .dialogActions button[type="submit"] { background: var(--accent); color: #fff; border-color: var(--accent); }
+.primary, #addService, #rideToggle, .dialogActions button[type="submit"] { background: linear-gradient(145deg, #108b86, #086b70); color: #fff; border-color: #087773; box-shadow: 0 5px 14px #087e7826, inset 0 1px #ffffff30; }
 .primary:hover, #addService:hover, #rideToggle:hover { background: #066660; }
-input, select { min-height: 48px; min-width: 0; width: 100%; max-width: 100%; padding: .65rem .8rem; border: 1px solid #bfced3; border-radius: 10px; background: #fff; color: var(--ink); }
+input, select { min-height: 48px; min-width: 0; width: 100%; max-width: 100%; padding: .65rem .8rem; border: 1px solid #bfced3; border-radius: 14px; background: #ffffffeb; color: var(--ink); }
 h1 { font-size: clamp(1.55rem, 4vw, 2rem); line-height: 1.2; letter-spacing: -.045em; margin: 0; }
 h2 { font-size: 1.05rem; letter-spacing: -.02em; margin: 0; }
 p { margin: .25rem 0; }
 .appHeader, .appBody { max-width: 1000px; margin: auto; padding: 1.5rem 2rem; }
-.appHeader { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; background: #fff; border-bottom: 1px solid var(--line); }
+.appHeader { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; background: var(--glass); border-bottom: 1px solid var(--line); }
 .appHeader strong { display: flex; align-items: center; gap: .7rem; font-size: 1.1rem; letter-spacing: -.035em; }
-.appHeader strong::before { content: "M"; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: var(--ink); color: #fff; font-size: 18px; font-style: italic; }
+.appHeader strong::before { content: "M"; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, #168e91, #235a92); box-shadow: 0 4px 12px #087e7830; color: #fff; font-size: 18px; font-style: italic; }
 .headerActions { display: flex; gap: .5rem; }
 .headerActions button { font-size: .8rem; background: transparent; }
-.simpleNav { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: .3rem; padding: .35rem; border: 1px solid var(--line); border-radius: 16px; background: #eaf0f2; margin-bottom: 2rem; }
-.simpleNav button { min-width: 0; padding: .65rem .25rem; background: transparent; border-color: transparent; font-size: .85rem; color: var(--muted); }
-.simpleNav .active { background: #fff; color: #066660; border-color: var(--line); box-shadow: 0 2px 5px #182b3808; }
+.simpleNav { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: .3rem; padding: .35rem; border: 1px solid var(--line); border-radius: 22px; background: var(--glass); box-shadow: var(--shadow); margin-bottom: 2rem; }
+.simpleNav button { min-width: 0; padding: .65rem .25rem; background: transparent; border-color: transparent; font-size: .85rem; color: var(--muted); box-shadow: none; }
+.simpleNav .active { background: linear-gradient(145deg, #e5f7f3, #f4fbff); color: #066660; border-color: #b8ddd8; box-shadow: 0 3px 10px #087e7814, inset 0 1px #fff; }
 #openRide { color: #066660; }
 .sectionHead, .dialogHead, .dialogActions { display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin-bottom: 1.25rem; }
 .sectionHead > button { flex-shrink: 0; }
 .cardGrid, .list { display: grid; gap: .85rem; }
-.bikeCard, .listRow { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.25rem; border: 1px solid var(--line); border-radius: 16px; background: #fff; box-shadow: var(--shadow); }
+.bikeCard, .listRow { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.25rem; border: 1px solid var(--line); border-radius: 24px; background: var(--glass); box-shadow: var(--shadow); }
 .bikeCard { border-left: 4px solid var(--accent); }
 .bikeCard > div, .listRow > div { min-width: 0; overflow-wrap: anywhere; }
 .bikeCard p, .listRow p, time, .emptyState { color: var(--muted); }
 time { font-size: .875rem; white-space: nowrap; }
-.emptyState { padding: 3rem 1.25rem; text-align: center; background: #fff; border: 1px dashed #b8ccd0; border-radius: 18px; }
+.emptyState { padding: 3rem 1.25rem; text-align: center; background: var(--glass); border: 1px solid #cfdee5; border-radius: 24px; box-shadow: var(--shadow); }
 .authPage { padding: clamp(2rem, 10vh, 6rem) 1rem; }
-.authCard { max-width: 420px; margin: auto; padding: 2rem; border: 1px solid var(--line); border-radius: 24px; background: #fff; box-shadow: var(--shadow); }
+.authCard { max-width: 420px; margin: auto; padding: 2rem; border: 1px solid var(--line); border-radius: 28px; background: var(--glass); box-shadow: var(--shadow); }
 .authCard h1 { margin: 1rem 0; }
 .authCard form, .formGrid { display: grid; gap: 1rem; }
 label { display: grid; gap: .4rem; color: var(--muted); font-size: .875rem; font-weight: 600; }
 label input, label select, label textarea { font-size: 1rem; font-weight: 400; }
 .statusText { color: #9b2020; }
-.simpleDialog, .mapPanel dialog { width: min(92vw, 440px); max-height: 85dvh; overflow: auto; border: 1px solid var(--line); border-radius: 20px; padding: 1.5rem; background: #fff; color: var(--ink); box-shadow: 0 24px 80px #182b3830; }
+.simpleDialog, .mapPanel dialog { width: min(92vw, 440px); max-height: 85dvh; overflow: auto; border: 1px solid var(--line); border-radius: 28px; padding: 1.5rem; background: var(--glass); color: var(--ink); box-shadow: 0 24px 80px #182b3830; }
 dialog::backdrop { background: #142c3a80; }
 .dialogActions { justify-content: flex-end; margin: 1rem 0 0; }
 .toast { display: none; position: fixed; bottom: calc(1rem + env(safe-area-inset-bottom)); left: 1rem; right: 1rem; max-width: 600px; margin: auto; padding: 1rem; border-radius: 12px; background: var(--ink); color: #fff; z-index: 1100; }
@@ -52,10 +52,21 @@ textarea { font: inherit; width: 100%; min-height: 100px; padding: .75rem; borde
 
 .rideReview { width: min(94vw, 840px); }
 .reviewCards { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .75rem; }
-.reviewCards article { padding: .8rem; background: #eff5f6; border-radius: 12px; display: grid; gap: .4rem; }
+.reviewCards article { padding: 1rem; background: linear-gradient(145deg, #e8f5f4, #f6fbff); border: 1px solid #d2e5e8; box-shadow: 0 4px 12px #25485c08, inset 0 1px #fff; border-radius: 20px; display: grid; gap: .4rem; }
 .reviewCards strong { font-size: 1.1rem; overflow-wrap: anywhere; }
 .reviewExport { border-block: 1px solid #bfced3; padding-block: 1rem; margin-block: 1rem; }
 .reviewExport button { margin: .3rem; }
 .reviewTable { overflow-x: auto; }
 .reviewTable table { border-collapse: collapse; font-size: .8rem; white-space: nowrap; }
 .reviewTable th, .reviewTable td { padding: .6rem; border-bottom: 1px solid #bfced3; text-align: left; }
+
+/* Blur is reserved for floating chrome; data surfaces remain easy to scan. */
+@supports ((backdrop-filter: blur(18px)) or (-webkit-backdrop-filter: blur(18px))) {
+  .appHeader, .simpleNav, .simpleDialog { -webkit-backdrop-filter: blur(18px) saturate(130%); backdrop-filter: blur(18px) saturate(130%); }
+}
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  :root { --glass: #fff; }
+  .appHeader, .simpleNav, .simpleDialog { -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+@media (prefers-contrast: more) { :root { --line: #70848e; --muted: #314752; } }
+@media (prefers-reduced-motion: reduce) { button { transition: none; } }

@@ -1,28 +1,28 @@
 html:has(#rideDashOverlay), body:has(#rideDashOverlay) { background: #0b1219; color-scheme: dark; overscroll-behavior: none; }
 body:has(#rideDashOverlay)::before { background: #0b1219; }
 body:has(#rideDashOverlay)::after { content: ""; position: fixed; bottom: 0; left: 0; right: 0; height: env(safe-area-inset-bottom, 0px); background: #0b1219; z-index: 1200; pointer-events: none; }
-#rideDashOverlay { --ink: #edf6fa; --muted: #a6bac5; --line: #30434f; --accent: #087e78; color-scheme: dark; position: fixed; inset: 0; z-index: 1000; background: #0b1219; color: var(--ink); overflow: auto; overscroll-behavior: contain; }
-.ridePanel button, .ridePanel select { background: #1c2b36; border-color: #3b525f; color: #edf6fa; }
+#rideDashOverlay { --ink: #edf6fa; --muted: #a6bac5; --line: #30434f; --accent: #087e78; color-scheme: dark; position: fixed; inset: 0; z-index: 1000; background: radial-gradient(ellipse at 0 20%, #153b4540, transparent 60%), radial-gradient(ellipse at 100% 70%, #283b6540, transparent 60%), #0b1219; color: var(--ink); overflow: auto; overscroll-behavior: contain; }
+.ridePanel button, .ridePanel select { background: linear-gradient(145deg, #2b414ee8, #1c2b36); box-shadow: 0 4px 12px #0002, inset 0 1px #ffffff10; border-color: #3b525f; color: #edf6fa; }
 .ridePanel button:hover { background: #2c4351; }
-.ridePanel #rideToggle { background: #137971; border-color: #218f87; }
+.ridePanel #rideToggle { background: linear-gradient(145deg, #168c82, #116962); border-color: #218f87; }
 .ridePanel :focus-visible { outline-color: #69d8e6; }
 .ridePanel .rideRecovery { background: #302917; color: #f9e8bd; }
 .ridePanel { width: 100%; max-width: 1280px; min-height: 100dvh; margin: auto; display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 1.25rem; padding: calc(1.5rem + env(safe-area-inset-top)) max(1.25rem, env(safe-area-inset-right)) calc(1.5rem + env(safe-area-inset-bottom)) max(1.25rem, env(safe-area-inset-left)); }
 .rideEyebrow { display: block; font-size: .65rem; font-weight: 700; letter-spacing: .16em; color: var(--muted); margin-bottom: .4rem; }
 .ridePanel h1 { font-size: clamp(1.6rem, 4vw, 2.4rem); }
 .ridePanel > header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-.rideStatus { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .85rem; margin: 0; padding: 1rem; border: 1px solid var(--line); border-radius: 12px; background: #13202a; }
+.rideStatus { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .85rem; margin: 0; padding: 1rem; border: 1px solid var(--line); border-radius: 22px; background: linear-gradient(135deg, #213542eb, #13202af5); box-shadow: 0 10px 28px #0002, inset 0 1px #ffffff0d; }
 #rideStatus::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #71818a; margin-right: .5rem; }
 .ridePanel[data-recording="true"] #rideStatus::before { background: #087e78; box-shadow: 0 0 0 4px #087e7815; }
 .ridePanel[data-recording="true"] #rideToggle { background: #a32932; border-color: #a32932; }
 .rideBikeField { padding: 0 .15rem; }
 .rideStatus small { display: block; color: var(--muted); font-size: .875rem; }
 .sensorGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem; margin: 0; }
-.sensorGrid article { order: 2; min-width: 0; min-height: 112px; display: flex; flex-direction: column; justify-content: space-between; gap: .4rem; padding: 1.15rem; border: 1px solid var(--line); border-radius: 12px; background: #14212c; box-shadow: inset 0 1px #ffffff05; }
+.sensorGrid article { order: 2; min-width: 0; min-height: 112px; display: flex; flex-direction: column; justify-content: space-between; gap: .4rem; padding: 1.15rem; border: 1px solid var(--line); border-radius: 24px; background: linear-gradient(145deg, #223744ed, #14212cf5); box-shadow: 0 10px 28px #0003, inset 0 1px #ffffff12; }
 .sensorGrid small { font-size: .8rem; color: var(--muted); }
 .sensorGrid span { font-size: .65rem; letter-spacing: .1em; color: var(--muted); }
 .sensorGrid strong { font-size: clamp(1.3rem, 5vw, 2.15rem); letter-spacing: -.04em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; line-height: 1.2; }
-.sensorGrid .speedSensor { order: 0; grid-column: auto; min-height: 210px; align-items: center; justify-content: center; gap: .2rem; padding: .75rem; background: #101b24; color: #fff; }
+.sensorGrid .speedSensor { order: 0; grid-column: auto; min-height: 210px; align-items: center; justify-content: center; gap: .2rem; padding: .75rem; background: radial-gradient(ellipse at 50% 0, #194854, #101b24 80%); border-color: #3d6b78; color: #fff; }
 .instrumentDial { width: 100%; max-width: 290px; aspect-ratio: 1; position: relative; }
 .instrumentDial svg { width: 100%; height: 100%; overflow: visible; }
 .dialTrack { fill: none; stroke: #49cfde; stroke-width: 5; stroke-linecap: round; }
@@ -31,7 +31,7 @@ body:has(#rideDashOverlay)::after { content: ""; position: fixed; bottom: 0; lef
 .dialNeedle { fill: #ffb14d; transform-origin: 100px 100px; opacity: 0; }
 .dialValue { position: absolute; inset: 43% 0 0; display: flex; flex-direction: column; align-items: center; }
 .speedSensor strong { font-size: clamp(2.4rem, 9vw, 4.5rem); line-height: 1.05; font-weight: 650; }
-.sensorGrid .leanSensor { order: 2; align-items: center; justify-content: center; background: #101b24; text-align: center; padding: .75rem; }
+.sensorGrid .leanSensor { order: 2; align-items: center; justify-content: center; background: linear-gradient(145deg, #302f32, #101b24); border-color: #64564a; text-align: center; padding: .75rem; }
 .leanInstrument { position: relative; width: 100%; max-width: 200px; aspect-ratio: 1.4; overflow: hidden; }
 .leanAxis { position: absolute; inset: 0; display: flex; align-items: center; gap: .4rem; padding: .5rem; }
 .leanAxis i { height: 1px; flex: 1; background: #56707f; }
@@ -39,7 +39,7 @@ body:has(#rideDashOverlay)::after { content: ""; position: fixed; bottom: 0; lef
 #leanNeedle span { display: block; width: 80%; height: 4px; background: #ffb14d; border-radius: 4px; }
 .leanSensor > span { font-size: .55rem; }
 .speedSensor small, .speedSensor span { color: #bce3de; }
-.ridePanel section[aria-label="Lean tracking"] { padding: 1.25rem; border: 1px solid var(--line); border-radius: 12px; background: #13202a; }
+.ridePanel section[aria-label="Lean tracking"] { padding: 1.25rem; border: 1px solid var(--line); border-radius: 22px; background: linear-gradient(135deg, #213542eb, #13202af5); box-shadow: 0 10px 28px #0002, inset 0 1px #ffffff0d; }
 .leanSectionHead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; margin-bottom: .8rem; }
 .rideChip { font-size: .65rem; font-weight: 600; padding: .25rem .55rem; border-radius: 20px; background: #273a46; color: var(--muted); }
 .leanPeaks { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem; font-size: .875rem; }
@@ -51,9 +51,9 @@ body:has(#rideDashOverlay)::after { content: ""; position: fixed; bottom: 0; lef
 .ridePanel footer { margin-top: 0; display: flex; gap: .75rem; padding-top: .25rem; }
 .rideError { margin-top: 1rem; color: #ffb1b1; }
 .ridePanel footer button { flex: 1; }
-.sensorGrid .rideLimitSensor { order: 1; align-items: center; justify-content: center; gap: 1rem; border-color: #637785; background: #202d37; }
+.sensorGrid .rideLimitSensor { order: 1; align-items: center; justify-content: center; gap: 1rem; border-color: #3e716b; background: radial-gradient(ellipse at 50% 0, #23524e, #14252b 85%); }
 .rideLimitSensor strong { color: #fff; font-size: 2.4rem; }
-.rideRoadData { grid-column: 1 / -1; padding: 1.25rem; background: #13202a; border: 1px solid var(--line); border-radius: 12px; }
+.rideRoadData { grid-column: 1 / -1; padding: 1.25rem; background: linear-gradient(135deg, #213542eb, #13202af5); border: 1px solid var(--line); border-radius: 22px; box-shadow: 0 10px 28px #0002, inset 0 1px #ffffff0d; }
 .rideRoadData h2 { overflow-wrap: anywhere; }
 .rideRoadData dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin: 1rem 0; }
 .rideRoadData dt, #rideRoadSource, #rideRoadStatus { color: var(--muted); font-size: .75rem; }
@@ -71,4 +71,9 @@ body:has(#rideDashOverlay)::after { content: ""; position: fixed; bottom: 0; lef
   .ridePanel { padding-left: max(.75rem, env(safe-area-inset-left)); padding-right: max(.75rem, env(safe-area-inset-right)); gap: 1rem; }
   .sensorGrid { gap: .65rem; }
   .sensorGrid article { padding: .85rem; }
+}
+
+@media (prefers-contrast: more) {
+  #rideDashOverlay { --muted: #d4e3eb; --line: #718894; }
+  .sensorGrid article, .rideStatus, .rideRoadData { border-color: #718894; }
 }

@@ -17,12 +17,12 @@ html:has(#motoMapOverlay), body:has(#motoMapOverlay) { background: #e5ecee; padd
 .mapExit { top: calc(.75rem + env(safe-area-inset-top)); }
 .mapExit { left: max(.75rem, env(safe-area-inset-left)); }
 .mapTools { left: max(.75rem, env(safe-area-inset-left)); bottom: calc(2rem + env(safe-area-inset-bottom)); z-index: 3; }
-.mapExit, #mapToolsToggle, .mapLocate { box-shadow: 0 3px 18px #182b3826; background: #fff; }
-#mapToolsToggle { background: #b9eff8; color: #123d4b; border: 1px solid #88cddc; border-radius: 28px; padding: .75rem 1.1rem; min-height: 52px; }
+.mapExit, #mapToolsToggle, .mapLocate { box-shadow: 0 6px 24px #182b382b, inset 0 1px #fff; background: var(--glass); }
+#mapToolsToggle { background: linear-gradient(145deg, #e4fcfaef, #b9e5f5ed); color: #123d4b; border: 1px solid #88cddc; border-radius: 28px; padding: .75rem 1.1rem; min-height: 52px; }
 .mapExit, .mapLocate { border-radius: 24px; }
 .mapZoom { position: absolute; z-index: 2; right: max(.75rem, env(safe-area-inset-right)); bottom: calc(6rem + env(safe-area-inset-bottom)); display: grid; border-radius: 16px; overflow: hidden; box-shadow: 0 3px 18px #182b3826; }
 .mapZoom button { border-radius: 0; width: 48px; height: 46px; font-size: 1.4rem; background: #fff; }
-#mapToolsPanel { position: absolute; bottom: calc(100% + .65rem); left: 0; width: min(340px, calc(100vw - 1.5rem - env(safe-area-inset-left) - env(safe-area-inset-right))); max-height: calc(100dvh - 180px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); overflow: auto; overscroll-behavior: contain; padding: 1rem; border: 1px solid var(--line); border-radius: 18px; background: #fff; box-shadow: 0 12px 40px #182b3830; }
+#mapToolsPanel { position: absolute; bottom: calc(100% + .65rem); left: 0; width: min(340px, calc(100vw - 1.5rem - env(safe-area-inset-left) - env(safe-area-inset-right))); max-height: calc(100dvh - 180px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); overflow: auto; overscroll-behavior: contain; padding: 1rem; border: 1px solid var(--line); border-radius: 26px; background: var(--glass); box-shadow: 0 16px 48px #182b3838, inset 0 1px #fff; }
 .mapToolTabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: .35rem; margin-bottom: 1rem; }
 .mapToolTabs [aria-pressed="true"] { background: #123d4b; color: #fff; }
 #mapSearchForm { display: grid; gap: .65rem; }
@@ -33,7 +33,7 @@ html:has(#motoMapOverlay), body:has(#motoMapOverlay) { background: #e5ecee; padd
 #mapSettingsPane > * + * { margin-top: 1rem; }
 .mapReadout { inset: 0; pointer-events: none; }
 .mapReadout article { display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 4px 18px #182b3830; }
-.mapSpeedBadge { position: absolute; right: calc(max(1rem, env(safe-area-inset-right)) + 78px); top: calc(1rem + env(safe-area-inset-top)); width: 88px; height: 88px; border-radius: 50%; background: #182f3c; color: #fff; border: 3px solid #fff; }
+.mapSpeedBadge { position: absolute; right: calc(max(1rem, env(safe-area-inset-right)) + 78px); top: calc(1rem + env(safe-area-inset-top)); width: 88px; height: 88px; border-radius: 50%; background: linear-gradient(145deg, #284e60, #142b38); color: #fff; border: 3px solid #fff; }
 .mapSpeedBadge strong { font-size: 2.2rem; line-height: 1.1; }
 .mapSpeedBadge span { font-size: .65rem; letter-spacing: .1em; color: #c3e4e0; }
 .mapLimitBadge { position: absolute; right: max(1rem, env(safe-area-inset-right)); top: calc(1rem + env(safe-area-inset-top)); width: 64px; min-height: 82px; border: 3px solid #182b38; outline: 3px solid #fff; border-radius: 8px; background: #fff; color: #182b38; }
@@ -45,5 +45,12 @@ html:has(#motoMapOverlay), body:has(#motoMapOverlay) { background: #e5ecee; padd
 .switchRow { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 .switchRow input { width: 24px; height: 24px; min-height: 24px; }
 
-.mapRoadSource { position: absolute; right: max(1rem, env(safe-area-inset-right)); top: calc(7.4rem + env(safe-area-inset-top)); max-width: 155px; padding: .2rem .45rem; background: #fff; color: #182b38; border-radius: 6px; font-size: .65rem; text-align: right; overflow-wrap: anywhere; }
+.mapRoadSource { position: absolute; right: max(1rem, env(safe-area-inset-right)); top: calc(7.4rem + env(safe-area-inset-top)); max-width: 155px; padding: .35rem .55rem; background: #fffffff2; box-shadow: 0 3px 14px #182b3820; color: #182b38; border-radius: 6px; font-size: .65rem; text-align: right; overflow-wrap: anywhere; }
 #mapLimitStatus { min-height: .7rem; font-size: .55rem; }
+
+@supports ((backdrop-filter: blur(18px)) or (-webkit-backdrop-filter: blur(18px))) {
+  #mapToolsPanel, .mapExit, .mapLocate, #mapToolsToggle { -webkit-backdrop-filter: blur(18px) saturate(130%); backdrop-filter: blur(18px) saturate(130%); }
+}
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  #mapToolsPanel, .mapExit, .mapLocate, #mapToolsToggle { background: #fff; -webkit-backdrop-filter: none; backdrop-filter: none; }
+}

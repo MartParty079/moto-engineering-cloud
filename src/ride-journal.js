@@ -11,10 +11,16 @@ export function configureRideJournal(projectUrl) {
 function open() {
   if (!globalThis.indexedDB) return Promise.reject(new Error('Durable ride storage is unavailable in this browser.'));
   if (!connection) connection = new Promise((resolve, reject) => {
-    const request = indexedDB.open(databaseName, 1);
+    const request = indexedDB.open(databaseName, 2);
     request.onupgradeneeded = () => {
-      request.result.createObjectStore('rides', { keyPath: ['owner', 'id'] }).createIndex('owner', 'owner');
-      request.result.createObjectStore('samples', { keyPath: ['owner', 'rideId', 'sequence'] });
+      const db = request.result;
+      if (!db.objectStoreNames.contains('rides')) db.createObjectStore('rides', { keyPath: ['owner', 'id'] }).createIndex('owner', 'owner');
+      if (!db.objectStoreNames.contains('samples')) db.createObjectStore('samples', { keyPath: ['owner', 'rideId', 'sequence'] });
+      if (!db.objectStoreNames.contains('reviewSamples')) {
+        const reviews = db.createObjectStore('reviewSamples', { keyPath: ['owner', 'rideId', 'sequence'] });
+        const cursor = request.transaction.objectStore('samples').openCursor();
+        cursor.onsuccess = () => { const item = cursor.result; if (item) { reviews.put(item.value); item.continue(); } };
+      }
     };
     request.onerror = () => { connection = null; reject(request.error); };
     request.onblocked = () => { connection = null; reject(new Error('Close other Moto tabs to open ride storage.')); };
@@ -30,13 +36,13 @@ function open() {
 async function transaction(mode, action) {
   const db = await open();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(['rides', 'samples'], mode, { durability: 'strict' });
+    const tx = db.transaction(['rides', 'samples', 'reviewSamples'], mode, { durability: 'strict' });
     let value, failure;
     const fail = error => { failure = error; tx.abort(); };
     tx.oncomplete = () => resolve(value);
     tx.onabort = () => reject(failure || tx.error || new Error('Ride storage transaction failed.'));
     tx.onerror = () => {};
-    try { action(tx.objectStore('rides'), tx.objectStore('samples'), result => { value = result; }, fail); }
+    try { action(tx.objectStore('rides'), tx.objectStore('samples'), result => { value = result; }, fail, tx.objectStore('reviewSamples')); }
     catch (error) { fail(error); }
   });
 }
@@ -44,13 +50,13 @@ async function transaction(mode, action) {
 function ownerRequired(owner) { if (!owner || typeof owner !== 'string') throw new Error('Sign in before accessing ride storage.'); }
 function update(owner, id, change) {
   ownerRequired(owner);
-  return transaction('readwrite', (rides, samples, done, fail) => {
+  return transaction('readwrite', (rides, samples, done, fail, reviews) => {
     const get = rides.get([owner, id]);
     get.onsuccess = () => {
       try {
         if (!get.result) throw new Error('No local ride belongs to this account.');
         const ride = get.result;
-        change(ride, samples);
+        change(ride, samples, reviews);
         rides.put(ride);
         done(ride);
       } catch (error) { fail(error); }
@@ -87,9 +93,9 @@ export const rideJournal = {
       };
     });
   },
-  append(owner, id, position) {
+  append(owner, id, position, context = {}) {
     if (!validPosition(position)) return Promise.reject(new Error('Invalid GPS fix.'));
-    return update(owner, id, (ride, samples) => {
+    return update(owner, id, (ride, samples, reviews) => {
       if (ride.status !== 'recording') throw new Error('Ride is no longer recording.');
       if (position.timestamp < ride.lastCaptureAt || position.timestamp > Date.now() + 5000) throw new Error('Out-of-order or future GPS fix.');
       const c = position.coords;
@@ -103,9 +109,14 @@ export const rideJournal = {
       }
       if (p.speed !== null) { ride.maxSpeedMph = Math.max(ride.maxSpeedMph, p.speed); ride.speedSum += p.speed; ride.speedCount++; }
       ride.previous = p; ride.latest = p; ride.lastCaptureAt = position.timestamp; ride.sequence++;
-      samples.add({ owner, rideId: id, sequence: ride.sequence, row: { id: crypto.randomUUID(), session_id: id, user_id: owner,
+      const entry = { owner, rideId: id, sequence: ride.sequence, row: { id: crypto.randomUUID(), session_id: id, user_id: owner,
         recorded_at: new Date(position.timestamp).toISOString(), latitude: p.latitude, longitude: p.longitude,
-        altitude_m: p.altitude, accuracy_m: p.accuracy, speed_mps: speed, heading_deg: p.heading } });
+        altitude_m: p.altitude, accuracy_m: p.accuracy, speed_mps: speed, heading_deg: p.heading } };
+      samples.add(entry);
+      reviews.add({ ...entry, row: { ...entry.row, segment: ride.interruptions.length,
+        lean_estimate_deg: Number.isFinite(context.lean) ? context.lean : null,
+        limit_mph: Number.isFinite(context.road?.limit) ? context.road.limit : null,
+        limit_source: context.road?.source || null, limit_cached: Boolean(context.road?.cached) } });
     });
   },
   resume(owner, id) {
@@ -152,7 +163,18 @@ export const rideJournal = {
   markDiscarded(owner, id) { return update(owner, id, ride => { if (ride.completionRequested || ride.status === 'synced') throw new Error('Completion may already have updated mileage. Retry synchronization before managing the saved ride.'); ride.status = 'discarding'; }); },
   async remove(owner, id) {
     ownerRequired(owner);
-    return transaction('readwrite', (rides, samples) => { rides.delete([owner, id]); samples.delete(range(owner, id)); });
+    return transaction('readwrite', (rides, samples, done, fail, reviews) => { rides.delete([owner, id]); samples.delete(range(owner, id)); reviews.delete(range(owner, id)); });
+  },
+  async review(owner, id) {
+    ownerRequired(owner);
+    return transaction('readonly', (rides, samples, done, fail, reviews) => {
+      const r = rides.get([owner, id]);
+      r.onsuccess = () => {
+        if (!r.result) return fail(new Error('No local review is available for this account and ride.'));
+        const rows = reviews.getAll(range(owner, id));
+        rows.onsuccess = () => done({ ride: r.result, rows: rows.result.map(x => x.row) });
+      };
+    });
   },
   async export(owner, id) {
     ownerRequired(owner);

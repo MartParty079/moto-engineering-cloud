@@ -15,7 +15,7 @@ add('Live GPS callback uses the durable journal without Supabase',callback.inclu
 add('Live GPS callback contains no global event dispatch',!/dispatchEvent\s*\(/.test(callback));
 add('Live GPS samples are rate limited',runtime.includes('timestamp - lastSampleAt < 1000'));
 add('Runtime excludes recording sessions from network synchronization',runtime.includes("ride.status === 'recording'")&&runtime.includes('continue;'));
-add('Journal commits samples and summaries atomically',journal.includes("durability: 'strict'")&&journal.includes("db.transaction(['rides', 'samples']"));
+add('Journal commits samples and summaries atomically',journal.includes("durability: 'strict'")&&journal.includes("db.transaction(['rides', 'samples', 'reviewSamples']"));
 add('GPS broker multiplexes virtual subscribers',/const subscribers\s*=\s*new Map/.test(gps)&&/nativeWatch\(fanOutPosition/.test(gps));
 add('GPS broker overrides clearWatch as well as watchPosition',/Object\.defineProperty\(geo,'watchPosition'/.test(gps)&&/Object\.defineProperty\(geo,'clearWatch'/.test(gps));
 add('GPS broker suspends non-recorder subscribers',/subscriber\.recordingOwner/.test(gps)&&/suspendedCallbacks/.test(gps));

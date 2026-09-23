@@ -49,3 +49,13 @@ dialog::backdrop { background: #142c3a80; }
 textarea { font: inherit; width: 100%; min-height: 100px; padding: .75rem; border: 1px solid #bfced3; border-radius: 10px; resize: vertical; }
 .rideRecovery { margin: 1rem 0; padding: 1rem; border: 1px solid #d1b979; border-radius: 12px; background: #fff9e9; }
 .rideRecovery button { margin: .25rem; }
+
+.rideReview { width: min(94vw, 840px); }
+.reviewCards { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .75rem; }
+.reviewCards article { padding: .8rem; background: #eff5f6; border-radius: 12px; display: grid; gap: .4rem; }
+.reviewCards strong { font-size: 1.1rem; overflow-wrap: anywhere; }
+.reviewExport { border-block: 1px solid #bfced3; padding-block: 1rem; margin-block: 1rem; }
+.reviewExport button { margin: .3rem; }
+.reviewTable { overflow-x: auto; }
+.reviewTable table { border-collapse: collapse; font-size: .8rem; white-space: nowrap; }
+.reviewTable th, .reviewTable td { padding: .6rem; border-bottom: 1px solid #bfced3; text-align: left; }

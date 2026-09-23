@@ -15,7 +15,7 @@ There is no Xcode project, native app, signing configuration, or native release 
 | Authentication | Email/password sign-in and sign-out; session persistence through Supabase | Existing accounts, refresh/expiry, account isolation, visible errors |
 | Garage | List, add, edit motorcycles; year, make, model, odometer in miles | Preserve record IDs and existing fields; cancel never writes |
 | Service | Most recent 50 records; add/edit service, motorcycle display name, date, mileage, cost, notes | Compatible payloads; do not silently replace name association with bike UUID |
-| Ride history | Most recent 50 sessions; bike, date, distance, duration, average speed | Read current shared records; pagination is a future improvement |
+| Ride history | Latest 50 cloud sessions merged with local stopped rides, displaying up to 100; Review and GPX export | Read current shared records; pagination is a future improvement |
 | Ride Center | Single dark instrument screen; bike selection, start/stop, GPS speed beside mapped speed limit, distance, time, heading, altitude, accuracy, road details | Unknown values stay unknown; large touch controls; scroll on short screens |
 | Recovery | Interrupted ride resume/finish, pending retry, JSON recovery export, guarded discard | Durable local capture and idempotent upload before visual polish |
 | Lean | Opt-in calibrated phone tilt, left/right session peaks, experimental label | Core Motion implementation validated on mounted physical devices; never claim calibrated motorcycle bank angle without evidence |
@@ -193,7 +193,7 @@ Use Core Location for GPS and Core Motion for orientation. Request permissions i
 
 Native background recording is a primary reason for the port, but is NEW work. Verify lock screen, incoming calls, low power, airplane mode, GPS loss, permission revocation, process death and restart. Do not promise recording after force quit; recover a persisted interrupted session honestly.
 
-Lean parity: upright/still calibration, near-vertical screen facing rider; at least 15 samples over 750 ms within 2 degrees for baseline. Screen rotation, invalid mount/sensor, gaps >2 seconds, or >75-degree relative tilt invalidate calibration. Exponential smoothing factor .2; left/right peaks reset at ride start. Backgrounding requires recalibration. Samples and peaks are not written to ride history. A native gravity/attitude implementation must be validated independently; do not blindly map Core Motion axes to browser beta/gamma.
+Lean parity: upright/still calibration, near-vertical screen facing rider; at least 15 samples over 750 ms within 2 degrees for baseline. Screen rotation, invalid mount/sensor, gaps >2 seconds, or >75-degree relative tilt invalidate calibration. Exponential smoothing factor .2; left/right peaks reset at ride start. Backgrounding requires recalibration. Calibrated lean is sampled alongside GPS into the device-local review; it is not uploaded as cloud lean telemetry. A native gravity/attitude implementation must be validated independently; do not blindly map Core Motion axes to browser beta/gamma.
 
 Hardware remains future work: no production ESP32 transport, OBD readout, CAN/K-Line implementation, ECU writes, emergency services or validated bank-angle sensor. Preserve the electrical safety boundaries in HARDWARE_INTERFACE and SAFETY_BOUNDARIES.
 
@@ -248,11 +248,19 @@ Cleanup validation: 17 offline tests, eight recording static checks, syntax/inte
 - Active web auth lacks recovery/MFA UI; existing backend requirements still apply.
 - Map and Ride now share bounded last-known display behavior; physical-device/provider latency verification remains required.
 - GPX parser browser success paths need richer fixture/browser coverage; current offline unit tests cover export/math and early input rejection.
-- Current phone lean is not validated motorcycle lean; not persisted.
+- Current phone lean is not validated motorcycle lean; retained only in device-local GPS review samples.
 - Preview “READY” confirms a deployment build, not sensor accuracy or user workflow acceptance.
 - Historical release notes describe older commits. Do not treat their browser or schema receipts as fresh evidence for this build.
 
 Backend migration receipt is recorded in DEPLOYMENT_RELEASE.md; it is historical evidence, not a fresh live check. Preserve additive sync columns/RPC during rollback while clients can retry. Revert the cleanup commit to recover deleted source from Git; do not restore deprecated runtime layers by default.
+
+## Post-ride review addition
+
+The web app now opens a local ride review on durable stop (before cloud upload finishes), merges local stopped rides into History, and prompts to export GPX. Source owners: ride-review-data.js (sensor snapshots, statistics, segmented GPX) and ride-review.js (review UI). Journal IndexedDB version 2 adds reviewSamples, copies remaining v1 pending samples, and atomically preserves a review copy of new GPS rows across upload acknowledgements. No remote migration or completion-protocol change is required.
+
+Local-only review fields: lean_estimate_deg, limit_mph, limit_source, limit_cached, segment. GPS payload sent to Supabase stays unchanged. Stats include sample-mean average/max speed, left/right experimental lean peaks, altitude min/max, samples above mapped limits and measured time above limits. Only speed+limit pairs with GPS accuracy ≤40 m are compared; time sums adjacent valid samples ≤5 seconds apart within a segment, with the same limit, and above-limit time requires both endpoints above. Coverage is explicit; absence is not proof of no speeding. GPS GPX exports preserve UTC timestamps/elevation and split at resume boundaries or >10-second gaps.
+
+Native parity must persist reviews independently of the upload queue and allow repeat export. Existing older web rides may have only summaries or partial local tracks; no automatic cloud backfill is implemented. Detailed review sync across devices is future work. Version-1-only web downgrades cannot open the upgraded database: retain v2 compatibility and preserve pending data.
 
 ## 12. What to give the next developer
 

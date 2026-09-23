@@ -1,7 +1,7 @@
 // The recorder owns persistence/lifecycle; views only consume snapshots.
 export class RideRecorder {
-  constructor({ journal, synchronize, acquireCapture, watch, unwatch, changed = () => {} }) {
-    Object.assign(this, { journal, synchronize, acquireCapture, watch, unwatch, changed });
+  constructor({ journal, synchronize, acquireCapture, watch, unwatch, changed = () => {}, context = () => ({}), stopped = () => {} }) {
+    Object.assign(this, { journal, synchronize, acquireCapture, watch, unwatch, changed, context, stopped });
     this.owner = null; this.ride = null; this.recording = false; this.starting = false;
     this.syncing = false; this.error = ''; this.writeQueue = Promise.resolve(); this.generation = 0;
   }
@@ -50,8 +50,9 @@ export class RideRecorder {
     this.recording = true;
     this.watchId = this.watch(position => {
       if (!this.recording || this.owner !== owner || this.ride?.id !== id) return;
+      const context = this.context();
       this.writeQueue = this.writeQueue.then(async () => {
-        const ride = await this.journal.append(owner, id, position);
+        const ride = await this.journal.append(owner, id, position, context);
         if (this.owner !== owner || this.ride?.id !== id) return;
         this.ride = ride; this.error = ''; this.emit();
       }).catch(error => {
@@ -66,7 +67,7 @@ export class RideRecorder {
     this.release(); await this.writeQueue;
     const ride = await this.journal.stop(owner, id);
     if (this.owner !== owner) return;
-    this.ride = ride; this.emit(); await this.sync();
+    this.ride = ride; this.emit(); this.stopped(ride); await this.sync();
   }
   async motion(input) {
     if (!this.recording || !this.ride) return;

@@ -1,9 +1,11 @@
 const esc = (value = '') => String(value ?? '').replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[character]));
 const numeric = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
+import { setReviewLean, setReviewRoad } from './ride-review-data.js';
 import { createLeanTracker } from './lean-tracker.js';
 import { createRideRoadData } from './ride-road-data.js';
 import { supabase } from './supabase.js';
 const roadTracker = createRideRoadData((data, status, label) => {
+  setReviewRoad(data, label);
   value('rideSpeedLimit', data?.limit || '--');
   value('rideLimitStatus', [data?.source?.split(' · ')[0], label].filter(Boolean).join(' · '));
   value('rideRoadName', data?.name || 'Road unavailable');
@@ -17,6 +19,7 @@ const leanTracker = createLeanTracker(renderLean);
 let leanRideId = null;
 function renderLean() {
   const lean = leanTracker.getState();
+  setReviewLean(lean.enabled ? lean.lean : null);
   value('sensorLean', lean.lean === null ? '--' : Math.abs(lean.lean) < .5 ? '0°' : `${Math.abs(lean.lean).toFixed(1)}° ${lean.lean < 0 ? 'L' : 'R'}`);
   value('sensorLeanMax', `L ${lean.left.toFixed(1)}° / R ${lean.right.toFixed(1)}°`);
   value('leanStatus', lean.status);

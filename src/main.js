@@ -1,5 +1,7 @@
 import { supabase } from './supabase.js';
 import { roadCache } from './road-cache.js';
+import { rideJournal } from './ride-runtime.js';
+import { openRideReview } from './ride-review.js';
 
 const app = document.querySelector('#app');
 const esc = (value = '') => String(value ?? '').replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[character]));
@@ -32,14 +34,21 @@ async function loadData() {
   if (!session?.user) return;
   const version = ++loadVersion;
   const owner = session.user.id;
-  const [bikes, maintenance, rides] = await Promise.all([
+  const [bikes, maintenance, rides, localRides] = await Promise.all([
     supabase.from('bikes').select('*').eq('user_id', owner).order('created_at'),
     supabase.from('maintenance').select('*').eq('user_id', owner).order('created_at', { ascending: false }).limit(50),
-    supabase.from('ride_sessions').select('*').eq('user_id', owner).order('started_at', { ascending: false }).limit(50)
+    supabase.from('ride_sessions').select('*').eq('user_id', owner).order('started_at', { ascending: false }).limit(50),
+    rideJournal.list(owner).catch(() => [])
   ]);
   if (version !== loadVersion || session?.user.id !== owner) return;
   loadError = [bikes, maintenance, rides].some(result => result.error) ? 'Some records could not be loaded. Please retry.' : '';
-  state = { bikes: bikes.data || [], maintenance: maintenance.data || [], rides: rides.data || [] };
+  const history = new Map((rides.data || []).map(ride => [ride.id, ride]));
+  for (const ride of localRides.filter(ride => ['pending','synced'].includes(ride.status))) history.set(ride.id, {
+    ...history.get(ride.id), id: ride.id, bike_name: ride.bikeName, started_at: new Date(ride.startedAt).toISOString(), ended_at: new Date(ride.stoppedAt).toISOString(),
+    distance_miles: ride.distanceMiles, duration_seconds: Math.floor((ride.stoppedAt-ride.startedAt)/1000), average_speed_mph: ride.speedCount?ride.speedSum/ride.speedCount:0,
+    max_speed_mph: ride.maxSpeedMph, status: ride.status==='synced'?'complete':'pending'
+  });
+  state = { bikes: bikes.data || [], maintenance: maintenance.data || [], rides: [...history.values()].sort((a,b)=>Date.parse(b.started_at)-Date.parse(a.started_at)).slice(0,100) };
   renderShell();
 }
 
@@ -75,7 +84,11 @@ function renderService(content) {
 }
 
 function renderHistory(content) {
-  content.innerHTML = `<div class="sectionHead"><div><h1>Ride history</h1></div></div><div class="list">${state.rides.map(ride => `<article class="listRow"><div><h2>${esc(ride.bike_name || 'Ride')}</h2><p>${Number(ride.distance_miles || 0).toFixed(1)} mi · ${Math.round(Number(ride.duration_seconds || 0) / 60)} min · ${Math.round(Number(ride.average_speed_mph || 0))} mph avg</p></div><time>${ride.started_at ? new Date(ride.started_at).toLocaleDateString() : ''}</time></article>`).join('') || '<div class="emptyState">No recorded rides yet.</div>'}</div>`;
+  content.innerHTML = `<div class="sectionHead"><div><h1>Ride history</h1></div></div><div class="list">${state.rides.map(ride => `<article class="listRow"><div><h2>${esc(ride.bike_name || 'Ride')}</h2><p>${Number(ride.distance_miles || 0).toFixed(1)} mi · ${Math.round(Number(ride.duration_seconds || 0) / 60)} min · ${Math.round(Number(ride.average_speed_mph || 0))} mph avg</p></div><time>${ride.started_at ? new Date(ride.started_at).toLocaleDateString() : ''}</time><button type="button" data-review="${esc(ride.id)}">Review${ride.status==='pending'?' · pending upload':''}</button></article>`).join('') || '<div class="emptyState">No recorded rides yet.</div>'}</div>`;
+  content.querySelectorAll('[data-review]').forEach(button => button.onclick = () => {
+    const owner=session.user.id,id=button.dataset.review;
+    void openRideReview(owner,id,()=>session?.user.id===owner,state.rides.find(r=>r.id===id));
+  });
 }
 
 function bikeDialog(bike = {}) {
@@ -134,6 +147,13 @@ function serviceDialog(item = {}) {
   dialog.showModal();
 }
 
+window.addEventListener('moto-ride-stopped', event => {
+  const {id,owner}=event.detail;
+  if(session?.user.id!==owner)return;
+  window.MotoRideDash?.close(); window.MotoMap?.close();
+  void openRideReview(owner,id,()=>session?.user.id===owner);
+  void loadData();
+});
 window.addEventListener('moto-ride-complete', () => { if (session) loadData(); });
 
 function toast(message) {
@@ -144,7 +164,7 @@ function toast(message) {
   setTimeout(() => node.classList.remove('show'), 2800);
 }
 
-supabase.auth.onAuthStateChange((_event, nextSession) => { session = nextSession; roadCache.scope(session?.user.id, supabase.supabaseUrl); setTimeout(() => { if (session) loadData(); else { ++loadVersion; state = { bikes: [], maintenance: [], rides: [] }; window.MotoRideDash?.close(); window.MotoMap?.close(); document.querySelectorAll('dialog').forEach(dialog => dialog.remove()); authScreen(); } }, 0); });
+supabase.auth.onAuthStateChange((_event, nextSession) => { if (session?.user.id !== nextSession?.user.id) document.querySelectorAll('dialog').forEach(dialog => dialog.close()); session = nextSession; roadCache.scope(session?.user.id, supabase.supabaseUrl); setTimeout(() => { if (session) loadData(); else { ++loadVersion; state = { bikes: [], maintenance: [], rides: [] }; window.MotoRideDash?.close(); window.MotoMap?.close(); document.querySelectorAll('dialog').forEach(dialog => dialog.close()); authScreen(); } }, 0); });
 const { data } = await supabase.auth.getSession();
 session = data.session;
 roadCache.scope(session?.user.id, supabase.supabaseUrl);

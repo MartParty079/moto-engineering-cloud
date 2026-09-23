@@ -2,6 +2,7 @@ import { supabase } from './supabase.js';
 import { rideJournal, configureRideJournal } from './ride-journal.js';
 import { RideRecorder } from './ride-recorder.js';
 import { syncRide } from './ride-sync.js';
+import { reviewContext, clearReviewContext } from './ride-review-data.js';
 
 configureRideJournal(supabase.supabaseUrl || location.origin);
 const listeners = new Set();
@@ -18,6 +19,8 @@ async function acquireCapture() {
 }
 export const recorder = new RideRecorder({
   journal: rideJournal,
+  context: reviewContext,
+  stopped: ride => window.dispatchEvent(new CustomEvent('moto-ride-stopped', { detail: { id: ride.id, owner: ride.owner } })),
   acquireCapture,
   watch: (success, error) => {
     if (!navigator.geolocation) throw new Error('GPS is unavailable.');
@@ -56,3 +59,5 @@ export async function exportLocalRide() {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 export { rideJournal };
+
+supabase.auth.onAuthStateChange(() => clearReviewContext());

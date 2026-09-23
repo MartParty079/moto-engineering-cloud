@@ -7,7 +7,7 @@ A focused motorcycle app: Garage, Service, Ride history, a fixed live Ride Cente
 - Email/password sign-in and owner-scoped motorcycle/service records.
 - GPS ride recording with durable local recovery and retry-safe cloud completion.
 - Dark Ride instruments: GPS speed beside mapped speed limit, distance/time, heading, altitude, accuracy and road data.
-- Opt-in experimental phone lean with upright calibration and session peaks. Lean is not saved to ride history.
+- Opt-in experimental phone lean with upright calibration and session peaks. Lean estimates are sampled into the local post-ride review when enabled.
 - Fullscreen map with Street/Terrain/Satellite layers, speed/limit, location follow, search, and simple settings.
 - GPX import, segment selection, rename, reverse, track-to-route conversion and export. Files are session-only until exported. Conversion preserves geometry; it does not provide directions or road snapping.
 
@@ -39,6 +39,14 @@ npm run docs:inventory
 Override BOTH Supabase URL and public key: existing fallback configuration points to production. Vite does not run api/ handlers. Keep paid-provider secrets server-side. Do not modify production data for testing.
 
 Browser suites require Playwright plus browser binaries, a localhost Vite server at port 5173, and localhost Supabase test configuration at port 54321. They intercept backend traffic; no real account is needed. Run `npm run test:browser` and `npm run test:browser:rides`. Set `E2E_BROWSER=webkit` for WebKit.
+
+## Ride review and GPX export
+
+Stopping a ride opens a review and asks whether to save a GPX track. Ride history includes local pending rides and a Review action for saved rides. Summary cards show distance, duration, average/max GPS MPH, experimental left/right lean, altitude range and above-mapped-limit observations; a paginated table exposes individual measurements and limit sources.
+
+Detailed reviews are local to this browser/device and account. Cloud ride summaries and GPS sync retain their existing contract; lean/limit review metadata is not uploaded. Speeding comparisons require recorded limits, valid speed and GPS accuracy ≤40 m. Last-known/missing limits are excluded; duration counts consecutive valid samples no more than five seconds apart. Coverage is shown. Lean requires enabled/calibrated sensors; gaps are unavailable, not zero. GPX includes coordinates, elevation and UTC times, with separate segments across interruptions or gaps over ten seconds. Export can be repeated from history.
+
+The local journal upgrades additively to IndexedDB version 2, preserving pending rides/samples and copying remaining upload samples into the review store. Already-uploaded older samples cannot be reconstructed locally, so old reviews can be incomplete or summary-only. Review rows survive upload acknowledgement and remain until local data is removed; browser storage quota/eviction still applies. Close old app tabs if an upgrade is blocked. Do not roll back to a version-1-only journal client or clear pending rides to resolve an upgrade.
 
 ## Road display refresh
 

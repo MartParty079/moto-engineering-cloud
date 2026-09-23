@@ -30,11 +30,11 @@ src/lean-tracker.js [Loaded browser source; 84 lines]
 
 src/location-validity.js [Loaded browser source; 14 lines]
 
-src/main.js [Loaded browser source; 152 lines]
-  Imports: ./supabase.js, ./road-cache.js
+src/main.js [Loaded browser source; 172 lines]
+  Imports: ./supabase.js, ./road-cache.js, ./ride-runtime.js, ./ride-review.js
   Tables/buckets (literal references): bikes, maintenance, ride_sessions
   Local/session storage keys (literal): motoSimpleView
-  Events observed: click, close, moto-ride-complete
+  Events observed: click, close, moto-ride-complete, moto-ride-stopped
 
 src/pwa.css [Loaded browser source; 6 lines]
 
@@ -51,28 +51,34 @@ src/ride-center.js [Loaded browser source; 92 lines]
 
 src/ride-dashboard-map-page.css [Loaded browser source; 50 lines]
 
-src/ride-dashboard-map-page.js [Loaded browser source; 214 lines]
-  Imports: ./supabase.js, ./gpx.js, ./ride-road-data.js, ./road-cache.js
+src/ride-dashboard-map-page.js [Loaded browser source; 216 lines]
+  Imports: ./supabase.js, ./gpx.js, ./ride-road-data.js, ./ride-review-data.js, ./road-cache.js
   Declared storage-key constants: motoSimpleMapLayer
   Events observed: keydown, load, moto-gps-fix, pagehide, visibilitychange
 
 src/ride-dashboard.css [Loaded browser source; 75 lines]
 
-src/ride-dashboard.js [Loaded browser source; 169 lines]
-  Imports: ./lean-tracker.js, ./ride-road-data.js, ./supabase.js
+src/ride-dashboard.js [Loaded browser source; 172 lines]
+  Imports: ./ride-review-data.js, ./lean-tracker.js, ./ride-road-data.js, ./supabase.js
   Events observed: moto-gps-fix, moto-ride-open-request, moto-ride-state, pagehide, visibilitychange
 
-src/ride-journal.js [Loaded browser source; 169 lines]
+src/ride-journal.js [Loaded browser source; 191 lines]
   Imports: ./location-validity.js
 
-src/ride-recorder.js [Loaded browser source; 113 lines]
+src/ride-recorder.js [Loaded browser source; 114 lines]
+
+src/ride-review-data.js [Loaded browser source; 39 lines]
+
+src/ride-review.js [Loaded browser source; 42 lines]
+  Imports: ./ride-runtime.js, ./ride-review-data.js
+  Events observed: moto-ride-complete
 
 src/ride-road-data.js [Loaded browser source; 104 lines]
   Imports: ./road-cache.js
 
-src/ride-runtime.js [Loaded browser source; 59 lines]
-  Imports: ./supabase.js, ./ride-journal.js, ./ride-recorder.js, ./ride-sync.js
-  Events emitted: moto-ride-complete
+src/ride-runtime.js [Loaded browser source; 64 lines]
+  Imports: ./supabase.js, ./ride-journal.js, ./ride-recorder.js, ./ride-sync.js, ./ride-review-data.js
+  Events emitted: moto-ride-complete, moto-ride-stopped
 
 src/ride-sync.js [Loaded browser source; 55 lines]
   Tables/buckets (literal references): ride_samples, ride_sessions
@@ -80,7 +86,7 @@ src/ride-sync.js [Loaded browser source; 55 lines]
 
 src/road-cache.js [Loaded browser source; 62 lines]
 
-src/styles.css [Loaded browser source; 52 lines]
+src/styles.css [Loaded browser source; 62 lines]
 
 src/supabase-mock.js [Loaded browser source; 100 lines]
 

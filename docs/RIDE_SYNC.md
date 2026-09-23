@@ -4,7 +4,7 @@ The recorder stores samples locally before uploading. The migration is reconcile
 
 ## Ownership and lifecycle
 
-ride-journal.js owns strict IndexedDB transactions, version 1, database moto-ride-journal-v1:<backend origin>. Ride keys are [owner,id], sample keys [owner,rideId,sequence]. ride-recorder.js serializes GPS/motion writes. ride-runtime.js coordinates Web Locks and uploads stopped rides only. ride-center.js preserves the unified Ride OS API/events; active means capture is running.
+ride-journal.js owns strict IndexedDB transactions, version 2, database moto-ride-journal-v1:<backend origin>. Ride keys are [owner,id], sample keys [owner,rideId,sequence]. ride-recorder.js serializes GPS/motion writes. ride-runtime.js coordinates Web Locks and uploads stopped rides only. ride-center.js preserves the unified Ride OS API/events; active means capture is running.
 
 State: idle -> recording -> pending -> synced. A persisted recording without capture is interrupted. Resume records a gap and clears the previous fix. GPS samples are limited to one per second; sample and summary commit atomically before acknowledgement. Storage failure pauses capture visibly. Account changes stop capture; pending data retains its owner. iPhone motion remains disabled by the existing stability policy.
 
@@ -31,3 +31,11 @@ PGlite tests execute the copied schema: repeated migration, legacy rows/inserts,
 Recovery export includes metadata and unacknowledged samples; acknowledged samples are on the server. No import UI exists. Synced metadata remains local. Browser storage can be cleared/evicted and cannot ensure iOS background capture. Physical device/PWA testing remains necessary.
 
 Keep pending journals and additive backend fields during updates. Prefer rolling forward. Never drop version/completion markers or RPC while clients can retry; export/reconcile pending data before a frontend downgrade.
+
+## Local post-ride review
+
+Version 2 adds reviewSamples keyed by owner/rideId/sequence and copies pending v1 samples during the upgrade transaction. Each new GPS sample, local review row and ride summary commit together; review-only lean/limit/source/cache/segment fields never enter the cloud sample payload. Upload acknowledgements remove only upload queue rows. Discard cleanup removes local review rows with the ride; synced review samples remain available for repeated GPX export. Cloud schemas and completion RPC are unchanged.
+
+Stop emits moto-ride-stopped after durable local stop, before synchronization, to open the review. History merges pending/synced local metadata with the cloud list. New sensor context is snapshotted at GPS receipt, not at later persistence time: lean ≤2 seconds and road context ≤5 seconds; last-known road data is excluded. Account changes clear context and close reviews. GPX splits on explicit resume segments or >10-second GPS gaps.
+
+Do not downgrade to a journal-v1-only client after opening version 2. Preserve the new store on rollback or roll forward; never reset browser storage as a migration shortcut. Old acknowledged samples are absent from local review and are not backfilled from cloud by this feature. Detailed reviews are device-local, not multi-device cloud analytics.

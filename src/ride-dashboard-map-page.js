@@ -1,6 +1,7 @@
 import { supabase } from './supabase.js';
 import { createGpxTools, clearGpxSession } from './gpx.js';
 import { createRideRoadData } from './ride-road-data.js';
+import { setReviewRoad } from './ride-review-data.js';
 import { roadCache } from './road-cache.js';
 
 const MAP_STORE = 'motoSimpleMapLayer';
@@ -184,6 +185,7 @@ function renderZones() {
 }
 
 const roadTracker = createRideRoadData((data, status, label) => {
+  setReviewRoad(data, label);
   const set = (id, value) => { const node = document.getElementById(id); if (node && node.textContent !== value) node.textContent = value; };
   set('mapLimit', data?.limit || '--');
   set('mapLimitStatus', label || '');

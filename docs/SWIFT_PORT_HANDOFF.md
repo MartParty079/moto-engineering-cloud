@@ -154,7 +154,7 @@ Current tiles: OpenStreetMap, OpenTopoMap, Esri World Imagery. Swift could use M
 
 | Endpoint | Current caller / request | Expected handling |
 |---|---|---|
-| GET /api/road-info | Ride: lat, lon, provider=osm, optional heading/speed. Map: lat, lon, provider=auto and bearer if available | Road payload includes status, road/type/surface/lanes, limit.mph, limitKind, source/confidence; provider-specific fields can vary |
+| GET /api/road-info | Ride: lat, lon, provider=osm, optional heading/speed. Map: lat, lon, provider=osm, heading/speed and bearer if available | Road payload includes status, road/type/surface/lanes, limit.mph, limitKind, source/confidence; provider-specific fields can vary |
 | GET /api/poi-nearby | Map text search: q, lat/lon at map center; Authorization Bearer session access token | places array with name/address/lat/lon; current UI selects up to 5 valid results |
 | GET /api/road-info-live | Retained compatibility endpoint; not called by current shell | Paid-provider path; inspect handler before any reuse |
 | GET /api/fuel-nearby | Retained compatibility endpoint; no current UI | Not part of Swift parity |
@@ -165,9 +165,15 @@ Paid providers call Supabase `consume_road_api_request(p_provider)` using user b
 
 Map search: manual submit, 1.5-second cooldown, 18-second timeout, 30-query in-memory cache. Current cache is keyed by text, not location; native should include location to avoid reusing results after moving. Results place a marker only, not a navigable route.
 
-Shared Map/Ride refresh: at most once per 30 seconds, fresh received fixes ≤15 seconds, 12-second timeout, cancel on close/background. Retain the whole last successful road during requests/errors/no-match responses. Show Updating during a fresh refresh and Last known after errors, GPS loss, age >45 seconds or displacement >150 m. Expire after 120 seconds from request start or displacement >3 km. A new valid road replaces all fields, even when its limit is unavailable. Only mapped/relation limits are shown; estimates are withheld. Follow posted signs.
+Shared Map/Ride refresh: 15 seconds uncached, 60 seconds cached, 5 seconds after heading change or near an observed change zone, fresh received fixes ≤15 seconds, 12-second timeout, cancel on close/background. Retain the whole last successful road during requests/errors/no-match responses. Show Updating during a fresh refresh and Last known after errors, GPS loss, age >45 seconds or displacement >150 m. Expire after 120 seconds from request start or displacement >3 km. A new valid road replaces all fields, even when its limit is unavailable. Only mapped/relation limits are shown; estimates are withheld. Follow posted signs.
 
-Map uses auto provider with existing bearer authentication; Ride uses OSM. Both now share the same display retention, expiry, cancellation and limitKind filtering. Mapped limits and road matches are advisory, not authoritative traffic-sign recognition.
+Map and Ride use OSM with heading/speed. Both now share the same display retention, expiry, cancellation and limitKind filtering. Mapped limits and road matches are advisory, not authoritative traffic-sign recognition.
+
+### Frequent-road cache and change observations
+
+src/road-cache.js owns local storage keyed by backend and account: moto-road-cache-v1:<backend>:<owner>. It stores only OSM mapped-limit segments, never paid-provider payloads: max 400 segments and 100 observed change points, retained for 30 days. API road-info adds roadId and the selected pair of OSM geometry vertices. A cache hit requires valid GPS accuracy ≤40 m, distance ≤25 m to the segment (no endpoint extrapolation), and heading difference <35°. Ambiguous near-parallel competing matches decline the cache. Changes update on GPS fixes without waiting for a network lookup. Native should port geometry/heading and ambiguity tests, not use a simple radius around old GPS fixes.
+
+Orange map markers indicate the observed new-limit location after consecutive same-named-road matches with different limits, compatible heading, ≤120-second observation gap and <1.5 km separation. This is not the sign location or a surveyed boundary. Near-zone lookup means within 250 m in a compatible travel direction. No corridor download or route prediction is implemented. Cached road provenance/date must stay visible. Map settings can delete the local cache; account switching isolates it without deleting another account's data. Cache data is precise location history on the device: include it in native retention/privacy design.
 
 ## 7. GPX contract
 

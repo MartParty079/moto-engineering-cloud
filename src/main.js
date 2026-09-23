@@ -1,4 +1,5 @@
 import { supabase } from './supabase.js';
+import { roadCache } from './road-cache.js';
 
 const app = document.querySelector('#app');
 const esc = (value = '') => String(value ?? '').replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[character]));
@@ -143,7 +144,8 @@ function toast(message) {
   setTimeout(() => node.classList.remove('show'), 2800);
 }
 
-supabase.auth.onAuthStateChange((_event, nextSession) => { session = nextSession; setTimeout(() => { if (session) loadData(); else { ++loadVersion; state = { bikes: [], maintenance: [], rides: [] }; window.MotoRideDash?.close(); window.MotoMap?.close(); document.querySelectorAll('dialog').forEach(dialog => dialog.remove()); authScreen(); } }, 0); });
+supabase.auth.onAuthStateChange((_event, nextSession) => { session = nextSession; roadCache.scope(session?.user.id, supabase.supabaseUrl); setTimeout(() => { if (session) loadData(); else { ++loadVersion; state = { bikes: [], maintenance: [], rides: [] }; window.MotoRideDash?.close(); window.MotoMap?.close(); document.querySelectorAll('dialog').forEach(dialog => dialog.remove()); authScreen(); } }, 0); });
 const { data } = await supabase.auth.getSession();
 session = data.session;
+roadCache.scope(session?.user.id, supabase.supabaseUrl);
 if (session) await loadData(); else authScreen();

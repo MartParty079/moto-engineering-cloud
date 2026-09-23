@@ -54,9 +54,9 @@ test('refresh coordinator retains values during a pending request and rejects ca
     tracker.start(); tracker.update(point);
     requests[0].resolve(payload); await Promise.resolve(); await Promise.resolve();
     assert.equal(changes.at(-1).data.limit, '35');
-    t.mock.timers.tick(15000); tracker.update(point);
-    assert.equal(requests.length, 1, 'No lookup at the old 15-second cadence');
-    t.mock.timers.tick(15000); tracker.update(point);
+    t.mock.timers.tick(10000); tracker.update(point);
+    assert.equal(requests.length, 1, 'Requests remain throttled');
+    t.mock.timers.tick(5000); tracker.update(point);
     assert.equal(requests.length, 2);
     assert.equal(changes.at(-1).data.limit, '35');
     const count = changes.length;

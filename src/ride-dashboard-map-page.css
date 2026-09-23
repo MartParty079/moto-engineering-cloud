@@ -44,3 +44,6 @@ html:has(#motoMapOverlay), body:has(#motoMapOverlay) { background: #e5ecee; padd
 .mapCanvas .leaflet-control-attribution { max-width: calc(100vw - 1rem); font-size: 10px; margin-bottom: env(safe-area-inset-bottom); }
 .switchRow { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 .switchRow input { width: 24px; height: 24px; min-height: 24px; }
+
+.mapRoadSource { position: absolute; right: max(1rem, env(safe-area-inset-right)); top: calc(7.4rem + env(safe-area-inset-top)); max-width: 155px; padding: .2rem .45rem; background: #fff; color: #182b38; border-radius: 6px; font-size: .65rem; text-align: right; overflow-wrap: anywhere; }
+#mapLimitStatus { min-height: .7rem; font-size: .55rem; }

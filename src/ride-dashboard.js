@@ -5,7 +5,7 @@ import { createRideRoadData } from './ride-road-data.js';
 import { supabase } from './supabase.js';
 const roadTracker = createRideRoadData((data, status, label) => {
   value('rideSpeedLimit', data?.limit || '--');
-  value('rideLimitStatus', label || '');
+  value('rideLimitStatus', [data?.source?.split(' · ')[0], label].filter(Boolean).join(' · '));
   value('rideRoadName', data?.name || 'Road unavailable');
   value('rideRoadType', data?.type || '--');
   value('rideRoadSurface', data?.surface || '--');

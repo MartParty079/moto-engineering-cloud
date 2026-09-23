@@ -30,8 +30,8 @@ src/lean-tracker.js [Loaded browser source; 84 lines]
 
 src/location-validity.js [Loaded browser source; 14 lines]
 
-src/main.js [Loaded browser source; 150 lines]
-  Imports: ./supabase.js
+src/main.js [Loaded browser source; 152 lines]
+  Imports: ./supabase.js, ./road-cache.js
   Tables/buckets (literal references): bikes, maintenance, ride_sessions
   Local/session storage keys (literal): motoSimpleView
   Events observed: click, close, moto-ride-complete
@@ -49,10 +49,10 @@ src/ride-center.js [Loaded browser source; 92 lines]
   Events emitted: moto-ride-open-request, moto-ride-state, moto-rides-update
   Events observed: moto-ride-complete, online, pagehide, pageshow
 
-src/ride-dashboard-map-page.css [Loaded browser source; 47 lines]
+src/ride-dashboard-map-page.css [Loaded browser source; 50 lines]
 
-src/ride-dashboard-map-page.js [Loaded browser source; 194 lines]
-  Imports: ./supabase.js, ./gpx.js, ./ride-road-data.js
+src/ride-dashboard-map-page.js [Loaded browser source; 214 lines]
+  Imports: ./supabase.js, ./gpx.js, ./ride-road-data.js, ./road-cache.js
   Declared storage-key constants: motoSimpleMapLayer
   Events observed: keydown, load, moto-gps-fix, pagehide, visibilitychange
 
@@ -67,7 +67,8 @@ src/ride-journal.js [Loaded browser source; 169 lines]
 
 src/ride-recorder.js [Loaded browser source; 113 lines]
 
-src/ride-road-data.js [Loaded browser source; 89 lines]
+src/ride-road-data.js [Loaded browser source; 104 lines]
+  Imports: ./road-cache.js
 
 src/ride-runtime.js [Loaded browser source; 59 lines]
   Imports: ./supabase.js, ./ride-journal.js, ./ride-recorder.js, ./ride-sync.js
@@ -76,6 +77,8 @@ src/ride-runtime.js [Loaded browser source; 59 lines]
 src/ride-sync.js [Loaded browser source; 55 lines]
   Tables/buckets (literal references): ride_samples, ride_sessions
   RPCs: complete_ride_v1
+
+src/road-cache.js [Loaded browser source; 62 lines]
 
 src/styles.css [Loaded browser source; 52 lines]
 
@@ -99,7 +102,7 @@ api/road-info-live.js [Server endpoint; 201 lines]
   Imports: ../server/request-validation.js
   Environment variable names: GOOGLE_ROADS_API_KEY, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL, TOMTOM_API_KEY, VITE_SUPABASE_ANON_KEY, VITE_SUPABASE_PUBLISHABLE_KEY, VITE_SUPABASE_URL
 
-api/road-info.js [Server endpoint; 416 lines]
+api/road-info.js [Server endpoint; 418 lines]
   Imports: ../server/request-validation.js
   Environment variable names: GOOGLE_ROADS_API_KEY, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL, TOMTOM_API_KEY, VITE_SUPABASE_ANON_KEY, VITE_SUPABASE_PUBLISHABLE_KEY, VITE_SUPABASE_URL
 

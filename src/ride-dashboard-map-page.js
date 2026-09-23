@@ -1,6 +1,7 @@
 import { supabase } from './supabase.js';
 import { createGpxTools, clearGpxSession } from './gpx.js';
 import { createRideRoadData } from './ride-road-data.js';
+import { roadCache } from './road-cache.js';
 
 const MAP_STORE = 'motoSimpleMapLayer';
 let map = null;
@@ -12,6 +13,7 @@ let searchMarker = null;
 let searchRequest = null;
 let lastSearchAt = 0;
 let gpxTools = null;
+let zoneLayer = null, zonesSignature = null;
 const searchCache = new Map();
 
 const layers = {
@@ -45,10 +47,10 @@ async function open(options = {}) {
         <div class="mapToolTabs"><button id="mapSearchTab" aria-pressed="true">Search</button><button id="mapGpxTab" aria-pressed="false">GPX</button><button id="mapSettings" aria-pressed="false">Settings</button></div>
         <section id="mapGpxPane" hidden></section>
         <section id="mapSearchPane"><form id="mapSearchForm"><label>Find a place<input id="mapQuery" type="search" placeholder="City, address or place" required minlength="3" maxlength="200"></label><button class="primary" id="mapSearchSubmit">Search</button></form><p id="mapSearchStatus" role="status"></p><div id="mapSearchResults"></div><small>Search by Google Maps. No routes.</small></section>
-        <section id="mapSettingsPane" hidden><label>Base map<select id="mapLayer">${Object.entries(layers).map(([id, layer]) => `<option value="${id}">${layer.label}</option>`).join('')}</select></label><label class="switchRow">Follow location<input id="mapFollow" type="checkbox" checked></label><label class="switchRow">Keep screen awake<input id="mapWake" type="checkbox"></label><p>GPS accuracy: <span id="mapGps">--</span></p><p>Speed limit source: <span id="mapLimitSource">UNKNOWN</span></p><small>Always follow posted road signs.</small></section>
+        <section id="mapSettingsPane" hidden><label>Base map<select id="mapLayer">${Object.entries(layers).map(([id, layer]) => `<option value="${id}">${layer.label}</option>`).join('')}</select></label><label class="switchRow">Follow location<input id="mapFollow" type="checkbox" checked></label><label class="switchRow">Keep screen awake<input id="mapWake" type="checkbox"></label><p>GPS accuracy: <span id="mapGps">--</span></p><p>Speed limit source: <span id="mapLimitSource">UNKNOWN</span></p><p>Road cache stays on this device. Orange markers show observed limit changes, not exact sign locations.</p><button id="clearRoadCache" type="button">Clear saved roads</button><small>Always follow posted road signs.</small></section>
       </section>
     </div>
-    <section class="mapReadout" aria-label="Driving information"><article class="mapSpeedBadge"><strong id="mapSpeed">--</strong><span>MPH</span></article><article class="mapLimitBadge" aria-label="Speed limit in miles per hour"><small>SPEED<br>LIMIT</small><strong id="mapLimit">--</strong><small id="mapLimitStatus" role="status"></small></article></section>
+    <section class="mapReadout" aria-label="Driving information"><article class="mapSpeedBadge"><strong id="mapSpeed">--</strong><span>MPH</span></article><article class="mapLimitBadge" aria-label="Speed limit in miles per hour"><small>SPEED<br>LIMIT</small><strong id="mapLimit">--</strong><small id="mapLimitStatus" role="status"></small></article><span id="mapRoadSource" class="mapRoadSource"></span></section>
     <div class="mapZoom" aria-label="Map zoom"><button id="mapZoomIn" aria-label="Zoom in">+</button><button id="mapZoomOut" aria-label="Zoom out">−</button></div>
     <button id="mapCenter" class="mapLocate" aria-label="Center on my location">⌖ Locate</button>
     <button id="mapFullscreen" class="mapFullscreen">Fullscreen</button>
@@ -62,6 +64,7 @@ async function open(options = {}) {
     catch { fullscreen.textContent = 'Fullscreen unavailable'; }
   };
   overlay.querySelector('#mapClose').onclick = close;
+  overlay.querySelector('#clearRoadCache').onclick = () => { roadCache.clear(); roadTracker.clear(); roadTracker.start(); renderZones(); };
   overlay.querySelector('#mapCenter').onclick = center;
   overlay.querySelector('#mapZoomIn').onclick = () => map?.zoomIn();
   overlay.querySelector('#mapZoomOut').onclick = () => map?.zoomOut();
@@ -103,7 +106,7 @@ async function open(options = {}) {
   }
 }
 
-function close() { gpxTools?.clearDrawing(); gpxTools = null; searchRequest?.abort(); searchRequest = null; if (gpsWatch != null) navigator.geolocation.clearWatch(gpsWatch); gpsWatch = null; roadTracker.stop(); void toggleWakeLock(false); map?.remove(); map = null; marker = null; searchMarker = null; document.querySelector('#motoMapOverlay')?.remove(); document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#ffffff'); }
+function close() { gpxTools?.clearDrawing(); gpxTools = null; searchRequest?.abort(); searchRequest = null; if (gpsWatch != null) navigator.geolocation.clearWatch(gpsWatch); gpsWatch = null; roadTracker.stop(); void toggleWakeLock(false); map?.remove(); map = null; zoneLayer = null; zonesSignature = null; marker = null; searchMarker = null; document.querySelector('#motoMapOverlay')?.remove(); document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#ffffff'); }
 function setLayer(id) { if (!map || !window.L) return; map.eachLayer(layer => { if (layer instanceof window.L.TileLayer) map.removeLayer(layer); }); const item = layers[id] || layers.street; window.L.tileLayer(item.url, { maxZoom: item.maxZoom, attribution: id === 'satellite' ? 'Tiles © Esri' : id === 'terrain' ? '© OpenStreetMap contributors · © OpenTopoMap' : '© OpenStreetMap contributors' }).addTo(map); if (marker) marker.addTo(map); }
 function center() { if (map && latestFix) { document.querySelector('#mapFollow').checked = true; map.setView([latestFix.latitude, latestFix.longitude], Math.max(map.getZoom(), 16)); } }
 
@@ -167,15 +170,32 @@ function updateFix(detail) {
   if (map) roadTracker.update(detail);
 }
 
+function renderZones() {
+  if (!map || !window.L) return;
+  const zones = roadCache.zones.filter(z => Date.now()-z.at < 30*86400000);
+  const signature = JSON.stringify(zones);
+  if (signature === zonesSignature) return;
+  zonesSignature = signature; zoneLayer?.remove(); zoneLayer = window.L.layerGroup().addTo(map);
+  for (const zone of zones) {
+    const label = document.createElement('span');
+    label.textContent = `Observed change: ${zone.from} → ${zone.to} mph · heading ${Math.round(zone.heading)}° · ${new Date(zone.at).toLocaleDateString()} · OpenStreetMap. Observation area, not an exact sign location.`;
+    window.L.circleMarker([zone.lat,zone.lon], { radius: 8, color: '#fff', weight: 2, fillColor: '#d97706', fillOpacity: .9 }).bindPopup(label).addTo(zoneLayer);
+  }
+}
+
 const roadTracker = createRideRoadData((data, status, label) => {
   const set = (id, value) => { const node = document.getElementById(id); if (node && node.textContent !== value) node.textContent = value; };
   set('mapLimit', data?.limit || '--');
   set('mapLimitStatus', label || '');
+  set('mapRoadSource', data?.source?.split(' · ')[0] || 'Source unavailable');
+  renderZones();
   set('mapLimitSource', data ? `${data.source} · ${status}` : status);
 }, { requestRoad: async (point, signal) => {
   const { data: { session } } = await supabase.auth.getSession();
   if (signal.aborted) throw new Error('Lookup cancelled');
-  const params = new URLSearchParams({ lat: point.latitude, lon: point.longitude, provider: 'auto' });
+  const params = new URLSearchParams({ lat: point.latitude, lon: point.longitude, provider: 'osm' });
+  if (numeric(point.heading)) params.set('heading', point.heading);
+  if (numeric(point.speed)) params.set('speed', point.speed);
   const response = await fetch(`/api/road-info?${params}`, { headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}, signal });
   if (!response.ok) throw new Error('Road lookup failed');
   return response.json();

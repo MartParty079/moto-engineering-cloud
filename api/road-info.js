@@ -91,7 +91,7 @@ function bestSegment(way, point) {
   let best = null;
   for (let index = 1; index < geometry.length; index += 1) {
     const hit = projectToSegment(point, geometry[index - 1], geometry[index]);
-    if (!best || hit.distance < best.distance) best = hit;
+    if (!best || hit.distance < best.distance) best = { ...hit, geometry: [geometry[index - 1], geometry[index]] };
   }
   if (best) return best;
   const center = way.center;
@@ -326,6 +326,8 @@ async function osmRoad(lat, lon, heading, speed) {
 
       return {
         status: 'road',
+        roadId: `osm/way/${picked.way.id}`,
+        geometry: picked.segment.geometry || null,
         source: `OpenStreetMap · ${source}`,
         distance: picked.segment.distance,
         road: tags.name || tags.ref || tags.destination || 'Unnamed road',

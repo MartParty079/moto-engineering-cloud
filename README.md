@@ -42,7 +42,11 @@ Browser suites require Playwright plus browser binaries, a localhost Vite server
 
 ## Road display refresh
 
-Map and Ride refresh road matches in the background every 30 seconds. Last successful road details stay visible during lookups and temporary failures, with Updating or Last known labels. Matches expire after two minutes from request time or 3 km from the request location; a new matched road replaces all fields together, including clearing an unavailable limit. Both screens withhold estimated road-class limits. Closing/backgrounding cancels requests; sign-out clears retained matches.
+Map and Ride share an account/backend-scoped local OpenStreetMap segment cache (400 segments, 100 observed change markers, 30-day expiry). GPS updates match within a 25 m road corridor with heading within 35 degrees; poor accuracy or ambiguous nearby roads declines the cached match. Opposite travel directions are cached separately. Cached values are labeled and the provider is displayed beside the limit. Nothing is uploaded from this cache; clear it in Map → Settings → Clear saved roads.
+
+Live lookups run every 15 seconds without a cached match, 60 seconds on cached roads, or 5 seconds after a heading change / within 250 m of a heading-compatible observed change marker. Only one request per screen is in flight. These are map-data observations, not surveyed traffic-sign locations. Markers show the new-limit observation point for successive same-named-road matches; they do not predict exact sign boundaries or provide navigation. The cache learns only segments the provider has actually matched, not an entire road corridor in advance.
+
+Last successful details remain visible during failures/lookups. Unmatched last-known values still expire after two minutes or 3 km; current cached segment matches remain explicitly Cached and expire after 30 days. Fresh road matches replace fields together, and unknown limits invalidate previous values for that directed segment. Both screens use OSM with heading/speed and withhold estimated road-class limits.
 
 ## Map and iOS
 

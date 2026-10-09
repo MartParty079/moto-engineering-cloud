@@ -178,7 +178,7 @@ function onTrustedClick(event){
   const pointer=[...pointerState.values()].find(value=>value.action===action);
   if(pointer?.moved){event.preventDefault();event.stopImmediatePropagation();clearPressState(action);return;}
   const now=performance.now(),previous=lastTrustedActivation.get(action)||0;
-  if(!repeatAllowed(action)&&now-previous<FAST_TAP_WINDOW_MS){
+  if(previous>0&&!repeatAllowed(action)&&now-previous<FAST_TAP_WINDOW_MS){
     event.preventDefault();event.stopImmediatePropagation();clearPressState(action);return;
   }
   lastTrustedActivation.set(action,now);

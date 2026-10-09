@@ -123,11 +123,12 @@ function nav(){
 
   if(!button){
     button = document.createElement('button');
-    const group = [...container.querySelectorAll('.navGroup')].find(item => item.querySelector('.navLabel')?.textContent.trim() === 'Operations');
+    const group = container.querySelector('[data-v="dashboard"]')?.closest('.navGroup');
     (group || container).appendChild(button);
   }
 
   button.id = 'rideCenterNav';
+  button.hidden = true; // Header Ride Mode is the canonical entry; legacy integrations retain this control.
   button.innerHTML = '<span class="navIcon">◉</span><span>Ride</span>';
   button.onclick = () => {
     container.classList.remove('open');
@@ -457,7 +458,7 @@ function renderRideControl(){
   const recoverable = ['interrupted','pending'].includes(ride.status);
   if (recovery) {
     recovery.hidden = !recoverable;
-    const text = recoverable ? `<p>${esc(ride.error || (ride.status === 'interrupted' ? 'This recording was interrupted. Resume capture or finish with the samples saved on this device.' : 'Saved on this device. Keep this browser data until upload is confirmed.'))}</p><div>${ride.status === 'interrupted' ? '<button data-recovery="stop">Finish & upload</button>' : ''}<button data-recovery="export">Export recovery copy</button>${!ride.completionRequested ? '<button data-recovery="discard">Discard local ride</button>' : ''}</div>` : '';
+    const text = recoverable ? `<p>${esc(ride.error || (ride.status === 'interrupted' ? 'This recording was interrupted. Resume capture or finish with the samples saved on this device.' : 'Saved on this device. Keep this browser data until upload is confirmed.'))}</p><div>${ride.status === 'interrupted' ? '<button data-recovery="stop">Finish & upload</button>' : ''}<button data-recovery="export">Export recovery copy</button><button data-recovery="exportGPX">Export local GPX</button>${!ride.completionRequested ? '<button data-recovery="discard">Discard local ride</button>' : ''}</div>` : '';
     if (recovery.innerHTML !== text) recovery.innerHTML = text;
   }
   if (recoverable) {

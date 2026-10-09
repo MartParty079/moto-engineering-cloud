@@ -15,6 +15,7 @@
     "inventory": "node scripts/app-inventory.mjs",
     "test:browser": "node tests/browser-smoke.mjs",
     "test:browser:rides": "node tests/browser-durable.mjs",
+    "test:browser:gpx": "node tests/browser-gpx.mjs",
     "docs:inventory": "node scripts/app-inventory.mjs"
   },
   "dependencies": {

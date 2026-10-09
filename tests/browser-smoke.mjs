@@ -5,11 +5,12 @@ import { join } from 'node:path';
 import assert from 'node:assert/strict';
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE ? pathToFileURL(process.env.PLAYWRIGHT_MODULE).href : 'playwright');
 const out = await mkdtemp(join(tmpdir(), 'moto-browser-smoke-'));
-const browser = process.env.PLAYWRIGHT_CDP_URL ? await chromium.connectOverCDP(process.env.PLAYWRIGHT_CDP_URL) : await chromium.launch({headless:true});
+const browser = process.env.PLAYWRIGHT_CDP_URL ? await chromium.connectOverCDP(process.env.PLAYWRIGHT_CDP_URL) : await chromium.launch({headless:true,executablePath:process.env.PLAYWRIGHT_EXECUTABLE_PATH || undefined});
 const context = await browser.newContext({serviceWorkers:'block',viewport:{width:1280,height:800}});
 const page = await context.newPage();
 const errors = []; page.on('pageerror',error=>errors.push(error.message));
 const user = {id:'00000000-0000-4000-8000-000000000001',email:'developer@example.test',role:'authenticated',aud:'authenticated',email_confirmed_at:'2026-01-01T00:00:00Z',is_anonymous:false,factors:[]};
+let accessRole='owner', dashboardEnabled=true;
 const bike = {id:'00000000-0000-4000-8000-000000000003',user_id:user.id,name:'Trail bike',year:2022,make:'Honda',model:'CRF450RL',odometer:1248,created_at:'2026-01-01T00:00:00Z'};
 try {
   await context.addInitScript(()=>localStorage.setItem('moto-startup-permissions-v1',JSON.stringify({location:'granted',motion:'granted'})));
@@ -19,7 +20,7 @@ try {
     if(url.hostname!=='127.0.0.1'||url.port!=='54321')return route.abort();
     if(url.pathname==='/auth/v1/token')return route.fulfill({status:400,contentType:'application/json',body:JSON.stringify({error:'invalid_grant',error_description:'Local test rejection'})});
     const table=url.pathname.split('/').at(-1);
-    let body=table==='user_profiles'?[{user_id:user.id,role:'owner',display_name:'Marty'}]:table==='bikes'?[bike]:table==='feature_flags'?['dashboard','garage_mode','motorcycles','maintenance','ride_log','notebook','project_files'].map(feature_key=>({id:feature_key,feature_key,name:feature_key,minimum_role:'rider',release_stage:'production',enabled:true})):[];
+    let body=table==='user_profiles'?[{user_id:user.id,role:accessRole,display_name:'Marty'}]:table==='bikes'?[bike]:table==='feature_flags'?['dashboard','garage_mode','motorcycles','maintenance','ride_log','notebook','project_files'].map(feature_key=>({id:feature_key,feature_key,name:feature_key,minimum_role:'rider',release_stage:'production',enabled:feature_key==='dashboard'?dashboardEnabled:true})):[];
     if(route.request().headers().accept?.includes('vnd.pgrst.object'))body=body[0]||null;
     if(url.pathname==='/auth/v1/user')body=user;
     return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
@@ -41,6 +42,31 @@ try {
   await page.reload(); await page.locator('.motoWelcomePage').waitFor();
   await page.setViewportSize({width:1280,height:800});
   await page.screenshot({path:join(out,'home-desktop.png'),fullPage:true});
+  assert.deepEqual(await page.locator('#nav .navGroup').first().locator('[data-v]').evaluateAll(nodes=>nodes.map(n=>n.textContent.trim())),['⌖Map','⌁Routes / GPX','↗Rides / Review','◇Bike / Devices','⚙Settings / Admin']);
+  await page.locator('#nav [data-v="routes"]').click();
+  await page.locator('#missionRoutesOpen').waitFor();
+  await page.reload();
+  await page.locator('#missionRoutesOpen').waitFor();
+  assert.equal(await page.locator('#nav [data-v="routes"]').evaluate(el=>el.classList.contains('active')),true,'Restore the last area');
+  await page.screenshot({path:join(out,'routes-desktop.png'),fullPage:true});
+  await page.locator('#missionRoutesOpen').click();
+  await page.locator('#advRoutesSheet').waitFor();
+  assert.equal(await page.locator('#advRoutesSheet').getAttribute('aria-hidden'),'false','Routes opens the current GPX sheet');
+  await page.getByRole('heading',{name:'Map unavailable',exact:true}).waitFor();
+  await page.locator('#closeAdventure').click();
+  await page.locator('#nav [data-v="settings"]').click();
+  await page.locator('#missionPreferences').waitFor();
+  await page.locator('#missionSecurity').click();
+  await page.locator('#securityCenterOverlay').waitFor();
+  await page.locator('#closeSecurityCenter').click();
+  await page.locator('#missionPreferences').click();
+  await page.locator('#riderSettingsOverlay .riderUtilityClose').click();
+  await page.locator('#nav [data-v="devices"]').click();
+  await page.getByRole('heading',{name:'Device status',exact:true}).waitFor();
+  await page.locator('#nav [data-v="rides"]').click();
+  await page.locator('.unifiedRideLog').waitFor();
+  await page.locator('#nav [data-v="dashboard"]').click();
+  await page.locator('.motoWelcomePage').waitFor();
   await page.locator('#welcomeSettings').click();
   await page.locator('#riderSettingsOverlay').waitFor();
   await page.locator('#riderSettingsOverlay .riderUtilityClose').click();
@@ -56,6 +82,13 @@ try {
   await page.screenshot({path:join(out,'home-tablet.png'),fullPage:true});
   await page.setViewportSize({width:390,height:844});
   await page.screenshot({path:join(out,'home-mobile.png'),fullPage:true});
+  for (const [target,heading] of [['routes','Routes / GPX'],['rides','Ride Log'],['garage','Motorcycles'],['settings','Settings']]) {
+    await page.locator(`#motoBottomNav [data-go="${target}"]`).click();
+    await page.locator('#main').getByRole('heading',{name:heading,exact:true}).waitFor();
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`${target} must fit mobile`);
+  }
+  await page.locator('#main').getByRole('heading',{name:'Settings',exact:true}).waitFor();
+  await page.screenshot({path:join(out,'settings-mobile.png'),fullPage:true});
   await page.locator('#menu').click();
   await page.locator('#nav [data-v="maintenance"]').click();
   assert.equal(await page.locator('#nav').evaluate(el=>el.classList.contains('open')),false);
@@ -70,6 +103,18 @@ try {
   await page.locator('#rideDashOverlay').waitFor();
   await page.screenshot({path:join(out,'ride-mobile.png'),fullPage:true});
   await page.locator('#dashClose').click();
+  accessRole='rider';
+  await page.reload();
+  await page.locator('.motoWelcomePage').waitFor();
+  assert.equal(await page.locator('#accessBootstrapGroup').count(),0,'Riders must not see administrative controls');
+  await page.locator('#motoBottomNav [data-go="routes"]').click();
+  await page.locator('#missionRoutesOpen').waitFor();
+  dashboardEnabled=false;
+  await page.reload();
+  await page.waitForFunction(()=>document.querySelector('#nav [data-v="routes"]')?.hidden && document.querySelector('#nav [data-v="rides"]')?.classList.contains('active'));
+  assert.equal(await page.locator('#missionRoutesOpen').count(),0,'A restored disabled area must fail closed');
+  await page.waitForFunction(()=>document.querySelector('#motoBottomNav [data-go="routes"]')?.disabled);
+  assert.equal(await page.locator('#motoBottomNav [data-go="routes"]').isVisible(),false);
   assert.deepEqual(errors,[]);
-  console.log(JSON.stringify({passed:['invite-only auth','failed sign-in recovery','rider home','settings','maintenance','garage','mobile navigation','unified Ride screen'],errors,overflow,screenshots:out}));
-} finally {await context.close();await browser.close();}
+  console.log(JSON.stringify({passed:['invite-only auth','failed sign-in recovery','rider home','settings','maintenance','garage','mobile navigation','unified Ride screen','five PRD areas','last-screen restoration','GPX sheet entry','map failure fallback','honest device status','rider admin gating','disabled-feature restoration'],errors,overflow,screenshots:out}));
+} catch(error) { console.log(await page.evaluate(()=>({hash:location.hash,saved:localStorage.getItem('motoCurrentView'),main:document.querySelector('#main')?.textContent,nav:[...document.querySelectorAll('#nav [data-v]')].map(n=>({view:n.dataset.v,hidden:n.hidden,active:n.classList.contains('active')}))}))); console.log({errors}); throw error; } finally {await context.close();await browser.close();}

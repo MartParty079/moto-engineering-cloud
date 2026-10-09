@@ -64,16 +64,6 @@ function cleanNav(){
     else seen.add(key);
   });
 
-  const adventure = $('#adventureNav');
-  if(adventure){
-    const label=adventure.querySelector('span:nth-of-type(2)');
-    if(label && label.textContent !== 'Maps & Routes') label.textContent='Maps & Routes';
-    const badge=adventure.querySelector('em');
-    if(badge && badge.textContent !== 'GPX') badge.textContent='GPX';
-    const group = [...nav.querySelectorAll('.navGroup')].find(item => item.querySelector('.navLabel')?.textContent.trim() === 'Operations');
-    if(group && !group.contains(adventure)) group.appendChild(adventure);
-  }
-
   if(nav.dataset.touchPolished !== '1'){
     nav.dataset.touchPolished = '1';
     nav.addEventListener('touchmove',event => event.stopPropagation(),{passive:true});
@@ -94,11 +84,15 @@ function bottomNav(){
     bar.id = 'motoBottomNav';
     bar.className = 'motoBottomNav';
     bar.setAttribute('aria-label','Primary navigation');
-    bar.innerHTML = `<button type="button" data-go="home">${navIcon.home}<span>Home</span></button><button type="button" data-go="ride">${navIcon.ride}<span>Ride</span></button><button type="button" data-go="maps">${navIcon.maps}<span>Maps</span></button><button type="button" data-go="garage">${navIcon.garage}<span>Garage</span></button><button type="button" data-go="menu">${navIcon.menu}<span>Menu</span></button>`;
+    bar.innerHTML = `<button type="button" data-go="home">${navIcon.maps}<span>Map</span></button><button type="button" data-go="routes">${navIcon.maps}<span>Routes</span></button><button type="button" data-go="rides">${navIcon.ride}<span>Rides</span></button><button type="button" data-go="garage">${navIcon.garage}<span>Bike</span></button><button type="button" data-go="settings">${navIcon.menu}<span>Settings</span></button>`;
     document.body.appendChild(bar);
-  }else if(!bar.querySelector('[data-go="maps"]')){
-    const old=bar.querySelector('[data-go="adv"]');
-    if(old){old.dataset.go='maps';old.innerHTML=`${navIcon.maps}<span>Maps</span>`;}
+  }
+  const destinations={home:'dashboard',routes:'routes',rides:'rides',garage:'garage',settings:'settings'};
+  for(const button of bar.querySelectorAll('[data-go]')) {
+    const target=$(`#nav [data-v="${destinations[button.dataset.go]}"]`);
+    button.hidden=Boolean(target?.hidden);
+    button.disabled=!target || target.hidden;
+    button.classList.toggle('active',Boolean(target?.classList.contains('active')));
   }
   if(bar.dataset.bound === '2') return;
   bar.dataset.bound = '2';
@@ -107,18 +101,8 @@ function bottomNav(){
     if(!button || button.disabled) return;
     const go = button.dataset.go;
     setBottomActive(go);
-    if(go === 'home') document.querySelector('[data-v="dashboard"]')?.click();
-    if(go === 'ride') $('#rideCenterNav')?.click();
-    if(go === 'maps'){
-      if(window.MotoAdventure?.openMap) window.MotoAdventure.openMap();
-      else $('#adventureNav')?.click();
-    }
-    if(go === 'garage') document.querySelector('[data-v="garage"]')?.click();
-    if(go === 'menu'){
-      const nav=$('#nav');
-      nav?.classList.toggle('open');
-      document.querySelector('.menuButton')?.setAttribute('aria-expanded',String(Boolean(nav?.classList.contains('open'))));
-    }
+    const target=document.querySelector(`[data-v="${destinations[go]}"]`);
+    if(target && !target.hidden) target.click();
   };
 }
 

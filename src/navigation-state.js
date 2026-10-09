@@ -5,7 +5,7 @@ let lastApplied='';
 
 function rememberView(target){
   const button=target?.closest?.('[data-v]');
-  if(!button?.dataset?.v)return;
+  if(!button?.dataset?.v || button.hidden || button.disabled)return;
   const next=button.dataset.v;
   lastApplied=next;
   localStorage.setItem(STORAGE_KEY,next);
@@ -27,6 +27,8 @@ function restoreView(){
   restoring=true;
   requestAnimationFrame(()=>{
     try{
+      const latest=location.hash.replace(/^#/,'')||localStorage.getItem(STORAGE_KEY);
+      if(latest!==requested)return; // A newer rider choice supersedes a queued startup restore.
       const current=document.querySelector('#nav')?.querySelector(`[data-v="${CSS.escape(requested)}"]`);
       if(current&&!current.hidden&&!current.classList.contains('active'))current.click();
       lastApplied=requested;
@@ -48,6 +50,6 @@ function queueRestore(){
 document.addEventListener('click',event=>rememberView(event.target),true);
 window.addEventListener('hashchange',queueRestore);
 
-const observer=new MutationObserver(queueRestore);
-observer.observe(document.querySelector('#app')||document.body,{childList:true,subtree:false});
+window.addEventListener('moto-page-ready',queueRestore);
+window.addEventListener('moto-access-ready',queueRestore);
 queueRestore();

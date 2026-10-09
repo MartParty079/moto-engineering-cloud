@@ -10,6 +10,12 @@ September 2026 compatibility note: the current UI is rider-focused. Preserve new
 
 Build a safe, reliable motorcycle engineering platform that records rides, organizes vehicle development, and supports future ESP32-S3 telemetry hardware without overstating unfinished capability.
 
+## Moto Mission PRD structure
+
+The 2026-10-08 Master PRD defines Prepare → Ride → Review with five primary areas: Map, Routes/GPX, Rides/Review, Bike/Devices, and Settings/Admin. The structural rebuild reuses the existing web domain owners and durable recorder; it does not establish completion of the full PRD. On 2026-10-08 the user explicitly retained invitation-only verified access and MFA and deferred guest/local mode. Administrative controls retain existing role gates.
+
+Map opens the existing online workspace. Routes now stores account/project-scoped immutable GPX originals locally, previews geometry without tiles and downloads exact original files; local imports appear read-only on the map alongside existing editable cloud routes. Completed rides export full tracks through bounded owner-filtered pagination, and complete unuploaded local journals can export GPX for recovery. See [GPX_WORKFLOW.md](GPX_WORKFLOW.md) for limits and release checks. Offline routable packages, route-time weather, provider quota reservations, configurable ten-ride retention, and connected motorcycle integrations remain gated pending implementation and validation. No automatic data reduction, ECU writes, provider change, or hardware control is introduced. See [PRD_STRUCTURE.md](PRD_STRUCTURE.md) for implementation mapping and release checks.
+
 ## V1 system boundary
 
 ### Included

@@ -54,7 +54,7 @@ function openAdventureFromRideCenter(){
   requestAnimationFrame(()=>{
     const adventure=$('#adventureNav');
     if(adventure){adventure.click();return}
-    document.querySelector('.motoBottomNav [data-go="maps"],.motoBottomNav button:nth-child(3)')?.click();
+    window.MotoAdventure?.openMap?.();
   });
 }
 

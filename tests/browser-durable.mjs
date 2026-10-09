@@ -1,7 +1,8 @@
 import { pathToFileURL } from 'node:url';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE ? pathToFileURL(process.env.PLAYWRIGHT_MODULE).href : 'playwright');
-const browser = process.env.PLAYWRIGHT_CDP_URL ? await chromium.connectOverCDP(process.env.PLAYWRIGHT_CDP_URL) : await chromium.launch({ headless: true });
+const browser = process.env.PLAYWRIGHT_CDP_URL ? await chromium.connectOverCDP(process.env.PLAYWRIGHT_CDP_URL) : await chromium.launch({ headless: true, executablePath:process.env.PLAYWRIGHT_EXECUTABLE_PATH || undefined });
 const context = await browser.newContext({ serviceWorkers: 'block', userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 Version/18.5 Mobile/15E148 Safari/604.1', viewport: { width: 390, height: 844 } });
 const page = await context.newPage();
 const errors = []; page.on('pageerror', error => errors.push(error.message));
@@ -62,7 +63,8 @@ try {
   assert.equal(await page.evaluate(() => window.MotoRide.getState().sessionId), rideId);
   assert.equal(await page.evaluate(() => window.MotoRide.getState().bufferedSamples), 1);
   await page.locator('#menu').click();
-  await page.locator('#rideCenterNav').click();
+  if(await page.locator('#nav').evaluate(n=>n.classList.contains('open'))) await page.locator('#navClose').click();
+  await page.locator('#missionRideMode').click();
   assert.equal(await page.locator('#dashRideStatus').textContent(), 'RECORDING INTERRUPTED');
   assert.equal(await page.locator('#dashRideToggle').textContent(), 'RESUME RIDE');
   await page.locator('#dashClose').click();
@@ -78,9 +80,15 @@ try {
   await page.reload(); await page.locator('#nav').waitFor({state:'attached'});
   await page.waitForFunction(() => window.MotoRide?.getState().status === 'pending');
   await page.locator('#menu').click();
-  await page.locator('#rideCenterNav').click();
+  if(await page.locator('#nav').evaluate(n=>n.classList.contains('open'))) await page.locator('#navClose').click();
+  await page.locator('#missionRideMode').click();
   assert.equal(await page.locator('#dashRideStatus').textContent(), 'UPLOAD PENDING');
   assert.equal(await page.locator('#dashRideToggle').textContent(), 'RETRY UPLOAD');
+  const localDownload = page.waitForEvent('download');
+  await page.locator('[data-recovery="exportGPX"]').click();
+  const localGPX = await readFile(await (await localDownload).path(), 'utf8');
+  assert.equal((localGPX.match(/<trkpt /g) || []).length, 2, 'Offline GPX includes all local GPS fixes');
+  assert.equal((localGPX.match(/<time>/g) || []).length, 2, 'Offline GPX preserves recorded timestamps');
   await page.locator('#dashClose').click();
   writesAvailable = true;
   await page.evaluate(() => window.MotoRide.retry());

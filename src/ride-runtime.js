@@ -1,3 +1,4 @@
+import { recordedRideGPX, downloadGPX } from './gpx.js';
 import { supabase } from './supabase.js';
 import { rideJournal, configureRideJournal } from './ride-journal.js';
 import { RideRecorder } from './ride-recorder.js';
@@ -56,3 +57,14 @@ export async function exportLocalRide() {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 export { rideJournal };
+
+export async function exportLocalRideGPX() {
+  const owner=recorder.owner,id=recorder.ride?.id;
+  if(!owner||!id||recorder.recording)throw new Error('Stop recording before exporting a local GPX.');
+  const data=await rideJournal.export(owner,id);
+  if(recorder.owner!==owner||recorder.recording)throw new Error('Account or recording state changed.');
+  if(data.ride.acknowledged>0)throw new Error('Some samples have already uploaded. Use Rides / Review after synchronization to export the complete track.');
+  if(data.unsyncedSamples.length!==data.ride.sequence)throw new Error('Local track is incomplete. Keep the recovery copy and retry synchronization.');
+  const xml=recordedRideGPX(data.ride.bikeName,data.unsyncedSamples,data.ride.interruptions);
+  downloadGPX(xml,`moto-local-ride-${id}.gpx`);
+}

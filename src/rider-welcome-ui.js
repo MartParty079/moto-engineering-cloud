@@ -1,3 +1,4 @@
+import { mountRouteLibrary } from './route-library.js';
 import { supabase } from './supabase.js';
 
 const REMOVED_VIEWS = new Set(['roadmap', 'engineering', 'parts', 'pcb', 'firmware']);
@@ -69,11 +70,11 @@ function removeEngineeringNavigation() {
   });
 
   const intro = nav.querySelector('.navIntro');
-  const introMarkup = '<span>RIDER HUB</span><strong>Moto Mission</strong><small>Ride, maintain, and manage</small>';
+  const introMarkup = '<span>MOTO MISSION</span><strong>Prepare · Ride · Review</strong><small>Map · Routes · Rides · Bike · Settings</small>';
   if (intro && intro.innerHTML !== introMarkup) intro.innerHTML = introMarkup;
   setText(nav.querySelector('.navFooter small'), 'Ride · Maintain · Explore');
-  setText($('.brandCopy h1'), 'Marty Moto Party');
-  setText($('.brandCopy p'), 'Rider hub');
+  setText($('.brandCopy h1'), 'Moto Mission');
+  setText($('.brandCopy p'), 'Prepare · Ride · Review');
   const search = $('#globalSearch');
   if (search && search.placeholder !== 'Search motorcycles, rides, maintenance…') search.placeholder = 'Search motorcycles, rides, maintenance…';
 
@@ -103,9 +104,10 @@ function renderWelcome() {
   if (!$('#nav [data-v="dashboard"]')?.classList.contains('active') || !main || main.dataset.accessBlocked || main.querySelector('.motoWelcomePage')) return;
   const username = $('.userButton b')?.textContent?.trim() || 'Rider';
   main.innerHTML = `<section class="motoWelcomePage">
-    <div class="motoWelcomeHero"><div><span class="eyebrow">WELCOME BACK</span><h2>Ready to ride, ${esc(username)}?</h2><p>A place for your motorcycles, the miles ahead, and the details in between.</p></div><div class="motoWelcomeBadge"><span>🏍️</span><strong>Moto Mission</strong><small>Keep your next ride within reach.</small></div></div>
-    <div class="motoWelcomeActions"><button class="motoWelcomeAction" id="welcomeStartRide"><span class="icon">▶</span><strong>Start Ride</strong><small>Open the ride dashboard and begin GPS recording.</small></button><button class="motoWelcomeAction" id="welcomeAddMaintenance"><span class="icon">🔧</span><strong>Add Maintenance</strong><small>Log service, mileage, parts, cost, and notes.</small></button><button class="motoWelcomeAction" id="welcomeSettings"><span class="icon">⚙</span><strong>Settings</strong><small>Manage motorcycles, ride display, and account security.</small></button></div>
+    <div class="motoWelcomeHero"><div><span class="eyebrow">WELCOME BACK</span><h2>The miles ahead.</h2><p>Welcome back, ${esc(username)}. Explore the map, prepare a route, or enter Ride Mode to record with your phone.</p></div><div class="motoWelcomeBadge"><span>🏍️</span><strong>Moto Mission</strong><small>Phone GPS · Optional hardware disconnected</small></div></div>
+    <div class="motoWelcomeActions"><button class="motoWelcomeAction" id="missionOpenMap" type="button"><span class="icon">⌖</span><strong>Open Map</strong><small>Fullscreen map, location, layers, and saved tracks. Online tiles required.</small></button><button class="motoWelcomeAction" id="welcomeStartRide"><span class="icon">▶</span><strong>Start Ride</strong><small>Open the ride dashboard and begin GPS recording.</small></button><button class="motoWelcomeAction" id="welcomeAddMaintenance"><span class="icon">🔧</span><strong>Add Maintenance</strong><small>Log service, mileage, parts, cost, and notes.</small></button><button class="motoWelcomeAction" id="welcomeSettings"><span class="icon">⚙</span><strong>Settings</strong><small>Manage motorcycles, ride display, and account security.</small></button></div>
   </section>`;
+  $('#missionOpenMap').onclick = () => openMissionMap(false);
   $('#welcomeStartRide').onclick = () => { if (window.MotoRide?.open) window.MotoRide.open(); else window.dispatchEvent(new CustomEvent('moto-ride-open-request')); };
   $('#welcomeAddMaintenance').onclick = () => void openMaintenanceModal();
   $('#welcomeSettings').onclick = openSettingsModal;
@@ -231,3 +233,32 @@ function install() {
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install, { once: true });
 else install();
+
+
+function openMissionMap(routes) {
+  if (window.MotoRide?.getState?.().active) return toast('Return to Ride Mode while recording. Route setup is available after stopping.');
+  const bridge = window.MotoAdventure;
+  if (!bridge) return toast('Map tools are still loading. Try again.');
+  routes ? bridge.openRoutes() : bridge.openMap();
+}
+
+export function renderMissionArea(view, main) {
+  if (!['dashboard', 'routes', 'settings', 'devices'].includes(view)) return false;
+  if (main.dataset.accessBlocked) return true;
+  if (view === 'dashboard') renderWelcome();
+  if (view === 'routes') {
+    main.innerHTML = `<section class="missionPage"><header><span class="eyebrow">PREPARE</span><h2>Routes / GPX</h2><p>Prepare a saved track before entering Ride Mode.</p></header><article class="card"><h3>Your route workspace</h3><p>Import GPX, preview tracks and waypoints, manage saved routes, and export from the map workspace.</p><button id="missionRoutesOpen" class="primary" type="button">Open Routes / GPX</button></article><section id="missionRouteLibrary" class="missionRouteLibrary"></section><div class="missionCapabilityGrid"><article class="card"><span class="missionState">Online map</span><h3>Follow a saved track</h3><p>Track guidance uses existing geometry. It does not provide offline turn-by-turn routing.</p></article><article class="card"><span class="missionState">Unavailable</span><h3>Offline packages</h3><p>Downloadable routing graphs and local rerouting are planned. Cached map tiles do not establish offline routing coverage.</p></article><article class="card"><span class="missionState">Unavailable</span><h3>Weather along your route</h3><p>Arrival-time rain forecasts and three-day rainfall history are planned. Current point weather does not represent route coverage.</p></article></div></section>`;
+    main.querySelector('#missionRoutesOpen').onclick = () => openMissionMap(true);
+    void mountRouteLibrary(main.querySelector('#missionRouteLibrary'));
+  }
+  if (view === 'devices') {
+    main.innerHTML = `<section class="missionPage"><header><span class="eyebrow">BIKE / DEVICES</span><h2>Device status</h2><p>Phone-first riding with explicit measurement sources.</p></header><div class="missionCapabilityGrid"><article class="card"><span class="missionState">Phone source</span><h3>GPS recording</h3><p>Ride Mode uses the existing local GPS recorder. Location permission and a valid GPS fix are required. Continuous iOS background capture is not guaranteed.</p><button class="secondary" type="button" id="missionDeviceRide">Open Ride Mode</button></article><article class="card"><span class="missionState">Disconnected / experimental</span><h3>Motorcycle IMU / ESP32</h3><p>No production hardware transport is connected. Phone motion is not guaranteed chassis lean. Calibration and quality validation are required.</p></article><article class="card"><span class="missionState">Unavailable</span><h3>OBD diagnostics</h3><p>RPM, engine temperature, and fault diagnostics require a supported connected device. ECU writes and brake-light control are not enabled.</p></article></div></section>`;
+    main.querySelector('#missionDeviceRide').onclick = () => window.MotoRide?.open?.();
+  }
+  if (view === 'settings') {
+    main.innerHTML = `<section class="missionPage"><header><span class="eyebrow">SETTINGS / ADMIN</span><h2>Settings</h2><p>Invitation-only access. Guest and local-only accounts are deferred.</p></header><div class="missionCapabilityGrid"><article class="card"><h3>Rider preferences</h3><p>Manage motorcycles, the ride display, and account security.</p><button class="secondary" type="button" id="missionPreferences">Open preferences</button></article><article class="card"><h3>Security & MFA</h3><p>Review password, multi-factor verification, and sessions.</p><button class="secondary" type="button" id="missionSecurity">Open account security</button></article><article class="card"><span class="missionState">Preserved locally</span><h3>Ride data</h3><p>Interrupted rides remain recoverable on this device. Your saved rides are kept. Automatic detail reduction and selectable cloud backup categories are not yet available.</p></article></div><p class="muted">Authorized administrators can use the role-gated administration controls in the navigation menu.</p></section>`;
+    main.querySelector('#missionPreferences').onclick = openSettingsModal;
+    main.querySelector('#missionSecurity').onclick = () => { const button=$('#securityCenterNav'); if(button)button.click();else toast('Security settings are still loading.'); };
+  }
+  return true;
+}

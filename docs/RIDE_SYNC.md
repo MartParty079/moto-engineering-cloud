@@ -28,6 +28,6 @@ Broad owner update privileges remain: this is cooperative retry accounting, not 
 
 PGlite tests execute the copied schema: repeated migration, legacy rows/inserts, UUID retry deduplication, anonymous/unverified denial, owner isolation, count validation, repeated completion and late-failure rollback. Browser tests use actual Chromium IndexedDB with intercepted localhost-only requests, not real accounts.
 
-Recovery export includes metadata and unacknowledged samples; acknowledged samples are on the server. No import UI exists. Synced metadata remains local. Browser storage can be cleared/evicted and cannot ensure iOS background capture. Physical device/PWA testing remains necessary.
+JSON recovery export includes metadata and unacknowledged samples; acknowledged samples are on the server. The separate local GPX action requires stopped capture, at least two valid GPS fixes and no acknowledged samples, so it cannot silently produce a partial track. After synchronization, Rides / Review exports the complete track through bounded, owner-filtered pagination; capture gaps remain separate GPX segments. See GPX_WORKFLOW.md. No import UI exists. Synced metadata remains local. Browser storage can be cleared/evicted and cannot ensure iOS background capture. Physical device/PWA testing remains necessary.
 
 Keep pending journals and additive backend fields during updates. Prefer rolling forward. Never drop version/completion markers or RPC while clients can retry; export/reconcile pending data before a frontend downgrade.

@@ -108,3 +108,20 @@ main{padding:32px 36px 60px;max-width:1500px}.card,.item{background:linear-gradi
 @media(max-width:760px){.pcbStats{grid-template-columns:repeat(2,1fr)}.pcbBlockDiagram{grid-template-columns:1fr 1fr}.pcbNode.main{grid-column:1/-1}.pcbPinGrid{grid-template-columns:1fr}}
 
 .pcbHero .danger{background:var(--red);color:#220707}.field input[type='checkbox']{width:auto;margin-right:7px}
+
+/* PRD areas share the existing shell and domain owners. */
+.missionPage{display:grid;gap:22px;max-width:1180px;margin:auto;padding-bottom:32px}
+.missionPage h2{font-size:clamp(28px,5vw,44px);letter-spacing:-.04em;margin:8px 0}
+.missionPage p{line-height:1.6;color:var(--muted)}
+.missionCapabilityGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.missionCapabilityGrid .card{min-width:0}
+.missionState{display:inline-block;padding:6px 10px;border:1px solid #64748b;border-radius:20px;font-size:12px;color:#cbd5e1}
+#missionRideMode{min-height:44px;white-space:nowrap}
+@media(max-width:780px){.missionCapabilityGrid{grid-template-columns:1fr}.topActions .systemStatus{display:none}#missionRideMode{padding:10px;font-size:12px}.brandCopy h1{font-size:16px}}
+
+.missionMapFailure{position:absolute;top:30%;left:8%;right:8%;padding:24px;background:#101923;color:#f8fafc;border-radius:20px;line-height:1.6}
+
+#motoBottomNav button[hidden]{display:none!important}
+
+.missionRouteLibrary{display:grid;gap:14px}.missionRouteLibrary>header{display:flex;align-items:center;justify-content:space-between;gap:20px}.missionImport{position:relative;cursor:pointer;white-space:nowrap;display:inline-block;padding:12px;border:1px solid #64748b;border-radius:8px;min-height:44px;box-sizing:border-box}.missionImport input{position:absolute;inset:0;opacity:0;width:100%;cursor:pointer}.missionTrackPreview{display:block;width:100%;max-height:300px;margin:16px 0}.missionSavedRoute{margin-bottom:12px}.missionSavedRoute .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}.missionRouteFilter{display:grid;gap:8px}.missionRouteFilter input{width:100%}.missionRouteLibrary button{min-height:44px}.missionRouteLibrary input:focus-visible,.missionImport:focus-within{outline:2px solid #bcd58b;outline-offset:3px}
+@media(max-width:780px){.missionRouteLibrary>header{align-items:start;flex-direction:column}.missionSavedRoute .actions{display:grid;grid-template-columns:1fr}.missionSavedRoute small{overflow-wrap:anywhere}}

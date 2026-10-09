@@ -1,5 +1,5 @@
 import { supabase } from './supabase.js';
-import { recorder, subscribeRecorder, exportLocalRide } from './ride-runtime.js';
+import { recorder, subscribeRecorder, exportLocalRide, exportLocalRideGPX } from './ride-runtime.js';
 
 // Preserve the unified Ride OS interface while the journal owns capture and recovery.
 let bikes = [], rides = [], stopping = false, loadGeneration = 0;
@@ -73,7 +73,7 @@ window.MotoRide = {
   async resume() { await recorder.resume(); return publish(); },
   async retry() { await recorder.sync(); await refresh(); return publish(); },
   async discard() { await recorder.discard(); return publish(); },
-  export:exportLocalRide,
+  export:exportLocalRide, exportGPX:exportLocalRideGPX,
   open() { if (window.MotoRideDash?.open) window.MotoRideDash.open(); else window.dispatchEvent(new CustomEvent('moto-ride-open-request')); }
 };
 let lifecycle = '';

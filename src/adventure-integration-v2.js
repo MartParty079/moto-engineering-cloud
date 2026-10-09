@@ -40,8 +40,8 @@ function openAdventure(){
   nav.click();return true;
 }
 function openRoutes(){
-  if(!$('#adventureOverlay')){if(openAdventure())setTimeout(()=>$('#adventureOverlay [data-sheet="advGpxSheet"]')?.click(),500);return;}
-  $('#adventureOverlay [data-sheet="advGpxSheet"]')?.click();
+  if(!$('#adventureOverlay')){if(openAdventure())requestAnimationFrame(()=>$('#adventureOverlay [data-sheet="advRoutesSheet"]')?.click());return;}
+  $('#adventureOverlay [data-sheet="advRoutesSheet"]')?.click();
 }
 function openMap(){if(!$('#adventureOverlay'))openAdventure();}
 
@@ -77,6 +77,6 @@ function polishNav(){
 function scan(){polishNav();bindOverlay($('#adventureOverlay'));}
 const observer=new MutationObserver(mutations=>{if(mutations.some(m=>[...m.addedNodes].some(n=>n.nodeType===1&&(n.matches?.('#adventureOverlay,#adventureNav')||n.querySelector?.('#adventureOverlay,#adventureNav')))))scan();});
 observer.observe(document.body,{childList:true,subtree:true});
-window.MotoAdventure={open:openAdventure,openMap,openRoutes,returnToRide,close:()=>$('#closeAdventure')?.click(),getState:()=>activeRoute||routeFromUi()||{active:false,name:'No active route'}};
+window.MotoAdventure={openLocalRoute:id=>{window.MotoRideDash?.close?.();window.dispatchEvent(new CustomEvent('moto-local-route-open',{detail:{id}}))},open:openAdventure,openMap,openRoutes,returnToRide,close:()=>$('#closeAdventure')?.click(),getState:()=>activeRoute||routeFromUi()||{active:false,name:'No active route'}};
 if(activeRoute)queueMicrotask(()=>window.dispatchEvent(new CustomEvent('moto-route-update',{detail:activeRoute})));
 scan();

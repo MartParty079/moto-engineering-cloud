@@ -17,10 +17,10 @@ function loadRidePickerStability(){
 }
 
 function loadRideV20Fixes(){
-  loadStyleOnce('/src/ride-speed-cell.css?v=3','rideSpeedCell');
+  loadStyleOnce('/src/ride-speed-cell.css?v=4','rideSpeedCell');
   loadStyleOnce('/src/ride-layout-cleanup.css?v=1','rideLayoutCleanup');
   if(!window.__motoRideSpeedCellModule){
-    window.__motoRideSpeedCellModule=import('./ride-speed-cell.js?v=3').catch(error=>console.error('Adaptive speed cell failed to load',error));
+    window.__motoRideSpeedCellModule=import('./ride-speed-cell.js?v=4').catch(error=>console.error('Adaptive speed cell failed to load',error));
   }
   if(!window.__motoLeanRuntimeV2Module){
     window.__motoLeanRuntimeV2Module=import('./ride-lean-v2.js?v=1').catch(error=>console.error('Lean runtime v2 failed to load',error));

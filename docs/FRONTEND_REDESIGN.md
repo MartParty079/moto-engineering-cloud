@@ -8,4 +8,6 @@ The integration preserves newer main rather than restoring removed AI or enginee
 
 Ride Center uses a compact mode band and a gauge-first telemetry grid inspired by Torque's customizable dashboard. The existing widget editor, themes, ride controls and source labels remain. The retired split-speed patch no longer replaces the canonical speed gauge. Map layout takes a map-first approach inspired by onX Offroad: floating recenter/layer shortcuts, a saved-route search, a quieter navigation dock, and clear route sheets. Search covers the rider's saved routes and waypoint names; it does not claim a nationwide trail catalog or offline tile packs. Maps & Routes owns its header and heading rotation.
 
+The current-speed card keeps the speed reading centered in a circular gauge. Posted-limit and adaptive status appear in a separate, readable footer so they do not overlap the gauge at narrow widths. An unavailable limit remains marked with a dash.
+
 Desktop, tablet and 390px layouts are checked with synthetic fixtures and isolated sessions. Legacy observer/global CSS interactions remain candidates for later consolidation; no workflows are silently removed to simplify them.

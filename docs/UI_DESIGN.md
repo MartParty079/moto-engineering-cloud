@@ -42,4 +42,6 @@ Rollback restores the prior reviewed frontend after explicit authorization. Pres
 
 ## Local evidence
 
+Mobile header follow-up: the app's top bar uses an opaque theme background and disables both backdrop-filter and -webkit-backdrop-filter at widths up to 780px. This removes the blurred strip above scrolling phone content; header layout, controls and desktop appearance remain intact.
+
 Audit passed with 25 tests and the production build; all 45 recording static checks and `git diff --check` passed. The five Chromium suites passed: design, navigation/access, durable recording/recovery, GPX and PRD workflows. Design captures include both color modes, bike details and security, 320/390/1440px layouts, long plausible names, 200% root type and reduced motion. Key text contrast and absence of the old dark speed-panel gradient are asserted. No uncaught page errors or horizontal document overflow were observed. Screenshots use mocked accounts and do not establish physical iPhone or live-provider success. Existing warnings remain as noted above.

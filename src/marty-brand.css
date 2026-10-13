@@ -268,7 +268,8 @@ body .workspaceTools .actions{position:absolute;right:0;top:48px;z-index:5;width
 }
 @media(max-width:1000px){#app .top{gap:12px;padding-inline:20px;}#app .topSearch{max-width:300px;}#app .brand{min-width:180px;}}
 @media(max-width:780px){
-  #app .top{min-height:68px;height:auto;padding:0 max(12px,env(safe-area-inset-left));gap:8px;}
+  /* A solid mobile header avoids a blurred strip as content scrolls beneath it. */
+  #app .top{min-height:68px;height:auto;padding:0 max(12px,env(safe-area-inset-left));gap:8px;background:var(--bg)!important;backdrop-filter:none;-webkit-backdrop-filter:none;}
   #app .brand{min-width:0;gap:8px;flex:1;}
   #app .brandMark{display:none;}
   #app .brandCopy h1{font-size:.9rem;overflow:hidden;text-overflow:ellipsis;}

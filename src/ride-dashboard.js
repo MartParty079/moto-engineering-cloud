@@ -1,6 +1,7 @@
 const $ = q => document.querySelector(q);
 const esc = (s = '') => String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
 
+function parked(){const ride=window.MotoRide?.getState?.();return !ride?.active || Number.isFinite(ride.speedMph)&&ride.speedMph<=1&&Date.now()-ride.gpsTimestamp<15000;}
 const LAYOUT_STORE = 'motoRideDashLayoutV2';
 const LEGACY_LAYOUT_STORE = 'motoRideDashLayoutV1';
 const STYLE_STORE = 'motoRideDashStyleV1';
@@ -23,7 +24,8 @@ const themePresets = {
 };
 
 const defaults = [
-  {id:'street',name:'Ride',widgets:[['speed','xl'],['lean','small'],['cornerSpeed','small'],['maxLean','wide'],['road','wide'],['rideTime','small'],['distance','small'],['rides','hero']]},
+  {id:'street',name:'Navigation',widgets:[['speed','xl'],['lean','small'],['cornerSpeed','small'],['maxLean','wide'],['road','wide'],['rideTime','small'],['distance','small'],['rides','hero']]},
+  {id:'touring',name:'Touring',widgets:[['speed','wide'],['distance','small'],['rideTime','small'],['road','wide'],['weather','small'],['heading','small'],['rides','wide']]},
   {id:'performance',name:'Performance',widgets:[['speed','xl'],['lean','wide'],['cornerSpeed','small'],['maxLean','small'],['maxSpeed','small'],['avgSpeed','small'],['accel','small'],['heading','small'],['rides','wide']]},
   {id:'bike',name:'Bike',widgets:[['bike','wide'],['distance','small'],['rideTime','small'],['range','small'],['gps','small'],['placeholder','wide'],['rides','wide']]}
 ];
@@ -64,10 +66,11 @@ const themeLayouts = {
 const catalog = {
   speed:{label:'Speed',cat:'Ride'},distance:{label:'Distance',cat:'Ride'},rideTime:{label:'Ride Time',cat:'Ride'},avgSpeed:{label:'Average Speed',cat:'Ride'},maxSpeed:{label:'Max Speed',cat:'Ride'},rides:{label:'Ride History',cat:'Ride'},
   road:{label:'Road',cat:'Road'},limit:{label:'Speed Limit',cat:'Road'},heading:{label:'Heading',cat:'GPS'},altitude:{label:'Altitude',cat:'GPS'},gps:{label:'GPS Status',cat:'GPS'},weather:{label:'Weather',cat:'Weather'},
-  range:{label:'Fuel Range',cat:'Adventure'},map:{label:'Adventure Map',cat:'Adventure'},lean:{label:'Lean Angle',cat:'Performance'},maxLean:{label:'Maximum Lean',cat:'Performance'},cornerSpeed:{label:'Corner Average',cat:'Performance'},accel:{label:'Acceleration',cat:'Performance'},
-  bike:{label:'Motorcycle',cat:'Bike'},placeholder:{label:'Future ESP Gauges',cat:'Bike'}
+  range:{label:'Fuel Range',cat:'Adventure'},map:{label:'Adventure Map',cat:'Adventure'},lean:{label:'Phone lean estimate',cat:'Performance'},maxLean:{label:'Maximum phone lean estimate',cat:'Performance'},cornerSpeed:{label:'Corner Average',cat:'Performance'},accel:{label:'Acceleration',cat:'Performance'},
+  bike:{label:'Motorcycle',cat:'Bike'},placeholder:{label:'Phone data sources',cat:'Bike'}
 };
 
+let layoutOrientation = innerWidth > innerHeight ? 'landscape' : 'portrait';
 let layout = loadLayout();
 let style = loadStyle();
 let edit = false;
@@ -84,7 +87,7 @@ function clone(value){
 
 function loadLayout(){
   try{
-    const saved = JSON.parse(localStorage.getItem(LAYOUT_STORE));
+    const saved = JSON.parse(localStorage.getItem(`${LAYOUT_STORE}:${layoutOrientation}`) || localStorage.getItem(LAYOUT_STORE));
     if(Array.isArray(saved) && saved.length) return saved;
   }catch{}
   try{
@@ -100,8 +103,8 @@ function loadLayout(){
 }
 
 function loadStyle(){
-  const preset = themePresets.future;
-  const base = {theme:'future',accent:preset.accent,density:preset.density,gauge:preset.gauge,shape:preset.shape,surface:preset.surface,glow:preset.glow,texture:preset.texture,labels:preset.labels};
+  const preset = themePresets.simple;
+  const base = {theme:'simple',accent:preset.accent,density:preset.density,gauge:preset.gauge,shape:preset.shape,surface:preset.surface,glow:preset.glow,texture:preset.texture,labels:preset.labels};
   try{
     const saved = JSON.parse(localStorage.getItem(STYLE_STORE));
     if(saved && typeof saved === 'object') return {...base,...saved};
@@ -109,7 +112,7 @@ function loadStyle(){
   return base;
 }
 
-function saveLayout(){ localStorage.setItem(LAYOUT_STORE,JSON.stringify(layout)); }
+function saveLayout(){ localStorage.setItem(`${LAYOUT_STORE}:${layoutOrientation}`,JSON.stringify(layout)); }
 function saveStyle(){ localStorage.setItem(STYLE_STORE,JSON.stringify(style)); }
 function setText(element,value){ if(element && element.textContent !== value) element.textContent = value; }
 
@@ -150,14 +153,14 @@ function open(){
       <div class="dashBrand"><small>MOTO MISSION · UNIFIED RIDE SYSTEM</small><h2>Ride</h2></div>
       <div class="dashHeaderActions">
         <button id="dashAdventure" type="button" title="Open Adventure Mode" aria-label="Open Adventure Mode">ADV</button>
-        <button id="dashStyle" type="button">STYLE</button>
+        <button id="dashMedia" type="button">MEDIA / VOICE</button><button id="dashStyle" type="button">STYLE</button>
         <button id="dashEdit" type="button">EDIT</button>
         <button id="dashClose" type="button" aria-label="Close">×</button>
       </div>
     </header>
     <div class="dashRideControl" id="dashRideControl">
       <div class="dashRideIdentity"><span id="dashRideDot"></span><div><small id="dashRideStatus">NOT RECORDING</small><strong id="dashRideBike">Select a motorcycle to begin</strong></div></div>
-      <button id="dashRideToggle" type="button">START RIDE</button>
+      <button id="dashRideToggle" type="button">START RIDE</button><button id="dashPauseRide" type="button" hidden>PAUSE</button>
     </div>
     <div class="dashTabs" id="dashTabs"></div>
     <div id="dashRecovery" role="status" hidden></div>
@@ -170,6 +173,8 @@ function open(){
   $('#dashClose').onclick = () => close(true);
   $('#dashAdventure').onclick = openAdventure;
   $('#dashStyle').onclick = openStylePicker;
+  $('#dashMedia').onclick = async()=>{try{const {openMedia}=await import('./media-bridge.js');await openMedia()}catch(error){alert(error.message)}};
+  overlay.addEventListener('click',event=>{if(event.target.closest('#dashEdit,#dashStyle,#dashAddPage,[data-rename],[data-add],[data-delete-page],[data-remove],[data-size],[data-left],[data-right]')&&!parked()){event.preventDefault();event.stopImmediatePropagation();alert('Stop safely before changing cockpit layout.');}},true);
   $('#dashEdit').onclick = () => {
     edit = !edit;
     overlay.classList.toggle('editing',edit);
@@ -177,6 +182,7 @@ function open(){
     render();
   };
   $('#dashRideToggle').onclick = toggleRide;
+  $('#dashPauseRide').onclick = async () => { try { await window.MotoRide.pause(); } catch(error) { alert(error.message); } };
   $('#dashRecovery').onclick = async event => {
     const action = event.target.closest('[data-recovery]')?.dataset.recovery;
     if (!action || rideActionBusy) return;
@@ -242,6 +248,11 @@ function render(){
   pages.querySelectorAll('[data-left]').forEach(button => button.onclick = () => moveWidget(+button.dataset.p,+button.dataset.w,-1));
   pages.querySelectorAll('[data-right]').forEach(button => button.onclick = () => moveWidget(+button.dataset.p,+button.dataset.w,1));
 
+  pages.querySelectorAll('[draggable="true"]').forEach(widget=>{
+    widget.ondragstart=event=>{if(!parked()){event.preventDefault();return;}event.dataTransfer.setData('text/plain',`${widget.dataset.layoutPage}:${widget.dataset.layoutWidget}`)};
+    widget.ondragover=event=>{if(parked())event.preventDefault()};
+    widget.ondrop=event=>{event.preventDefault();if(!parked())return;const [page,index]=event.dataTransfer.getData('text/plain').split(':').map(Number),target=Number(widget.dataset.layoutWidget);if(!Number.isInteger(page)||!Number.isInteger(index)||page!==Number(widget.dataset.layoutPage)||!layout[page]?.widgets[index])return;const items=layout[page].widgets;items.splice(target,0,items.splice(index,1)[0]);saveLayout();render();};
+  });
   refresh(true);
   dots();
   window.dispatchEvent(new CustomEvent('moto-ride-dash-rendered',{detail:{overlay:$('#rideDashOverlay'),pages,tabs}}));
@@ -250,7 +261,7 @@ function render(){
 function widget(item,pageIndex,widgetIndex){
   const [type,size = 'small'] = item;
   const info = catalog[type] || {label:type};
-  return `<article class="dashWidget size-${size} widget-${esc(type)}" data-widget="${esc(type)}">
+  return `<article class="dashWidget size-${size} widget-${esc(type)}" data-widget="${esc(type)}" data-layout-page="${pageIndex}" data-layout-widget="${widgetIndex}" draggable="${edit}">
     <small class="dashWidgetLabel">${esc(info.label)}</small>
     <div class="dashValue" data-value="${esc(type)}">--</div>
     ${edit ? `<div class="widgetEdit"><button data-left data-p="${pageIndex}" data-w="${widgetIndex}">←</button><button data-size data-p="${pageIndex}" data-w="${widgetIndex}">SIZE</button><button data-right data-p="${pageIndex}" data-w="${widgetIndex}">→</button><button data-remove data-p="${pageIndex}" data-w="${widgetIndex}">×</button></div>` : ''}
@@ -343,7 +354,7 @@ function openStylePicker(){
     modal.remove();
   };
   modal.querySelector('#dashResetStyle').onclick = () => {
-    const preset = themePresets.future;
+    const preset = themePresets.simple;
     style = {theme:'future',accent:preset.accent,density:preset.density,gauge:preset.gauge,shape:preset.shape,surface:preset.surface,glow:preset.glow,texture:preset.texture,labels:preset.labels};
     saveStyle();
     applyStyle();
@@ -416,12 +427,12 @@ async function toggleRide(){
   const controller = window.MotoRide;
   if(!controller){ alert('Ride logger is still loading. Try again in a moment.'); return; }
   const ride = controller.getState?.() || state.ride || {};
-  if(!ride.active && !['interrupted','pending'].includes(ride.status)){ showRidePicker(); return; }
+  if(!ride.active && !['interrupted','paused','pending'].includes(ride.status)){ showRidePicker(); return; }
   if(ride.active && !confirm('Stop and save this ride?')) return;
   rideActionBusy = true;
   refresh(true);
   try{
-    if (ride.status === 'interrupted') await controller.resume();
+    if (['interrupted','paused'].includes(ride.status)) await controller.resume();
     else if (ride.status === 'pending') await controller.retry();
     else await controller.stop();
   }catch(error){
@@ -446,6 +457,7 @@ function renderRideControl(){
   const active = Boolean(ride.active);
   const starting = Boolean(ride.starting);
   control.classList.toggle('recording',active);
+  if ($('#dashPauseRide')) $('#dashPauseRide').hidden = !active;
   control.classList.toggle('starting',starting || rideActionBusy);
   dot.classList.toggle('live',active);
   setText(status,active ? 'RECORDING' : starting ? 'STARTING LOGGER' : ride.gpsError ? 'GPS NEEDS ATTENTION' : 'SYSTEM READY');
@@ -455,16 +467,16 @@ function renderRideControl(){
   if(active && !runtime.rideWasActive) resetRuntime();
   runtime.rideWasActive = active;
   const recovery = $('#dashRecovery');
-  const recoverable = ['interrupted','pending'].includes(ride.status);
+  const recoverable = ['interrupted','paused','pending'].includes(ride.status);
   if (recovery) {
     recovery.hidden = !recoverable;
-    const text = recoverable ? `<p>${esc(ride.error || (ride.status === 'interrupted' ? 'This recording was interrupted. Resume capture or finish with the samples saved on this device.' : 'Saved on this device. Keep this browser data until upload is confirmed.'))}</p><div>${ride.status === 'interrupted' ? '<button data-recovery="stop">Finish & upload</button>' : ''}<button data-recovery="export">Export recovery copy</button><button data-recovery="exportGPX">Export local GPX</button>${!ride.completionRequested ? '<button data-recovery="discard">Discard local ride</button>' : ''}</div>` : '';
+    const text = recoverable ? `<p>${esc(ride.error || (['interrupted','paused'].includes(ride.status) ? 'Capture is paused or interrupted. Resume capture or finish with the samples saved on this device.' : 'Saved on this device. Keep this browser data until upload is confirmed.'))}</p><div>${['interrupted','paused'].includes(ride.status) ? '<button data-recovery="stop">Finish & upload</button>' : ''}<button data-recovery="export">Export recovery copy</button><button data-recovery="exportGPX">Export local GPX</button>${!ride.completionRequested ? '<button data-recovery="discard">Discard local ride</button>' : ''}</div>` : '';
     if (recovery.innerHTML !== text) recovery.innerHTML = text;
   }
   if (recoverable) {
-    setText(status,ride.status === 'interrupted' ? 'RECORDING INTERRUPTED' : 'UPLOAD PENDING');
+    setText(status,['interrupted','paused'].includes(ride.status) ? (ride.status === 'paused' ? 'RECORDING PAUSED' : 'RECORDING INTERRUPTED') : 'UPLOAD PENDING');
     setText(bike,ride.bikeName || 'Motorcycle');
-    setText(toggle,ride.syncing || rideActionBusy ? 'WORKING…' : ride.status === 'interrupted' ? 'RESUME RIDE' : 'RETRY UPLOAD');
+    setText(toggle,ride.syncing || rideActionBusy ? 'WORKING…' : ['interrupted','paused'].includes(ride.status) ? 'RESUME RIDE' : 'RETRY UPLOAD');
     toggle.disabled = ride.syncing || rideActionBusy || starting;
   }
 }
@@ -569,7 +581,7 @@ function value(type){
   switch(type){
     case 'speed':{
       const percent = Math.min(100,speed / 160 * 100);
-      return `<div class="dashSpeedGauge" style="--speed-pct:${percent}%;--speed-sweep:${percent * .75}%"><div class="dashGaugeTicks"></div><div class="dashSpeedNumber">${Math.round(speed)}</div><span>MPH</span><i>0</i><i>160</i></div>`;
+      return `<div class="dashSpeedGauge" style="--speed-pct:${percent}%;--speed-sweep:${percent * .75}%"><div class="dashGaugeTicks"></div><div class="dashSpeedNumber">${Number.isFinite(ride.speedMph ?? gps.speed)?Math.round(speed):'--'}</div><span>MPH</span><i>0</i><i>160</i></div>`;
     }
     case 'distance':return `${Number(ride.distanceMiles ?? 0).toFixed(2)} <span>mi</span>`;
     case 'rideTime':return ride.elapsedText || '00:00:00';
@@ -583,18 +595,19 @@ function value(type){
     case 'weather':return `${weather.temperature ?? weather.temp ?? '--'}° <span>${weather.rainChance ?? weather.rain ?? '--'}% rain</span>`;
     case 'range':return `${localStorage.getItem('motoEstimatedRange') || '--'} <span>mi</span>`;
     case 'lean':{
+      if(!state.lean?.calibrated||!Number.isFinite(state.lean?.lean))return '-- <span>Phone IMU uncalibrated / unavailable</span>';
       const direction = lean < -0.5 ? 'LEFT' : lean > 0.5 ? 'RIGHT' : 'CENTER';
       const percent = Math.min(100,Math.abs(lean) / 50 * 100);
       const side = lean < 0 ? -1 : 1;
       return `<div class="dashLeanGauge" style="--lean-pct:${percent}%;--lean-offset:${side * percent * .36}%;--lean-angle:${side * percent * .32}deg"><div><strong>${Math.round(Math.abs(lean))}°</strong><span>${direction}</span></div></div>`;
     }
-    case 'maxLean':return `<div class="dashDualMetric"><span><small>LEFT</small><strong>${Math.round(runtime.maxLeanLeft)}°</strong></span><i></i><span><small>RIGHT</small><strong>${Math.round(runtime.maxLeanRight)}°</strong></span></div>`;
-    case 'cornerSpeed':return `${runtime.cornerSamples ? Math.round(runtime.cornerSpeedSum / runtime.cornerSamples) : 0} <span>mph</span>`;
-    case 'accel':return `${Number(state.lean?.accel || 0).toFixed(2)} <span>g</span>`;
+    case 'maxLean':if(!state.lean?.calibrated)return '--';return `<div class="dashDualMetric"><span><small>LEFT</small><strong>${Math.round(runtime.maxLeanLeft)}°</strong></span><i></i><span><small>RIGHT</small><strong>${Math.round(runtime.maxLeanRight)}°</strong></span></div>`;
+    case 'cornerSpeed':if(!state.lean?.calibrated)return '--';return `${runtime.cornerSamples ? Math.round(runtime.cornerSpeedSum / runtime.cornerSamples) : 0} <span>mph</span>`;
+    case 'accel':if(!Number.isFinite(state.lean?.accel))return '--';return `${Number(state.lean?.accel || 0).toFixed(2)} <span>g</span>`;
     case 'bike':return `<strong class="dashBikeName">${esc(ride.bikeName || 'Select a motorcycle')}</strong><span class="dashBikeStatus">${ride.active ? 'ACTIVE RIDE' : 'READY'}</span>`;
     case 'map':return `<button class="dashMapPreview dashOpenAdventure"><span class="dashTopo"></span><svg viewBox="0 0 320 130" preserveAspectRatio="none" aria-hidden="true"><path class="route-shadow" d="M8,111 C45,93 49,51 92,62 S140,119 174,76 S232,18 312,34"/><path class="route-line" d="M8,111 C45,93 49,51 92,62 S140,119 174,76 S232,18 312,34"/></svg><span class="dashMapPin"></span><strong>OPEN FULL ADVENTURE MODE</strong><small>Terrain · heading lock · route tools</small></button>`;
     case 'rides':return rideCards();
-    case 'placeholder':return '<span>RPM · TEMP · VOLTAGE<br>Ready for ESP integration</span>';
+    case 'placeholder':return '<span>Phone GPS · optional phone motion<br>Motorcycle data excluded</span>';
     default:return '--';
   }
 }
@@ -631,7 +644,16 @@ function scheduleRefresh(force = false){
   },wait);
 }
 
-window.addEventListener('moto-ride-state',event => { state.ride = event.detail; scheduleRefresh(); });
+window.addEventListener('moto-ride-state',event => {
+  state.ride = event.detail;
+  if(!parked()){
+    $('#dashStylePicker')?.remove();$('#dashPicker')?.remove();
+    if(edit){edit=false;$('#rideDashOverlay')?.classList.remove('editing');setText($('#dashEdit'),'EDIT');render();}
+  }
+  for(const id of ['dashEdit','dashStyle','dashAddPage'])if($('#'+id))$('#'+id).disabled=!parked();
+  scheduleRefresh();
+});
+window.addEventListener('resize',()=>{const next=innerWidth>innerHeight?'landscape':'portrait';if(next!==layoutOrientation){layoutOrientation=next;layout=loadLayout();if($('#rideDashOverlay'))render();}});
 window.addEventListener('moto-rides-update',event => { state.rides = Array.isArray(event.detail) ? event.detail : []; scheduleRefresh(); });
 window.addEventListener('moto-gps-fix',event => { state.gps = event.detail; scheduleRefresh(); });
 window.addEventListener('moto-road-update',event => { state.road = event.detail; scheduleRefresh(); });

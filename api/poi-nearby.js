@@ -232,7 +232,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid coordinates' });
   }
 
-  if (process.env.GOOGLE_PLACES_API_KEY) {
+  if (PAID_PROVIDERS_ENABLED && process.env.GOOGLE_PLACES_API_KEY) {
     const quota = await consumePlacesRequest(authorization).catch(() => ({ allowed: false, reason: 'Usage counter unavailable' }));
     if (quota.allowed) {
       try {
@@ -257,7 +257,7 @@ export default async function handler(req, res) {
       attempts.push(`Google Places: ${quota.reason || 'monthly cap reached'}`);
     }
   } else {
-    attempts.push('Google Places: key not configured');
+    attempts.push(PAID_PROVIDERS_ENABLED?'Google Places: key not configured':'Google Places: disabled for free-only beta');
   }
 
   try {
@@ -275,3 +275,4 @@ export default async function handler(req, res) {
     return res.status(502).json({ error: 'Nearby place lookup failed', details: attempts });
   }
 }
+import { PAID_PROVIDERS_ENABLED } from '../server/provider-policy.js';

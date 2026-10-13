@@ -42,13 +42,13 @@ try{
   },gpx);
   assert.deepEqual(parserChecks.rejected,[true,true,true,true,true]);assert.equal(parserChecks.count,4);assert.equal(parserChecks.segments,2);assert.ok(parserChecks.distance<1,'Do not connect separate GPX segments');assert.equal(parserChecks.zeroElevation,0);
   await page.locator('#missionGpxInput').setInputFiles({name:'original.gpx',mimeType:'application/gpx+xml',buffer:Buffer.from(gpx)});
-  await page.locator('#missionSaveGpx').waitFor();assert.equal(await page.locator('#missionGpxPreview polyline').count(),2);
+  await page.locator('#missionSaveGpx').waitFor();assert.equal(await page.locator('#missionGpxPreview .missionTrackPreview polyline').count(),2);
   await page.screenshot({path:join(out,'import-desktop.png'),fullPage:true});
   await page.locator('#missionSaveGpx').click();await page.locator('.missionSavedRoute').waitFor();
   await page.reload();await page.locator('.missionSavedRoute').waitFor();
   const originalDownload=page.waitForEvent('download');await page.locator('[data-route-original]').click();const original=await originalDownload;assert.equal(await readFile(await original.path(),'utf8'),gpx);
   await page.locator('#missionRouteSearch').fill('Start');assert.equal(await page.locator('.missionSavedRoute').count(),1);
-  await page.setViewportSize({width:390,height:844});await page.locator('[data-route-preview]').click();await page.locator('#missionGpxPreview svg').waitFor();assert.equal(await page.locator('#missionGpxPreview polyline').count(),2);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+  await page.setViewportSize({width:390,height:844});await page.locator('[data-route-preview]').click();await page.locator('#missionGpxPreview .missionTrackPreview').waitFor();assert.equal(await page.locator('#missionGpxPreview .missionTrackPreview polyline').count(),2);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
   await page.screenshot({path:join(out,'library-mobile.png'),fullPage:true});
   // A test renderer records calls; no real tile/provider or map capability is implied.
   await page.evaluate(()=>{

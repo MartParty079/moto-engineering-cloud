@@ -212,6 +212,7 @@ function enhanceCard(card, bike) {
   card.tabIndex = 0;
   card.setAttribute('role', 'link');
   card.setAttribute('aria-label', `Open ${bike.name || bikeLabel(bike)} Garage Center`);
+  card.classList.toggle('has-bike-photo',Boolean(bike.image_url));
   card.style.setProperty('--bike-card-image', cssImage(bike.image_url));
 
   const host = card.querySelector(':scope > div') || card;

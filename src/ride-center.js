@@ -10,12 +10,14 @@ function rideState() {
   const elapsed = ride ? Math.max(0, Math.floor(((ride.stoppedAt || Date.now()) - ride.startedAt) / 1000)) : 0;
   return {
     active: recorder.recording, recording: recorder.recording, starting: recorder.starting, stopping, syncing: recorder.syncing,
-    status: ride ? (recorder.recording ? 'recording' : ride.status === 'recording' ? 'interrupted' : ride.status) : 'idle',
+    status: ride ? (recorder.recording ? 'recording' : ride.status === 'recording' ? (ride.pausedAt != null ? 'paused' : 'interrupted') : ride.status) : 'idle',
     bikeId: ride?.bike.id || null, bikeName: ride?.bikeName || null, sessionId: ride?.id || null,
     elapsedSeconds: elapsed, elapsedText: `${String(Math.floor(elapsed / 3600)).padStart(2,'0')}:${String(Math.floor(elapsed % 3600 / 60)).padStart(2,'0')}:${String(elapsed % 60).padStart(2,'0')}`,
+    captureSeconds: ride ? Math.max(0,Math.floor(((ride.stoppedAt || ride.pausedAt || Date.now()) - ride.startedAt - (ride.pausedMs || 0))/1000)) : 0,
     distanceMiles: ride?.distanceMiles || 0, speedMph: point.speed ?? null,
     averageSpeedMph: ride?.speedCount ? ride.speedSum / ride.speedCount : 0, maxSpeedMph: ride?.maxSpeedMph || 0,
     heading: point.heading ?? null, altitudeFt: ft(point.altitude), accuracyFt: ft(point.accuracy),
+    gpsTimestamp: point.timestamp ?? null,
     latitude: point.latitude ?? null, longitude: point.longitude ?? null, gpsLocked: Boolean(ride?.latest),
     gpsError: recorder.error || null, error: recorder.error, bufferedSamples: ride ? ride.sequence - ride.acknowledged : 0,
     completionRequested: Boolean(ride?.completionRequested)
@@ -70,15 +72,16 @@ window.MotoRide = {
   getState:rideState, getBikes:() => bikes.map(bike => ({id:bike.id,name:bikeName(bike),odometer:Number(bike.odometer || 0)})),
   getRides:rideHistory, refresh, stop,
   async start(id) { const bike = bikes.find(item => String(item.id) === String(id)); if (!bike) throw new Error('Choose a motorcycle from your garage.'); await recorder.start(bike); return publish(); },
+  async pause() { await recorder.pause(); return publish(); },
   async resume() { await recorder.resume(); return publish(); },
-  async retry() { await recorder.sync(); await refresh(); return publish(); },
+  async retry() { await recorder.sync({manual:true}); await refresh(); return publish(); },
   async discard() { await recorder.discard(); return publish(); },
   export:exportLocalRide, exportGPX:exportLocalRideGPX,
   open() { if (window.MotoRideDash?.open) window.MotoRideDash.open(); else window.dispatchEvent(new CustomEvent('moto-ride-open-request')); }
 };
 let lifecycle = '';
 subscribeRecorder(() => {
-  const next = [recorder.owner,recorder.recording,recorder.starting,recorder.syncing,recorder.ride?.status,recorder.error].join('|');
+  const next = [recorder.owner,recorder.recording,recorder.starting,recorder.syncing,recorder.ride?.status,recorder.ride?.pausedAt,recorder.error].join('|');
   if (next !== lifecycle) { lifecycle = next; publish(); }
 });
 setInterval(() => { if (recorder.recording) publish(); },1000);

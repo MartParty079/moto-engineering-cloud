@@ -80,7 +80,7 @@ function smartStrip(){
     <button class="rideXModeSummary" data-ridex="modes" type="button">${icon(modes[mode].icon)}<span><small>RIDE MODE</small><strong>${esc(modes[mode].name)}</strong></span></button>
     <button class="rideXCompliance" data-ridex="speed" type="button" style="--adaptive:${c.color}"><span class="rideXComplianceRing" style="--ratio:${Math.min(1.25,c.ratio||0)}"><b>${Math.round(speed())}</b><small>MPH</small></span><span><small>${max?`${max} MPH LIMIT`:'ROAD CONTEXT'}</small><strong>${esc(c.label)}</strong></span></button>
     <button class="rideXRoute" data-ridex="routes" type="button">${icon('route')}<span><small>ROUTE</small><strong>${esc(r.name||'Choose route')}</strong></span></button>
-    <button class="rideXFuel" data-ridex="fuel" type="button" style="--fuel:${f.percent}%">${icon('fuel')}<span><small>FUEL RANGE</small><strong>${Math.round(f.remaining)} MI · ${Math.round(f.percent)}%</strong></span></button>
+    <button class="rideXFuel" data-ridex="fuel" type="button" style="--fuel:${f.percent}%">${icon('fuel')}<span><small>FUEL RANGE</small><strong>${f.updatedAt?`${Math.round(f.remaining)} mi · ${Math.round(f.percent)}%`:'Set estimate'}</strong></span></button>
   </div>`;
 }
 

@@ -18,16 +18,9 @@ main.js imports the area renderer through its existing domain owner. No independ
 
 Maintenance, Garage Mode, notes and project files remain secondary tools. Dormant engineering implementations and stored records are preserved; removed AI/engineering navigation is not reintroduced.
 
-## Remaining PRD delivery gates
+## Feature continuation
 
-- Map opens fullscreen from its launch page; map rendering still requires online external resources. No tile caching establishes licensed routable regional coverage.
-- GPX originals now persist locally as immutable files with previews and exact downloads. Existing cloud route editing remains available; new imports stay on this device. Derivative editing, cloud synchronization of originals and large regional routing graphs remain deferred. See GPX_WORKFLOW.md.
-- True offline local rerouting, turn instructions and provider licensing remain unresolved. Do not advertise downloaded route coverage.
-- Route-time weather, previous three full local days and rolling 72h rainfall, uncertainty and surface estimates are unavailable. Existing point weather is not equivalent.
-- Provider-side accounting and atomic quota reservations need a separate backend design and concurrency proof. This change makes no zero-overage guarantee.
-- Ten-ride retention, pinning and summary/aggregate verification must be implemented before any automatic cleanup. This rebuild reduces no data.
-- Device adapters, calibrated chassis lean, OBD diagnostics and native media/background capabilities remain unavailable or experimental. No safety-critical actuation is authorized.
-- Presets and widgets use current Ride OS controls; orientation-specific parked customization and moving-task locking still require dedicated acceptance tests.
+The 2026-10-09 implementation and remaining requirement gates are tracked in [PRD_DELIVERY.md](PRD_DELIVERY.md). This supersedes the original deferred-feature list. ECU data/controls are excluded and guest/local accounts remain deferred. Current changes are local and have not been deployed.
 
 ## Validation and release
 

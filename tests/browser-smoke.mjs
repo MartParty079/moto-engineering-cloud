@@ -82,7 +82,7 @@ try {
   await page.screenshot({path:join(out,'home-tablet.png'),fullPage:true});
   await page.setViewportSize({width:390,height:844});
   await page.screenshot({path:join(out,'home-mobile.png'),fullPage:true});
-  for (const [target,heading] of [['routes','Routes / GPX'],['rides','Ride Log'],['garage','Motorcycles'],['settings','Settings']]) {
+  for (const [target,heading] of [['routes','Routes / GPX'],['rides','Your rides'],['garage','Motorcycles'],['settings','Settings']]) {
     await page.locator(`#motoBottomNav [data-go="${target}"]`).click();
     await page.locator('#main').getByRole('heading',{name:heading,exact:true}).waitFor();
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`${target} must fit mobile`);

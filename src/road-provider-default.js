@@ -1,10 +1,7 @@
 const providerKey = 'motoRoadProvider';
-const migrationKey = 'motoRoadProviderAutoDefaultV1';
+const migrationKey = 'motoRoadProviderFreeBetaV1';
 
 if (!localStorage.getItem(migrationKey)) {
-  const currentProvider = localStorage.getItem(providerKey);
-  if (!currentProvider || currentProvider === 'osm') {
-    localStorage.setItem(providerKey, 'auto');
-  }
+  localStorage.setItem(providerKey, 'osm');
   localStorage.setItem(migrationKey, '1');
 }

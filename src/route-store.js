@@ -1,4 +1,4 @@
-import { validTrackPoint, MAX_GPX_BYTES, MAX_GPX_POINTS } from './gpx.js';
+import { validTrackPoint, MAX_GPX_BYTES, MAX_GPX_POINTS, serializeGPX } from './gpx.js';
 
 export class RouteStore {
   constructor(project) { this.name=`moto-route-library-v1:${new URL(project).origin}`;this.connection=null; }
@@ -33,6 +33,26 @@ export class RouteStore {
     return this.transaction(owner,'readwrite',(tx,done)=>{
       // Add-only storage keeps the original separate and immutable. No automatic cleanup exists.
       tx.objectStore('routes').add(record);tx.objectStore('geometry').add({owner,id,segments:parsed.segments,waypoints:parsed.waypoints});tx.objectStore('originals').add({owner,id,file:original});done(record);
+    });
+  }
+  async derive(owner, sourceIds, name, parsed, operation) {
+    if (!Array.isArray(sourceIds) || !sourceIds.length || sourceIds.some(id => typeof id !== 'string')) throw new Error('A source route is required.');
+    const file = new Blob([serializeGPX({name, ...parsed})], {type:'application/gpx+xml'});
+    if (file.size > MAX_GPX_BYTES) throw new Error('Edited GPX exceeds the 10 MB limit.');
+    const id = crypto.randomUUID(), filename = `${name.replace(/[\\/:*?"<>|]/g,'-') || 'edited-route'}.gpx`;
+    return this.transaction(owner, 'readwrite', (tx, done, fail) => {
+      let remaining = sourceIds.length;
+      for (const sourceId of sourceIds) {
+        const request = tx.objectStore('routes').get([owner,sourceId]);
+        request.onsuccess = () => {
+          if (!request.result) return fail(new Error('Source route does not belong to this account.'));
+          if (--remaining) return;
+          const record = {owner,id,name,filename,kind:'track',pointCount:parsed.pointCount,segmentCount:parsed.segments.length,waypointCount:parsed.waypoints.length,waypointNames:parsed.waypoints.map(p=>p.name||''),distanceMiles:parsed.distanceMiles,gainFeet:parsed.gainFeet,createdAt:Date.now(),bytes:file.size,sourceIds:[...sourceIds],operation,version:1};
+          tx.objectStore('routes').add(record);
+          tx.objectStore('geometry').add({owner,id,segments:parsed.segments,waypoints:parsed.waypoints});
+          tx.objectStore('originals').add({owner,id,file});done(record);
+        };
+      }
     });
   }
   list(owner) { return this.transaction(owner,'readonly',(tx,done)=>{const req=tx.objectStore('routes').index('owner').getAll(owner);req.onsuccess=()=>done(req.result.sort((a,b)=>b.createdAt-a.createdAt))}); }

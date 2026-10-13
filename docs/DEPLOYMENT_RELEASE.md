@@ -25,3 +25,17 @@ Keep additive schema during frontend rollback. Never drop completion markers/RPC
 - Post-migration security advisor retains the existing warnings described above. Remediation references: https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable and https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection.
 - Local audit: 11 tests, syntax/interactions and Vite build pass. Recording architecture: 45 checks pass. Both isolated browser suites pass; screenshots inspected at desktop and 390px.
 - PR #77 opened against main. Initial GitHub audit job and Vercel preview build passed. Production merge/deployment await the remaining browser CI checks.
+
+## October 2026 PRD and design release
+
+The user authorized deployment on 13 October 2026 after reviewing the locally implemented PRD continuation and light/dark redesign. Release branch: `feat/prd-features`; production must be the reviewed merge on `main`. The preceding production deployment is `dpl_ByTuG96tcpZuMasjtAnD3oBRGWd6`, commit `7c2ffde02c52b5776c679abbd7d325cd6046d83c` (PR #80), at https://moto-engineering-cloud.vercel.app/.
+
+Scope: immutable GPX edits, bounded OSM offline routing, Open-Meteo route weather, durable pause/recovery, GPS review/playback, optional upload/local cache retention, media/voice capability fallbacks, and the shared UI/UX redesign with persistent light/dark appearance. Invitation-only/MFA access is preserved; guest/local accounts remain deferred and ECU features are excluded. Paid-provider dispatch is disabled. No migration, auth configuration, secret or service-worker change is included. See PRD_DELIVERY.md and UI_DESIGN.md for precise capability limits and changed files.
+
+Release evidence before push: audit passed with 25 tests and the production build; five mocked Chromium browser suites and all 45 recording static checks passed. Desktop/mobile, 320px long names, 200% type, key text contrast, theme persistence, owner isolation, pause/reload recovery, original GPX bytes and local offline routing were checked. Existing observer/generated-button and large-bundle warnings remain. Physical iPhone/background behavior and real provider availability remain manual limitations; mock evidence does not certify them.
+
+Risk is high because this includes recorder lifecycle and provider behavior. The implementation diff was reviewed locally for failure handling, account boundaries, duplicate styles and source provenance; CI and the Vercel preview must pass before merging the exact reviewed head. The duplicate public speed stylesheet was replaced with a source import through its owning module. API routing and cache rules remain unchanged.
+
+After merge, verify the Vercel production deployment is READY for the merge SHA, the canonical alias serves the new assets, invite-only sign-in and both public themes load at desktop/mobile widths, failed sign-in remains bounded, shell/worker cache headers revalidate, malformed API inputs return JSON 4xx, and paid-provider health is disabled. Authenticated production records are not accessed by automated public smoke checks. Retain pending journals and local route libraries across refresh/update.
+
+Rollback restores the preceding reviewed main deployment with human authorization. Keep existing additive database schema and all IndexedDB stores; do not clear site data or delete pending recordings. No database rollback is needed. PR/CI/production receipts will be reported with the release result.

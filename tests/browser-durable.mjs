@@ -57,6 +57,11 @@ try {
   await page.evaluate(id => window.MotoRide.start(id), bike.id);
   await page.evaluate(() => window.deliverTestGPS());
   await page.waitForFunction(() => window.MotoRide.getState().bufferedSamples === 1);
+  await page.evaluate(() => window.MotoRide.pause());
+  assert.equal(await page.evaluate(() => window.MotoRide.getState().status),'paused');
+  await page.reload();
+  await page.waitForFunction(() => window.MotoRide?.getState().status === 'paused');
+  await page.evaluate(() => window.MotoRide.resume());
   const rideId = await page.evaluate(() => window.MotoRide.getState().sessionId);
   await page.reload(); await page.locator('#nav').waitFor({state:'attached'});
   await page.waitForFunction(() => window.MotoRide?.getState().status === 'interrupted');

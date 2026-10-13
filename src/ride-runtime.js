@@ -1,3 +1,4 @@
+import { riderPreferences } from './rider-preferences.js';
 import { recordedRideGPX, downloadGPX } from './gpx.js';
 import { supabase } from './supabase.js';
 import { rideJournal, configureRideJournal } from './ride-journal.js';
@@ -33,7 +34,11 @@ export const recorder = new RideRecorder({
   },
   unwatch: id => { navigator.geolocation.clearWatch(id); window.__motoRecordingActive = false; },
   changed: state => listeners.forEach(listener => listener(state)),
-  synchronize: async (owner, isCurrentOwner) => {
+  synchronize: async (owner, isCurrentOwner, {manual=false}={}) => {
+    const preferences=await riderPreferences(owner);
+    if(!manual&&!preferences.automaticUpload)throw new Error('Automatic cloud uploads are disabled. Use Retry upload when ready.');
+    const connection=navigator.connection;
+    if(!manual&&preferences.unmeteredOnly&&(!connection||connection.saveData||connection.type!=='wifi'&&connection.type!=='ethernet'))throw new Error('Automatic upload awaits a confirmed unmetered network. Use Retry upload to override.');
     if (!navigator.onLine) throw new Error('Offline. Reconnect and retry the upload.');
     if (!navigator.locks) throw new Error('This browser cannot coordinate safe synchronization.');
     await navigator.locks.request(`moto-ride-sync:${owner}`, async () => {

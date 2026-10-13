@@ -1,7 +1,7 @@
 import { recordedRideGPX } from './gpx.js';
 
 // Export reads are separate from the analytics preview, which has a display sample cap.
-export async function loadRecordedGPX(client, owner, rideId, isCurrentOwner) {
+export async function loadRecordedRide(client, owner, rideId, isCurrentOwner) {
   if(!owner||!rideId||!isCurrentOwner)throw new Error('Sign in before exporting a ride.');
   const check=async()=>{if(!await isCurrentOwner(owner))throw new Error('Account changed. Reopen the ride for your current account.');};
   await check();
@@ -12,7 +12,7 @@ export async function loadRecordedGPX(client, owner, rideId, isCurrentOwner) {
     if(error||!ride||ride.user_id!==owner||ride.id!==rideId||ride.status!=='complete')throw new Error('A completed ride belonging to this account is required for GPX export.');
     const rows=[],seen=new Set(),pageSize=1000,maxRows=200000;let expected=null;
     for(let from=0;from<=maxRows;){
-      const {data,count,error:sampleError}=await client.from('ride_samples').select('id,user_id,session_id,recorded_at,latitude,longitude,altitude_m',{count:'exact'}).eq('user_id',owner).eq('session_id',rideId).order('recorded_at',{ascending:true}).order('id',{ascending:true}).range(from,from+pageSize-1).abortSignal(controller.signal);
+      const {data,count,error:sampleError}=await client.from('ride_samples').select('id,user_id,session_id,recorded_at,latitude,longitude,altitude_m,accuracy_m,speed_mps,heading_deg,lean_deg,pitch_deg,roll_deg,accel_g',{count:'exact'}).eq('user_id',owner).eq('session_id',rideId).order('recorded_at',{ascending:true}).order('id',{ascending:true}).range(from,from+pageSize-1).abortSignal(controller.signal);
       await check();
       if(sampleError||!Array.isArray(data))throw new Error('Ride samples could not be loaded. No partial GPX was downloaded.');
       if(!Number.isSafeInteger(count)||count<0||expected!==null&&count!==expected)throw new Error('The full sample count could not be verified. Retry export after synchronization.');
@@ -26,6 +26,11 @@ export async function loadRecordedGPX(client, owner, rideId, isCurrentOwner) {
       if(!data.length||rows.length>expected)throw new Error('Ride track is incomplete. No partial GPX was downloaded.');
       from+=data.length;
     }
-    return {name:ride.bike_name||'Ride',xml:recordedRideGPX(ride.bike_name||'Ride',rows),sampleCount:rows.length};
+    return {ride,rows};
   } finally {clearTimeout(timeout)}
+}
+
+export async function loadRecordedGPX(...args) {
+  const {ride,rows}=await loadRecordedRide(...args);
+  return {name:ride.bike_name||'Ride',xml:recordedRideGPX(ride.bike_name||'Ride',rows),sampleCount:rows.length};
 }

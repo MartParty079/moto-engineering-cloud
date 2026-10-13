@@ -31,3 +31,12 @@ PGlite tests execute the copied schema: repeated migration, legacy rows/inserts,
 JSON recovery export includes metadata and unacknowledged samples; acknowledged samples are on the server. The separate local GPX action requires stopped capture, at least two valid GPS fixes and no acknowledged samples, so it cannot silently produce a partial track. After synchronization, Rides / Review exports the complete track through bounded, owner-filtered pagination; capture gaps remain separate GPX segments. See GPX_WORKFLOW.md. No import UI exists. Synced metadata remains local. Browser storage can be cleared/evicted and cannot ensure iOS background capture. Physical device/PWA testing remains necessary.
 
 Keep pending journals and additive backend fields during updates. Prefer rolling forward. Never drop version/completion markers or RPC while clients can retry; export/reconcile pending data before a frontend downgrade.
+
+
+## PRD continuation: pause and optional upload
+
+Pause drains pending recorder writes, releases capture resources and persists pausedAt in the existing owner-scoped journal. Paused sessions remain recoverable after reload and must be explicitly resumed or finished. Resuming starts a new capture interval; motion/GPS appends reject paused sessions. The existing recording status remains compatible with older journal readers.
+
+Account/project-scoped preferences may disable automatic upload or restrict it to known unmetered connections. Unknown network cost defers restrictive automatic uploads. Explicit Retry is a manual upload action. Default automatic upload preserves prior behavior. Preferences do not alter authentication, guest access, RLS or deduplication. Review retention affects only separately cached, completed cloud rides after backup confirmation; the capture journal and server samples remain intact.
+
+Validate pause/reload/resume/finish, offline pending state, owner switching, explicit retry with automatic upload off, lost receipts and exact completion. Browser persistence still does not establish continuous native iOS background capture.

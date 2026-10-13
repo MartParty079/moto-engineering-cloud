@@ -749,3 +749,31 @@
   #rideDashOverlay[data-ride-os="v3"] .widget-speed{min-height:235px;padding:12px!important}
   #rideDashOverlay[data-ride-os="v3"] .dashPageHead h3{font-size:16px}
 }
+
+/* Shared appearance tokens apply to instruments without changing data or layout choices. */
+body #rideDashOverlay .dashWidget{background:var(--panel)!important;color:var(--text)!important;border:1px solid var(--line)!important;border-radius:18px!important;box-shadow:none!important;clip-path:none!important;}
+body #rideDashOverlay .dashWidget:before,body #rideDashOverlay .dashWidget:after{display:none!important;}
+body #rideDashOverlay :is(.dashValue,.dashValue strong,.dashSpeedNumber){color:var(--text)!important;text-shadow:none!important;}
+body #rideDashOverlay .dashSpeedNumber{font-family:inherit!important;font-weight:600!important;}
+body #rideDashOverlay .dashWidgetLabel{color:var(--muted)!important;letter-spacing:.06em!important;font-size:11px!important;font-weight:600;}
+body #rideDashOverlay .dashSpeedGauge{background:transparent!important;border-color:var(--line)!important;}
+body #rideDashOverlay .dashSpeedGauge:before,body #rideDashOverlay .dashSpeedGauge:after{box-shadow:none;filter:none;}
+body #rideDashOverlay .dashSpeedGauge>span{color:var(--muted)!important;font-size:12px!important;letter-spacing:.08em;}
+body #rideDashOverlay .dashTabs{background:var(--bg)!important;}
+body #rideDashOverlay .rideDash>header{display:flex!important;flex-wrap:wrap!important;gap:10px!important;min-height:64px!important;height:auto!important;padding:12px!important;}
+body #rideDashOverlay .dashHeaderActions{display:flex!important;flex-wrap:wrap!important;overflow:visible!important;min-width:0!important;max-width:100%!important;flex:1 1 auto!important;justify-content:flex-end;}
+body #rideDashOverlay #dashClose{display:block!important;visibility:visible!important;min-width:44px!important;min-height:44px!important;order:100;}
+body #rideDashOverlay #dashRideToggle.recording{background:var(--red)!important;color:var(--bg)!important;}
+body #rideDashOverlay .rideXSmartStrip{background:var(--bg)!important;}
+body #rideDashOverlay .rideXSmartStrip button{background:var(--panel2)!important;border-color:var(--line)!important;color:var(--text)!important;box-shadow:none!important;}
+body #rideDashOverlay .rideXSmartStrip :is(strong,b){color:var(--text)!important;}
+body #rideDashOverlay .rideXSmartStrip small{color:var(--muted)!important;}
+body #rideDashOverlay .rideXFuel:after{display:none;}
+@media(max-width:780px){body #rideDashOverlay .dashBrand{flex:1 1 50px!important;}body #rideDashOverlay .dashHeaderActions{flex-basis:75%!important;}body #rideDashOverlay .dashHeaderActions button{min-height:44px!important;}body #rideDashOverlay .dashWidget{padding:16px!important;}}
+
+body #rideDashOverlay[data-header-controls-v2="ready"] .dashHeaderActions button{font-size:12px!important;letter-spacing:0!important;font-weight:600!important;padding:10px 12px!important;}
+body #rideDashOverlay .dashTabs button{font-size:12px!important;letter-spacing:0!important;font-weight:600!important;}
+body #rideDashOverlay .rideV3ModeRibbon small{font-size:10px!important;letter-spacing:.04em!important;}
+body #rideDashOverlay .rideV3HeroCopy>small{font-size:10px!important;letter-spacing:.08em!important;}
+body #rideDashOverlay .rideXSmartStrip small{font-size:10px!important;letter-spacing:.04em!important;}
+body #rideDashOverlay .rideXSmartStrip strong{font-size:12px!important;font-weight:600!important;}

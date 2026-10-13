@@ -1,3 +1,4 @@
+import './ride-speed-cell.css';
 const ICON_SELECTOR='svg.rideXIcon';
 
 function loadStyleOnce(href,key){
@@ -17,7 +18,6 @@ function loadRidePickerStability(){
 }
 
 function loadRideV20Fixes(){
-  loadStyleOnce('/src/ride-speed-cell.css?v=3','rideSpeedCell');
   loadStyleOnce('/src/ride-layout-cleanup.css?v=1','rideLayoutCleanup');
   if(!window.__motoRideSpeedCellModule){
     window.__motoRideSpeedCellModule=import('./ride-speed-cell.js?v=3').catch(error=>console.error('Adaptive speed cell failed to load',error));

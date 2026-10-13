@@ -1,4 +1,5 @@
 import { queryNumber, validCoordinates, requireGet } from '../server/request-validation.js';
+import { PAID_PROVIDERS_ENABLED } from '../server/provider-policy.js';
 
 const ENDPOINTS = [
   'https://overpass-api.de/api/interpreter',
@@ -365,7 +366,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid coordinates' });
   }
 
-  const order = requested === 'auto'
+  const order = !PAID_PROVIDERS_ENABLED ? ['osm'] : requested === 'auto'
     ? ['tomtom', 'google', 'osm']
     : [requested, 'osm'].filter((provider, index, array) => array.indexOf(provider) === index);
   const attempts = [];

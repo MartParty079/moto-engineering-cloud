@@ -1,4 +1,5 @@
 import { queryNumber, validCoordinates, requireGet } from '../server/request-validation.js';
+import { PAID_PROVIDERS_ENABLED } from '../server/provider-policy.js';
 
 const RAW_SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
@@ -160,6 +161,7 @@ export default async function handler(req, res) {
 
   const lat = queryNumber(req.query.lat), lon = queryNumber(req.query.lon), heading = queryNumber(req.query.heading), prevLat = queryNumber(req.query.prevLat), prevLon = queryNumber(req.query.prevLon);
   if (!validCoordinates(lat, lon)) return res.status(400).json({ error: 'Invalid coordinates' });
+  if (!PAID_PROVIDERS_ENABLED) return res.status(403).json({error:'Paid road providers are disabled for this beta. Use /api/road-info with OpenStreetMap.',providerPolicy:'free-only'});
 
   const requested = ['auto', 'tomtom', 'google'].includes(req.query.provider) ? req.query.provider : 'auto';
   const order = requested === 'auto' ? ['tomtom', 'google'] : [requested];

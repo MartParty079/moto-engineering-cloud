@@ -60,6 +60,20 @@ export class RideRecorder {
       });
     }, error => { if (this.owner === owner) { this.error = `GPS unavailable: ${error.message}`; this.emit(); } });
   }
+  async pause() {
+    if (!this.recording || this.starting || !this.ride) return;
+    const owner = this.owner, id = this.ride.id;
+    this.release();
+    try {
+      await this.writeQueue;
+      const ride = await this.journal.pause(owner, id);
+      if (this.owner !== owner || this.ride?.id !== id) return;
+      this.ride = ride;
+    } catch(error) {
+      if(this.owner===owner)this.error=`Capture stopped; recover the saved ride. ${error.message}`;
+      throw error;
+    } finally {this.emit();}
+  }
   async stop() {
     if (!this.ride) return;
     const owner = this.owner, id = this.ride.id;
@@ -79,12 +93,12 @@ export class RideRecorder {
     });
     return this.writeQueue;
   }
-  async sync() {
+  async sync(options = {}) {
     if (!this.owner || this.syncing) return;
     const owner = this.owner;
     this.syncing = true; this.emit();
     try {
-      await this.synchronize(owner, value => value === this.owner);
+      await this.synchronize(owner, value => value === this.owner, options);
       if (owner === this.owner) this.error = '';
     } catch (error) { if (owner === this.owner) this.error = `Saved on this device; upload pending. ${error.message}`; }
     finally {
@@ -107,6 +121,6 @@ export class RideRecorder {
     this.release(); await this.writeQueue;
     await this.journal.markDiscarded(owner, id);
     if (this.owner !== owner) return;
-    this.ride = null; this.emit(); await this.sync();
+    this.ride = null; this.emit(); await this.sync({manual:true});
   }
 }

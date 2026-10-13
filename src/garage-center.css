@@ -38,3 +38,31 @@
 @media(max-width:1000px){.garageCenterHeroMetrics{grid-template-columns:repeat(3,minmax(0,1fr))}.garageModGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:900px){.garageCenterGrid{grid-template-columns:1fr}.garageCenterStats{grid-template-columns:repeat(2,minmax(0,1fr))}.garageOverviewMods>div{grid-template-columns:90px 1fr auto}}
 @media(max-width:620px){.garageCardCompact.bikeHero,.garageCardCompact.bikeHero>div{min-height:380px}.garageCardCompact.bikeHero>div{padding:20px!important}.garageCardCompact .bikeCardTotals{grid-template-columns:repeat(2,minmax(0,1fr))}.garageCompactContent .garagePrimaryActions{grid-template-columns:repeat(2,minmax(0,1fr))}.garageCenterHero{min-height:420px;padding-left:18px;padding-right:18px}.garageCenterHeroActions button:not([data-add-maintenance]):not([data-add-mod]){display:none}.garageCenterHeroMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}.garageCenterBody{padding:18px 14px calc(28px + env(safe-area-inset-bottom))}.garageCenterTabs{padding-inline:10px}.garageCenterTimeline article{flex-direction:column}.garageCenterTimeline article>div:last-child{text-align:left}.garageModGrid{grid-template-columns:1fr}.garageMaintenanceHistory>article{grid-template-columns:36px 1fr}.garageHistoryActions{grid-column:2;justify-content:flex-start}.garageHistoryMain>div:first-child{display:block}.garageHistoryMain h3{margin-top:3px}.garageOverviewMods>div{grid-template-columns:1fr}.garageEntryOverlay{padding-inline:0}.garageEntryPanel{min-height:100%;border-radius:0}.garageEntryGrid{grid-template-columns:1fr}.garageEntryGrid label.wide,.garageEntryPreview{grid-column:auto}}
+
+/* Photo-free cards share the canonical appearance; supplied photos keep a legible dark overlay. */
+body .garageCardCompact.bikeHero{min-height:300px;border:1px solid var(--line)!important;border-radius:20px;background:var(--panel)!important;box-shadow:none;}
+body .garageCardCompact.bikeHero:not(.has-bike-photo):before,body .garageCardCompact.bikeHero:not(.has-bike-photo):after{display:none;}
+body .garageCardCompact.bikeHero>div{min-height:300px;justify-content:flex-start;padding:26px!important;}
+body .garageCardCompact .rowtop h2{font-size:1.55rem;line-height:1.25;letter-spacing:-.03em;text-shadow:none;margin:12px 0!important;overflow-wrap:anywhere;}
+body .garageCardCompact .rowtop .eyebrow{text-shadow:none;}
+body .garageCardCompact .garageCardStatus span{background:var(--panel2);color:var(--muted);border-color:var(--line);font-weight:500;}
+body .garageCardCompact .bikeCardTotals{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+body .garageCardCompact .bikeCardTotals span{background:var(--panel2);border:0;border-radius:12px;backdrop-filter:none;}
+body .garageCardCompact .bikeCardTotals small{color:var(--muted);font-size:.65rem;letter-spacing:0;white-space:normal;font-weight:550;}
+body .garageCardCompact .bikeCardTotals b{color:var(--text);font-size:1.1rem;white-space:normal;overflow:visible;font-variant-numeric:tabular-nums;}
+body .garageCompactDrawer>summary{color:var(--text);letter-spacing:0;font-weight:600;}
+body .garageCardCompact.has-bike-photo :is(h2,.eyebrow,.garageCompactDrawer>summary){color:#fff!important;}
+body .garageCardCompact.has-bike-photo .rowtop .eyebrow{color:#e0e6ec!important;}
+
+body .garageCenterOverlay,body .garageCenterShell{background:var(--bg);color:var(--text);}
+body .garageCenterIdentity h1{color:#fff;}
+body .garageCenterHeroMetrics strong,body .garageCenterHeroMetrics small{color:#fff;}
+body .garageCenterTabs{background:var(--chrome);border-color:var(--line);}
+body .garageCenterTabs button{color:var(--muted);font-weight:550;min-height:44px;}
+body .garageCenterTabs button.active{background:var(--accent-soft);color:var(--accent);box-shadow:none;}
+body :is(.garageCenterCard,.garageModCard,.garageEntryPanel){background:var(--panel);border-color:var(--line);color:var(--text);border-radius:18px;}
+body :is(.garageCenterStats article,.garageCenterTimeline article,.garageCenterEmpty,.garageCenterServiceList article,.garageOverviewMods>div,.garageMaintenanceHistory>article,.garageModBody dl div,.garageCompactNotes){background:var(--panel2);border-color:var(--line);color:var(--text);}
+body .garageCenterBody :is(p,small,dt,span),body .garageEntryPanel label{color:var(--muted);}
+body .garageCenterBody :is(strong,b,dd){color:var(--text);}
+body .garageCenterBody button,body .garageEntryPanel button{background:var(--panel2);color:var(--text);border-color:var(--line);min-height:44px;border-radius:12px;}
+body .garageCompactDrawer>summary span:before{color:var(--accent);}

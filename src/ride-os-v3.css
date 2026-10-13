@@ -42,3 +42,25 @@
   #rideDashOverlay[data-ride-os="v3"] .rideV3HeroCopy>p{font-size:9px}
   #rideDashOverlay[data-ride-os="v3"] .rideV3Metrics{display:none}
 }
+
+/* The riding workspace favors stable, readable instruments over decorative movement. */
+body #rideDashOverlay[data-ride-os="v3"]{--v3-ink:var(--bg);--v3-panel:var(--panel);--v3-line:var(--line);--v3-muted:var(--muted);--v3-accent:var(--accent)!important;--v3-hot:var(--accent)!important;}
+body #rideDashOverlay[data-ride-os="v3"] .rideDash{background:var(--bg)!important;box-shadow:none;}
+body #rideDashOverlay[data-ride-os="v3"] .rideV3Scene{display:none;}
+body #rideDashOverlay[data-ride-os="v3"] .rideV3ModeRibbon{background:var(--panel2);border-color:var(--line);box-shadow:none;backdrop-filter:none;}
+body #rideDashOverlay[data-ride-os="v3"] .rideV3ModeRibbon button{border:0;color:var(--muted);border-radius:12px;min-height:44px;transition:none;}
+body #rideDashOverlay[data-ride-os="v3"] .rideV3ModeRibbon button:before{display:none;}
+body #rideDashOverlay[data-ride-os="v3"] .rideV3ModeRibbon button.active{background:var(--accent-soft);color:var(--accent);box-shadow:none;}
+body #rideDashOverlay[data-ride-os="v3"] .rideV3ModeRibbon button.active .rideV3Icon{color:var(--accent);filter:none;}
+body #rideDashOverlay[data-ride-os="v3"] .rideV3Hero{background:var(--panel);border-color:var(--line);border-radius:18px;min-height:0;grid-template-columns:minmax(0,1fr) 230px;padding:22px;box-shadow:none;backdrop-filter:none;}
+body #rideDashOverlay[data-ride-os="v3"] .rideV3Hero:before,body #rideDashOverlay[data-ride-os="v3"] .rideV3Hero:after,body #rideDashOverlay[data-ride-os="v3"] .rideV3HeroVisual{display:none;}
+body #rideDashOverlay[data-ride-os="v3"] .rideV3HeroCopy h2{color:var(--text);font-size:1.6rem;line-height:1.15;font-weight:650;letter-spacing:-.03em;}
+body #rideDashOverlay[data-ride-os="v3"] .rideV3HeroCopy p{color:var(--muted);font-weight:400;font-size:.85rem;}
+body #rideDashOverlay[data-ride-os="v3"] .rideV3Metrics article,body #rideDashOverlay[data-ride-os="v3"] .rideV3Actions button{background:var(--panel2);border-color:var(--line);color:var(--text);box-shadow:none;}
+body #rideDashOverlay[data-ride-os="v3"] .rideV3Metrics strong{color:var(--text);font-weight:650;}
+body #rideDashOverlay[data-ride-os="v3"] .rideV3Actions small{color:var(--muted);}
+body .rideV3Sheet{background:var(--scrim);backdrop-filter:blur(8px);animation:none;}
+body .rideV3Sheet>section{background:var(--panel);color:var(--text);border-color:var(--line);box-shadow:0 24px 80px #0004;}
+body .rideV3Sheet :is(h2,h3,strong,b){color:var(--text);}
+body .rideV3Sheet :is(p,small,label){color:var(--muted);}
+@media(max-width:780px){body #rideDashOverlay[data-ride-os="v3"] .rideV3Hero{grid-template-columns:1fr;padding:16px;}.rideV3HeroCopy>small{font-size:9px;}body #rideDashOverlay[data-ride-os="v3"] .rideV3HeroCopy h2{font-size:1.25rem;}body #rideDashOverlay[data-ride-os="v3"] .rideV3Actions button{min-height:44px;}body #rideDashOverlay[data-ride-os="v3"] .rideV3HeroCopy p{font-size:12px;}}

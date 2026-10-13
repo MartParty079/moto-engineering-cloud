@@ -47,7 +47,7 @@ test('API input and failure boundaries use no live network', async () => {
     await handlers.find(([name]) => name === 'poi-nearby')[1]({ method: 'GET', query: { lat: '0', lon: '0' }, headers: { authorization: 'Bearer local-test' } }, res);
     assert.equal(res.code, 200);
     assert.match(res.body.source, /OpenStreetMap/);
-    assert.match(res.body.attempts[0], /Usage counter unavailable/);
+    assert.match(res.body.attempts[0], /disabled for free-only beta/);
   } finally { globalThis.fetch = original; delete process.env.GOOGLE_PLACES_API_KEY; }
 });
 

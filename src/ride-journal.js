@@ -90,7 +90,7 @@ export const rideJournal = {
   append(owner, id, position) {
     if (!validPosition(position)) return Promise.reject(new Error('Invalid GPS fix.'));
     return update(owner, id, (ride, samples) => {
-      if (ride.status !== 'recording') throw new Error('Ride is no longer recording.');
+      if (ride.status !== 'recording' || ride.pausedAt != null) throw new Error('Ride is not capturing.');
       if (position.timestamp < ride.lastCaptureAt || position.timestamp > Date.now() + 5000) throw new Error('Out-of-order or future GPS fix.');
       const c = position.coords;
       const finite = value => Number.isFinite(value) ? value : null;
@@ -108,16 +108,26 @@ export const rideJournal = {
         altitude_m: p.altitude, accuracy_m: p.accuracy, speed_mps: speed, heading_deg: p.heading } });
     });
   },
+  pause(owner, id, now = Date.now()) {
+    return update(owner, id, ride => {
+      if (ride.status !== 'recording') throw new Error('Only a recording can pause.');
+      if (ride.pausedAt == null) ride.pausedAt = now;
+      ride.previous = null;
+    });
+  },
   resume(owner, id) {
     return update(owner, id, ride => {
       if (ride.status !== 'recording') throw new Error('Only an interrupted recording can resume.');
-      ride.interruptions.push({ from: ride.lastCaptureAt, to: Date.now() }); ride.previous = null;
+      const now = Date.now();
+      ride.interruptions.push({ from: ride.lastCaptureAt, to: now }); ride.previous = null;
+      if (ride.pausedAt != null) ride.pausedMs = (ride.pausedMs || 0) + Math.max(0, now - ride.pausedAt);
+      ride.pausedAt = null;
     });
   },
   appendMotion(owner, id, input) {
     const fields = ['latitude','longitude','altitude_m','accuracy_m','speed_mps','heading_deg','accel_x','accel_y','accel_z','accel_g','rotation_beta','rotation_gamma','lean_deg','pitch_deg','roll_deg'];
     return update(owner, id, (ride, samples) => {
-      if (ride.status !== 'recording') throw new Error('Ride is no longer recording.');
+      if (ride.status !== 'recording' || ride.pausedAt != null) throw new Error('Ride is not capturing.');
       const row = {};
       for (const field of fields) {
         const value = input[field];
@@ -129,7 +139,7 @@ export const rideJournal = {
       samples.add({ owner, rideId: id, sequence: ride.sequence, row: { ...row, id: crypto.randomUUID(), user_id: owner, session_id: id, recorded_at: new Date().toISOString() } });
     });
   },
-  stop(owner, id, now = Date.now()) { return update(owner, id, ride => { if (ride.status !== 'recording') return; ride.status = 'pending'; ride.stoppedAt = now; }); },
+  stop(owner, id, now = Date.now()) { return update(owner, id, ride => { if (ride.status !== 'recording') return; if (ride.pausedAt != null) ride.pausedMs = (ride.pausedMs || 0) + Math.max(0, now - ride.pausedAt); ride.pausedAt = null; ride.status = 'pending'; ride.stoppedAt = now; }); },
   markCreated(owner, id) { return update(owner, id, ride => { ride.cloudCreated = true; }); },
   async batch(owner, id, limit = 100) {
     ownerRequired(owner);

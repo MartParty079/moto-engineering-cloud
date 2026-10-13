@@ -27,7 +27,7 @@ The supplied package identifies itself as Emil Kowalski's Skills For Designers a
 - `src/security-center.css` applies the shared appearance to security screens without changing auth behavior. `src/garage-center.js/.css` own supplied-photo detection and card contrast. `src/ride-log-bridge.js` owns the simpler review list. Existing detailed metrics and exports remain accessible.
 - `src/ride-dashboard.js/.css`, `src/ride-os-v3.css` and `src/ride-speed-cell.css` own cockpit appearance. New installations default to the Simple display preset; stored choices remain. Unknown live speed displays unavailable. `src/ride-experience-v2.js` labels unconfigured manual fuel estimates honestly.
 - `src/ride-experience-safety.js` imports the source speed stylesheet. Before deleting `public/src/ride-speed-cell.css`, direct/dynamic/HTML/service-worker references were searched: its only runtime reference was that module's dynamic stylesheet URL. The import replaces that URL; no new independently loaded HTML asset is added.
-- `src/adaptive-layout.css` lets headers grow with text instead of fixing their height. `index.html` retains zoom and adds keyboard viewport resizing; the theme-color fallback matches dark chrome. Service-worker behavior and API routing are unchanged.
+- `src/adaptive-layout.css` lets headers grow with text instead of fixing their height. `index.html` retains zoom and the existing viewport-fit setting; keyboard/viewport updates use the existing visualViewport handling. The theme-color fallback matches dark chrome. The optional Chromium interactive-widget setting was removed after WebKit reported an unsupported viewport-key console error. Service-worker behavior and API routing are unchanged.
 
 ## Validation and limits
 

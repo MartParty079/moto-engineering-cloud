@@ -17,14 +17,14 @@ export async function mountOfflineNavigation(host) {
   const controls=new AbortController();
   const prefs=await riderPreferences(owner);host.querySelector('[data-voice]').checked=Boolean(prefs.maneuverVoice);
   const report=error=>{if(host.isConnected)status.textContent=error.message||String(error)};
-  const updatePackages=()=>{select.innerHTML='<option value="">Choose downloaded network</option>'+packages.map(p=>`<option value="${p.id}">${esc(p.name)} · ${p.graph.nodes.length} nodes</option>`).join('')};updatePackages();
+  const updatePackages=()=>{select.innerHTML='<option value="">Choose downloaded network</option>'+packages.map(p=>`<option value="${p.id}">${esc(p.name)} · ${p.graph.nodes.length} nodes</option>`).join('');window.dispatchEvent(new CustomEvent('moto-offline-coverage',{detail:{count:packages.length}}));};updatePackages();
   const updatePlaces=async()=>{const places=await store.get(owner,'places')||[];if(!await current())return;const control=host.querySelector('[data-places]');control.innerHTML='<option value="">Choose saved place</option>'+places.map((p,i)=>`<option value="${i}">${esc(p.name)}</option>`).join('');control.onchange=()=>{const p=places[Number(control.value)];if(control.value!==''&&p){form.elements.endLat.value=p.lat;form.elements.endLon.value=p.lon}}};await updatePlaces();
   const stopped=()=>{if(window.MotoRide?.getState?.().active)throw new Error('Stop recording before changing navigation setup.');};
   const preferences=()=>({mode:form.elements.mode.value,assumedMph:Number(form.elements.mph.value),avoidHighways:form.elements.highways.checked,avoidTolls:form.elements.tolls.checked,avoidUnpaved:form.elements.unpaved.checked});
   const destination=()=>({lat:Number(form.elements.endLat.value),lon:Number(form.elements.endLon.value)});
   const render=()=>{
     if(!graph)return;const [south,west,north,east]=graph.bounds,width=Math.max(.00001,east-west),height=Math.max(.00001,north-south),xy=p=>`${20+460*(p.lon-west)/width},${280-260*(p.lat-south)/height}`,nodes=new Map(graph.nodes.map(n=>[n.id,n]));
-    view.innerHTML=`<svg class="missionOfflineMap" viewBox="0 0 500 300" role="img" aria-label="Downloaded OSM road network, north up"><rect width="500" height="300" fill="#101923"/>${graph.edges.map(e=>`<polyline points="${xy(nodes.get(e.from))} ${xy(nodes.get(e.to))}" stroke="#63726a" stroke-width="1.5"/>`).join('')}${route?`<polyline points="${route.points.map(xy).join(' ')}" stroke="#bcd58b" stroke-width="4" fill="none"/>`:''}${lastFix?`<circle cx="${xy(lastFix).split(',')[0]}" cy="${xy(lastFix).split(',')[1]}" r="5" fill="#ff8154"/>`:''}<text x="15" y="20" fill="white">N ↑ · vector road coverage</text></svg>`;
+    view.innerHTML=`<svg class="missionOfflineMap" viewBox="0 0 500 300" role="img" aria-label="Downloaded OSM road network, north up"><rect width="500" height="300" fill="#101923"/>${graph.edges.map(e=>`<polyline points="${xy(nodes.get(e.from))} ${xy(nodes.get(e.to))}" stroke="#63726a" stroke-width="1.5"/>`).join('')}${route?`<polyline points="${route.points.map(xy).join(' ')}" stroke="#F47716" stroke-width="4" fill="none"/>`:''}${lastFix?`<circle cx="${xy(lastFix).split(',')[0]}" cy="${xy(lastFix).split(',')[1]}" r="5" fill="#ff8154"/>`:''}<text x="15" y="20" fill="white">N ↑ · vector road coverage</text></svg>`;
     directions.innerHTML=route?`<p>${route.miles.toFixed(2)} mi · ${route.estimatedMinutes.toFixed(0)} min estimated. ${esc(route.assumptions)}</p><ol>${route.instructions.map(i=>`<li>${i.miles.toFixed(2)} mi: ${esc(i.text)}${i.severity?` · ${i.severity} geometric bend; not a safety rating`:''}</li>`).join('')}</ol>`:'';
   };
   select.onchange=()=>{try{stopped();graph=packages.find(p=>p.id===select.value)?.graph||null;route=null;tools.hidden=!graph;if(graph){status.textContent=`Downloaded ${new Date(graph.createdAt).toLocaleString()}. North-up vector view; access may have changed since download.`;render()}}catch(error){report(error)}};
@@ -40,7 +40,7 @@ export async function mountOfflineNavigation(host) {
   host.querySelector('[data-center-gps]').onclick=()=>{try{stopped();navigator.geolocation.getCurrentPosition(p=>{if(!host.isConnected)return;region.elements.lat.value=p.coords.latitude;region.elements.lon.value=p.coords.longitude;form.elements.startLat.value=p.coords.latitude;form.elements.startLon.value=p.coords.longitude},report,{enableHighAccuracy:true,timeout:15000,maximumAge:10000})}catch(error){report(error)}};
   form.onsubmit=async event=>{event.preventDefault();try{stopped();if(!await current())return;route=routeOffline(graph,{lat:Number(form.elements.startLat.value),lon:Number(form.elements.startLon.value)},destination(),preferences());lastSpoken='';render();status.textContent='Calculated entirely on this device. Curvature, elevation, live traffic and closures are not optimization inputs.'}catch(error){report(error)}};
   host.querySelector('[data-save-place]').onclick=async()=>{try{stopped();if(!await current())return;nearestNode(graph,destination());const name=prompt('Name this saved destination');if(!name?.trim())return;await store.update(owner,'places',old=>{old=old||[];if(old.length>=100)throw new Error('Saved-place limit reached.');return [...old,{name:name.trim().slice(0,80),...destination()}]});await updatePlaces()}catch(error){report(error)}};
-  const stop=()=>{guiding=false;if(watch!==null)navigator.geolocation.clearWatch(watch);watch=null;host.querySelector('[data-guidance]').hidden=false;host.querySelector('[data-end-guidance]').hidden=true;guideStatus.textContent='Guidance stopped.';if(lastSpoken)window.speechSynthesis?.cancel();lastSpoken=''};
+  const stop=()=>{guiding=false;window.MotoOfflineGuidance={active:false};window.dispatchEvent(new CustomEvent('moto-guidance-state',{detail:window.MotoOfflineGuidance}));if(watch!==null)navigator.geolocation.clearWatch(watch);watch=null;host.querySelector('[data-guidance]').hidden=false;host.querySelector('[data-end-guidance]').hidden=true;guideStatus.textContent='Guidance stopped.';if(lastSpoken)window.speechSynthesis?.cancel();lastSpoken=''};
   const fix=async position=>{
     if(!guiding||disposed)return;
     if(!await current()){stop();return;}
@@ -51,6 +51,9 @@ export async function mountOfflineNavigation(host) {
       offRouteFixes=closest.miles>.08?offRouteFixes+1:0;
       if(offRouteFixes>=2&&Date.now()-lastReroute>5000){lastReroute=Date.now();route=routeOffline(graph,lastFix,destination(),preferences());offRouteFixes=0;guideStatus.textContent='Rerouted locally inside downloaded coverage.';render();return;}
       const next=route.instructions.find(i=>i.index>closest.index)||route.instructions.at(-1);guideStatus.textContent=next.text;
+      const progress=route.edges.slice(0,closest.index).reduce((sum,edge)=>sum+edge.miles,0),remaining=Math.max(0,route.miles-progress);
+      window.MotoOfflineGuidance={active:true,next:next.text,distanceMiles:Math.max(0,next.miles-progress),remainingMiles:remaining,estimatedMinutes:remaining/preferences().assumedMph*60,updatedAt:position.timestamp,source:'downloaded OSM network; constant-speed ETA'};
+      window.dispatchEvent(new CustomEvent('moto-guidance-state',{detail:window.MotoOfflineGuidance}));
       if(host.querySelector('[data-voice]').checked&&next.text!==lastSpoken&&window.speechSynthesis&&window.SpeechSynthesisUtterance){lastSpoken=next.text;const {speakGuidance}=await import('./media-bridge.js');await speakGuidance(next.text);}
       render();
     }catch(error){guideStatus.textContent=`Guidance unavailable: ${error.message} Last route retained.`;}
@@ -59,7 +62,7 @@ export async function mountOfflineNavigation(host) {
   host.querySelector('[data-end-guidance]').onclick=stop;
   host.querySelector('[data-voice]').disabled=!('speechSynthesis' in window);if(!('speechSynthesis' in window))host.querySelector('[data-voice]').parentElement.append(' · Unsupported on this browser');
   host.querySelector('[data-remove-package]').onclick=async()=>{try{stopped();if(!await current())return;if(!confirm('Remove this downloaded road network? Saved rides and GPX files will remain.'))return;stop();packages=await store.update(owner,'offline-packages',old=>(old||[]).filter(p=>p.id!==select.value));updatePackages();graph=null;route=null;tools.hidden=true;status.textContent='Downloaded coverage removed.'}catch(error){report(error)}};
-  window.addEventListener('moto-ride-state',event=>{
+  window.addEventListener('moto-workspace-ride',event=>{
     const state=event.detail;form.querySelector('fieldset').disabled=Boolean(state.active);region.querySelector('fieldset').disabled=Boolean(state.active);select.disabled=Boolean(state.active);
     if(state.active&&state.latitude!=null&&state.longitude!=null)fix({timestamp:state.gpsTimestamp,coords:{latitude:state.latitude,longitude:state.longitude,accuracy:state.accuracyFt==null?NaN:state.accuracyFt/3.28084}});
   },{signal:controls.signal});

@@ -78,7 +78,7 @@ function sync(){
   regroupParts();
   syncActiveView();
   addRideCenterAdventureShortcut();
-  if($('#adventureOverlay'))closeMenu();
+  if($('#adventureOverlay')&&!$('#adventureOverlay').classList.contains('mmEmbedded'))closeMenu();
 }
 
 function queueSync(){

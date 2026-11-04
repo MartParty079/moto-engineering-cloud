@@ -1,0 +1,17 @@
+body .motorcycleChip{display:block;min-height:44px;max-width:210px;padding:8px 10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:inherit;font-size:.8rem;text-align:left;color:var(--text);background:var(--panel);border:1px solid var(--line);border-radius:10px;cursor:pointer;}
+body .motorcycleSelector{width:min(460px,calc(100% - 24px));max-height:85dvh;padding:20px;overflow:auto;color:var(--text);background:var(--panel);border:1px solid var(--line);border-radius:18px;box-sizing:border-box;}
+body .motorcycleSelector::backdrop{background:rgba(0,0,0,.65);}
+body .motorcycleSelector header,body .motorcycleSelector footer{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;}
+body .motorcycleSelector h2{font-size:1.25rem;margin:0;}
+body .motorcycleSelector label{display:grid;gap:8px;margin-top:16px;}
+body .motorcycleSelector input{width:100%;min-width:0;box-sizing:border-box;font-size:16px;}
+body .motorcycleSelector button{min-height:44px;padding:10px 12px;white-space:normal;overflow-wrap:anywhere;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:12px;font-size:.875rem;}
+body .motorcycleSelector p{line-height:1.5;}
+body .motorcycleChoices{display:grid;gap:10px;margin:16px 0;}
+body .motorcycleChoices button{display:flex;justify-content:space-between;gap:16px;text-align:left;}
+body .motorcycleChoices button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);}
+body .motorcycleChoices [hidden]{display:none;}
+body .motorcycleChoices small{flex-shrink:0;}
+#app .brandCopy{min-width:0;}
+body #rideDashOverlay #dashMotorcycle{flex-shrink:0;width:calc(100% - 24px);max-width:none;margin:6px 12px;min-height:44px;}
+@media(max-width:780px){#app .brandCopy .motorcycleChip{max-width:100%;width:100%;font-size:.7rem;padding:5px 7px;}#app .brandCopy h1{display:none;}}

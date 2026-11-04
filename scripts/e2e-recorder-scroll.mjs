@@ -1,10 +1,10 @@
-import { chromium, webkit } from 'playwright';
+import {chromium,webkit,launchOptions,isolateTestRequests} from './e2e-browser.mjs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
 const baseURL=process.env.E2E_BASE_URL||'http://127.0.0.1:4173';
 const engine=String(process.env.E2E_BROWSER||'webkit').toLowerCase();
-const browser=await (engine==='webkit'?webkit:chromium).launch({headless:true});
+const browser=await (engine==='webkit'?webkit:chromium).launch(launchOptions(engine));
 const context=await browser.newContext({viewport:{width:430,height:932},isMobile:true,hasTouch:true,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1'});
 await context.addInitScript(()=>{
   const position={coords:{latitude:30.2672,longitude:-97.7431,altitude:160,accuracy:6,altitudeAccuracy:4,heading:45,speed:12},timestamp:Date.now()};
@@ -13,6 +13,7 @@ await context.addInitScript(()=>{
   localStorage.setItem('motocloud-install-seen','1');
 });
 const page=await context.newPage();
+await isolateTestRequests(page,baseURL);
 await page.goto(`${baseURL}/?e2e=1&forceRecordingIsolation=1`,{waitUntil:'networkidle'});
 await page.waitForFunction(()=>Boolean(window.MotoRide&&window.MotoRideDash));
 await page.evaluate(()=>window.MotoRideDash.open());

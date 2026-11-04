@@ -14,7 +14,7 @@
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%;width:100%;min-height:100%;overflow-x:hidden}
 body{width:100%;min-height:var(--app-vh);overflow-x:hidden}
 .top{
-  min-height:var(--app-header-h)!important;
+  min-height:calc(var(--app-header-core) + var(--app-safe-top))!important;
   height:auto!important;
   padding-top:var(--app-safe-top)!important;
   padding-right:max(14px,var(--app-safe-right))!important;

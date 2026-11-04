@@ -1,4 +1,4 @@
-import { chromium, webkit } from 'playwright';
+import {chromium,webkit,launchOptions,isolateTestRequests} from './e2e-browser.mjs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
@@ -9,7 +9,7 @@ const out=path.resolve('test-results/proof',engine);
 await fs.rm(out,{recursive:true,force:true});
 await fs.mkdir(out,{recursive:true});
 
-const browser=await browserType.launch({headless:true});
+const browser=await browserType.launch(launchOptions(engine));
 const context=await browser.newContext({
   viewport:{width:430,height:932},
   deviceScaleFactor:1,
@@ -44,6 +44,7 @@ await context.addInitScript(()=>{
 });
 
 const page=await context.newPage();
+await isolateTestRequests(page,baseURL);
 const pageErrors=[];
 const consoleErrors=[];
 page.on('pageerror',error=>pageErrors.push(String(error?.stack||error)));
@@ -169,7 +170,7 @@ try{
 
   await page.click('#dashClose');
   await page.waitForSelector('#rideDashOverlay',{state:'detached'});
-  const routeViews=['dashboard','garageMode','roadmap','engineering','pcb','firmware','garage','parts','maintenance','rides','notes','media'];
+  const routeViews=['dashboard','rideCenter','weather','garage','settings','maintenance','garageMode','notes','media'];
   let routeIndex=0;
   for(const view of routeViews){
     const selector=`#nav [data-v="${view}"]`;
@@ -202,7 +203,7 @@ try{
     if(await page.locator('#adventureOverlay').count()){
       await shot('11-adventure-mode');
       pass('Adventure Mode opens');
-      await clickIf('#closeAdventure');
+      if(await page.locator('#adventureOverlay').evaluate(node=>node.classList.contains('mmEmbedded')))await page.evaluate(()=>window.MotoWorkspace.navigate('rideCenter','live'));else await clickIf('#closeAdventure');
     }else{
       evidence.skippedViews.push('adventure-overlay-selector');
     }

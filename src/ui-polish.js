@@ -31,6 +31,7 @@ const svg=path=>`<svg viewBox="0 0 24 24" aria-hidden="true">${path}</svg>`;
 const navIcon={
   home:svg('<path d="m3 11 9-8 9 8v10h-6v-6H9v6H3V11Z"/>'),
   ride:svg('<circle cx="12" cy="12" r="9"/><path d="M12 12 17 7M6 16h12"/>'),
+  weather:svg('<path d="M7 18a4 4 0 1 1 1-8A6 6 0 0 1 20 12a3 3 0 0 1-1 6H7Z"/>'),
   maps:svg('<path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Zm6-3v15m6-12v15"/>'),
   garage:svg('<path d="m3 10 9-7 9 7v11H3V10Zm4 11v-8h10v8M8 16h8"/>'),
   menu:svg('<path d="M4 6h16M4 12h16M4 18h16"/>')
@@ -84,10 +85,10 @@ function bottomNav(){
     bar.id = 'motoBottomNav';
     bar.className = 'motoBottomNav';
     bar.setAttribute('aria-label','Primary navigation');
-    bar.innerHTML = `<button type="button" data-go="home">${navIcon.maps}<span>Map</span></button><button type="button" data-go="routes">${navIcon.maps}<span>Routes</span></button><button type="button" data-go="rides">${navIcon.ride}<span>Rides</span></button><button type="button" data-go="garage">${navIcon.garage}<span>Bike</span></button><button type="button" data-go="settings">${navIcon.menu}<span>Settings</span></button>`;
+    bar.innerHTML = `<button type="button" data-go="home">${navIcon.maps}<span>Map</span></button><button type="button" data-go="rideCenter">${navIcon.ride}<span>Ride Center</span></button><button type="button" data-go="weather">${navIcon.weather}<span>Weather</span></button><button type="button" data-go="garage">${navIcon.garage}<span>Garage</span></button><button type="button" data-go="settings">${navIcon.menu}<span>Settings</span></button>`;
     document.body.appendChild(bar);
   }
-  const destinations={home:'dashboard',routes:'routes',rides:'rides',garage:'garage',settings:'settings'};
+  const destinations={home:'dashboard',rideCenter:'rideCenter',weather:'weather',garage:'garage',settings:'settings'};
   for(const button of bar.querySelectorAll('[data-go]')) {
     const target=$(`#nav [data-v="${destinations[button.dataset.go]}"]`);
     button.hidden=Boolean(target?.hidden);
@@ -145,7 +146,7 @@ function schedulePolish(){
 const appRoot = document.querySelector('#app');
 if(appRoot) new MutationObserver(schedulePolish).observe(appRoot,{childList:true,subtree:false});
 new MutationObserver(schedulePolish).observe(document.body,{childList:true,subtree:false});
-window.addEventListener('moto-ride-dash-opened',() => setBottomActive('ride'));
+window.addEventListener('moto-workspace-change',schedulePolish);
 window.addEventListener('moto-ride-dash-closed',schedulePolish);
-window.addEventListener('moto-route-update',()=>setBottomActive(document.querySelector('#adventureOverlay')?'maps':'ride'));
+window.addEventListener('moto-route-update',schedulePolish);
 polish();

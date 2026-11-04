@@ -1,6 +1,14 @@
 import { segmentMiles, validTrackPoint } from './gpx.js';
 
 const HOUR = 3600000;
+export function weatherCondition(code) {
+  if(code===0)return 'Clear';
+  if([1,2].includes(code))return 'Partly cloudy';if(code===3)return 'Overcast';
+  if([45,48].includes(code))return 'Fog';if([51,53,55,56,57].includes(code))return 'Drizzle';
+  if([61,63,65,66,67,80,81,82].includes(code))return 'Rain';
+  if([71,73,75,77,85,86].includes(code))return 'Snow';if([95,96,99].includes(code))return 'Thunderstorm';
+  return 'Conditions unavailable';
+}
 export function weatherTimeline(route, departure, mph = 35, count = 8) {
   if (!Number.isFinite(departure) || !Number.isFinite(mph) || mph < 1 || mph > 100) throw new Error('Choose a valid departure time and estimated speed (1–100 mph).');
   const legs = []; let miles = 0;
@@ -30,7 +38,7 @@ export function weatherAtArrival(sample, data, now = Date.now()) {
   // Provider precipitation values describe the preceding hour. Select the hour containing arrival.
   const index = times.findIndex(t => t>=sample.arrival && t-sample.arrival<HOUR);
   const value = (field,i) => {
-    const n = hourly[field]?.[i];return typeof n === 'number' && Number.isFinite(n) && (!['precipitation','wind_speed_10m'].includes(field)||n>=0) ? n : null;
+    const n = hourly[field]?.[i];return typeof n === 'number' && Number.isFinite(n) && (!['precipitation','wind_speed_10m','wind_gusts_10m'].includes(field)||n>=0) ? n : null;
   };
   const daily = data.daily;
   const previousDays = previousDates(now,zone).map(date => {
@@ -39,20 +47,25 @@ export function weatherAtArrival(sample, data, now = Date.now()) {
     return {date,mm:typeof mm==='number' && Number.isFinite(mm) && mm>=0 ? mm : null};
   });
   // Partial boundary hours are prorated. Require every hour: missing rain is not zero rain.
-  let rolling72 = 0,covered = 0;
-  times.forEach((t,i) => {
-    const overlap = Math.max(0,Math.min(t,now)-Math.max(t-HOUR,now-72*HOUR));
-    if (!overlap) return;
-    const rain = value('precipitation',i);
-    if (rain!==null && rain>=0) {rolling72 += rain*overlap/HOUR;covered += overlap;}
-  });
+  const rollingRain = hours => {
+    let amount=0,covered=0;
+    times.forEach((t,i)=>{const overlap=Math.max(0,Math.min(t,now)-Math.max(t-HOUR,now-hours*HOUR));const rain=value('precipitation',i);if(overlap&&rain!==null){amount+=rain*overlap/HOUR;covered+=overlap;}});
+    return covered>=hours*HOUR-1?amount:null;
+  };
   const probability = index>=0 ? value('precipitation_probability',index) : null;
+  const today=daily?.time?.findIndex(t=>dateKey(t*1000,zone)===dateKey(now,zone))??-1;
+  const dailyValue=field=>{const n=daily?.[field]?.[today];return typeof n==='number'&&Number.isFinite(n)?n:null;};
   return {...sample,timezone:zone,validAt:index>=0 ? times[index] : null,
     probability:probability!==null && probability>=0 && probability<=100 ? probability : null,
     amountMm:index>=0 ? value('precipitation',index) : null,
     windKph:index>=0 ? value('wind_speed_10m',index) : null,
     temperatureC:index>=0 ? value('temperature_2m',index) : null,
-    previousDays,rolling72Mm:covered>=72*HOUR-1 ? rolling72 : null,
+    gustKph:index>=0?value('wind_gusts_10m',index):null,
+    windDirection:index>=0?value('wind_direction_10m',index):null,
+    weatherCode:index>=0?value('weather_code',index):null,
+    highC:dailyValue('temperature_2m_max'),lowC:dailyValue('temperature_2m_min'),
+    hourly:times.map((time,i)=>({time,temperatureC:value('temperature_2m',i),probability:value('precipitation_probability',i),rainMm:value('precipitation',i)})).filter(item=>item.time>=now&&item.time<now+12*HOUR),
+    previousDays,rolling24Mm:rollingRain(24),rolling48Mm:rollingRain(48),rolling72Mm:rollingRain(72),
     historySource:'modelled/reanalysis estimate; not ground observations'};
 }
 
@@ -72,11 +85,16 @@ export function surfacePotential(sample, {surface='unknown', drainage='unknown',
 }
 
 export async function fetchRouteWeather(samples, fetcher = fetch) {
-  const params = new URLSearchParams({latitude:samples.map(s=>s.lat.toFixed(4)).join(','),longitude:samples.map(s=>s.lon.toFixed(4)).join(','),hourly:'precipitation_probability,precipitation,temperature_2m,wind_speed_10m',daily:'precipitation_sum',past_days:'4',forecast_days:'7',timezone:'auto',timeformat:'unixtime'});
+  const params = new URLSearchParams({latitude:samples.map(s=>s.lat.toFixed(4)).join(','),longitude:samples.map(s=>s.lon.toFixed(4)).join(','),hourly:'precipitation_probability,precipitation,temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m,weather_code',daily:'precipitation_sum,temperature_2m_max,temperature_2m_min',past_days:'4',forecast_days:'7',timezone:'auto',timeformat:'unixtime'});
   const response=await fetcher(`https://api.open-meteo.com/v1/forecast?${params}`,{signal:AbortSignal.timeout(15000)});
   if(!response.ok)throw new Error(`Weather unavailable (${response.status}).`);
   const data=await response.json(),locations=Array.isArray(data)?data:[data];
   if(locations.length!==samples.length)throw new Error('Incomplete route forecast.');
   const fetchedAt=Date.now();
   return {provider:'Open-Meteo',fetchedAt,issuedAt:null,resolution:'hourly; model-dependent spatial grid',samples:samples.map((s,i)=>weatherAtArrival(s,locations[i],fetchedAt))};
+}
+
+export async function reserveWeatherBudget(store,count,day=new Date().toISOString().slice(0,10)) {
+  if(!Number.isInteger(count)||count<1||count>8)throw new Error('Invalid weather sample count.');
+  return store.update('device',`weather-budget:${day}`,used=>{used=Number(used)||0;if(used+count>96)throw new Error('This device’s daily weather allowance is exhausted. Cached forecasts remain available.');return used+count;});
 }

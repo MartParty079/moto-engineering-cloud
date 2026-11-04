@@ -1,3 +1,4 @@
+import {openArea} from './workspace-helpers.mjs';
 import { pathToFileURL } from 'node:url';
 import { mkdtemp,readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -30,7 +31,7 @@ try{
   const login=async id=>{
     await page.setViewportSize({width:1280,height:800});owner=id;await page.goto('http://127.0.0.1:5173');
     await page.evaluate(id=>localStorage.setItem('sb-127-auth-token',JSON.stringify({access_token:btoa(JSON.stringify({alg:'HS256',typ:'JWT'}))+'.'+btoa(JSON.stringify({sub:id,role:'authenticated',aal:'aal1',exp:Math.floor(Date.now()/1000)+3600}))+'.test',refresh_token:'local-test',expires_at:Math.floor(Date.now()/1000)+3600,token_type:'bearer',user:{id,email:'local@example.test',email_confirmed_at:'2026-01-01T00:00:00Z',is_anonymous:false}})),id);
-    await page.reload();await page.locator('#nav [data-v="routes"]').waitFor();await page.locator('#nav [data-v="routes"]').click();await page.locator('#missionGpxInput').waitFor();
+    await page.reload();await page.locator('#motoBottomNav').waitFor();await openArea(page,'routes');await page.locator('#missionGpxInput').waitFor();
   };
   await login(ownerA);
   const parserChecks=await page.evaluate(async source=>{
@@ -53,15 +54,15 @@ try{
   // A test renderer records calls; no real tile/provider or map capability is implied.
   await page.evaluate(()=>{
     window.testTrackLines=[];const layer=()=>({addTo(){return this},clearLayers(){},getBounds(){return{}},bindPopup(){return this}});
-    const map={setView(){return this},on(){return this},eachLayer(){},invalidateSize(){},removeLayer(){},hasLayer(){return false},fitBounds(){},remove(){},panTo(){}};
+    const map={getContainer(){return document.querySelector('#adventureMap')},getCenter(){return {lat:30,lng:-97}},getZoom(){return 10},setView(){return this},on(){return this},eachLayer(){},invalidateSize(){},removeLayer(){},hasLayer(){return false},fitBounds(){},remove(){},panTo(){}};
     window.L={map:()=>map,tileLayer:()=>layer(),layerGroup:()=>layer(),marker:()=>layer(),divIcon:()=>({}),polyline:points=>{window.testTrackLines.push(points);return layer()}};
   });
   await page.locator('[data-route-map]').click();await page.waitForFunction(()=>window.testTrackLines.length>0);assert.equal(await page.evaluate(()=>window.testTrackLines.at(-1).length),2);
-  await page.locator('#closeAdventure').click();
+  await openArea(page,'routes');
   assert.equal(cloudWrites,0,'GPX imports must not write cloud routes');
   await login(ownerB);assert.equal(await page.locator('.missionSavedRoute').count(),0,'A different account cannot see originals');
   await login(ownerA);await page.locator('.missionSavedRoute').waitFor();
-  await page.setViewportSize({width:1280,height:800});await page.locator('#nav [data-v="rides"]').click();await page.locator('.unifiedRideLog [data-ride-session]').click();await page.locator('#downloadRideGpx').waitFor();
+  await page.setViewportSize({width:1280,height:800});await openArea(page,'rides');await page.locator('.unifiedRideLog [data-ride-session]').click();await page.locator('#downloadRideGpx').waitFor();
   const rideDownload=page.waitForEvent('download');await page.locator('#downloadRideGpx').click();const downloadedRide=await rideDownload;const exported=await readFile(await downloadedRide.path(),'utf8');
   assert.equal((exported.match(/<trkpt /g)||[]).length,2501);assert.match(exported,/<ele>0<\/ele>/);
   const roundtrip=await page.evaluate(async source=>{const {parseGPX}=await import('/src/gpx.js');const p=parseGPX(source);return{count:p.pointCount,first:p.segments[0][0].time,last:p.segments[0].at(-1).time}},exported);

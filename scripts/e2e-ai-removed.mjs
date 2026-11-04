@@ -1,4 +1,4 @@
-import { chromium, webkit } from 'playwright';
+import {chromium,webkit,launchOptions,isolateTestRequests} from './e2e-browser.mjs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
@@ -8,7 +8,7 @@ const browserType=engine==='webkit'?webkit:chromium;
 const out=path.resolve('test-results/proof',engine);
 await fs.mkdir(out,{recursive:true});
 
-const browser=await browserType.launch({headless:true});
+const browser=await browserType.launch(launchOptions(engine));
 const context=await browser.newContext({viewport:{width:430,height:932},isMobile:true,hasTouch:true,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1'});
 await context.addInitScript(()=>{
   localStorage.setItem('motocloud-install-seen','1');
@@ -16,6 +16,7 @@ await context.addInitScript(()=>{
   localStorage.setItem('moto-ai-history','must-be-removed');
 });
 const page=await context.newPage();
+await isolateTestRequests(page,baseURL);
 const errors=[];
 let aiNetworkRequests=0;
 page.on('pageerror',error=>errors.push(String(error)));

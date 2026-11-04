@@ -18,7 +18,11 @@ Map opens the existing online workspace. Routes now stores account/project-scope
 
 The 2026-10-13 design continuation adds light/dark appearance, a quieter shared visual system, progressive route preparation and a responsive cockpit. Theme preferences use the existing local owner/project store with a device fallback; no authentication or database policy changes are introduced. See [UI_DESIGN.md](UI_DESIGN.md) for evidence and device release checks.
 
+MM-UI-007 (2026-11-04) supersedes the previous top-level navigation with Map, Ride Center, Weather, Garage and Settings. Routes/GPX is nested in Map and ride review in Ride Center. Retained workspace roots preserve the single Leaflet instance, camera and recorder across tab switches; the iPhone recording fanout guard remains active without replacing the workspace with the legacy diagnostic overlay. Weather reuses the existing forecast and radar owners with explicit fetches, modeled-rainfall labels and bounded shared device usage. Invitation-only access, MFA, service boundaries and original route/ride data remain unchanged. This frontend work does not establish graph-aware Fit to Road, connected vehicle sensors, continuous iOS background capture or physical-device performance certification. See [MM_UI_007.md](MM_UI_007.md) for implementation, evidence and release gates. Production release requires explicit approval.
+
 ## V1 system boundary
+
+The 2026-11-04 Moto Mission 2.0 continuation retains invitation-only verified access and MFA by explicit user decision, overriding guest-first language in the new proposed PRD. The first local slice restores active motorcycle context in the shell/cockpit with owner/project-scoped persistence and a guard against changing bikes during recoverable rides. See [MOTO_MISSION_2_DELIVERY.md](MOTO_MISSION_2_DELIVERY.md) for requirement status, remaining gates and release checks. This does not establish deployment, full offline regional maps, GPX graph matching, paid-provider enablement or native/hardware parity.
 
 ### Included
 

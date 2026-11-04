@@ -1,9 +1,37 @@
 import { supabase } from './supabase.js';
 import { recorder, subscribeRecorder, exportLocalRide, exportLocalRideGPX } from './ride-runtime.js';
+import { missionStore } from './rider-preferences.js';
 
 // Preserve the unified Ride OS interface while the journal owns capture and recovery.
 let bikes = [], rides = [], stopping = false, loadGeneration = 0;
+let selectedBikeId = null, bikeOwner = null, selectionBusy = false;
 const bikeName = bike => [bike.year, bike.make, bike.model].filter(Boolean).join(' ') || bike.name || 'Motorcycle';
+function activeBike() {
+  if (!bikeOwner || recorder.owner !== bikeOwner) return null;
+  // Recovery keeps the recorded motorcycle authoritative, including paused rides.
+  if (recorder.ride) return {id:recorder.ride.bike.id,name:recorder.ride.bikeName};
+  const bike = bikes.find(item => String(item.id) === String(selectedBikeId));
+  return bike ? {id:bike.id,name:bike.name || bikeName(bike)} : null;
+}
+function publishBike() {
+  window.dispatchEvent(new CustomEvent('moto-motorcycle-context',{detail:activeBike()}));
+}
+async function selectBike(id) {
+  const owner = recorder.owner, generation = loadGeneration;
+  if (!owner || owner !== bikeOwner) throw new Error('Sign in and wait for your garage to load.');
+  if (selectionBusy || recorder.starting || stopping) throw new Error('Wait for the current motorcycle operation to finish.');
+  const bike = bikes.find(item => String(item.id) === String(id));
+  if (!bike) throw new Error('Choose a motorcycle from your garage.');
+  if (recorder.ride && String(recorder.ride.bike.id) !== String(id)) throw new Error('Finish or recover the current ride in Ride Mode before switching motorcycles.');
+  selectionBusy = true;
+  try {
+    await missionStore.put(owner,'active-motorcycle',bike.id);
+    if (owner !== recorder.owner || generation !== loadGeneration) throw new Error('Account or garage changed. Choose your motorcycle again.');
+    selectedBikeId = bike.id;
+    publishBike();
+    return activeBike();
+  } finally { selectionBusy = false; }
+}
 const ft = value => Number.isFinite(value) ? value * 3.28084 : null;
 function rideState() {
   const ride = recorder.ride, point = ride?.latest || {};
@@ -38,6 +66,9 @@ function publish() {
     else localStorage.removeItem('motoActiveRide');
   } catch { /* IndexedDB is authoritative; this legacy UI hint is optional. */ }
   window.dispatchEvent(new CustomEvent('moto-ride-state',{detail:state}));
+  publishBike();
+  // One bounded presentation snapshot; GPS/motion fan-out stays isolated on iPhone.
+  window.dispatchEvent(new CustomEvent('moto-workspace-ride',{detail:state}));
   return state;
 }
 async function loadData() {
@@ -45,6 +76,7 @@ async function loadData() {
   const {data, error} = await supabase.auth.getSession();
   if (generation !== loadGeneration) return;
   const owner = error ? null : data.session?.user.id;
+  if (bikeOwner !== owner) { bikes = []; rides = []; selectedBikeId = null; bikeOwner = owner; }
   await recorder.setOwner(owner || null);
   if (generation !== loadGeneration) return;
   if (!owner) { bikes = []; rides = []; }
@@ -56,6 +88,9 @@ async function loadData() {
     if (generation !== loadGeneration || owner !== recorder.owner) return;
     if (bikeResult.error || rideResult.error) throw new Error('Garage or ride history could not be loaded.');
     bikes = bikeResult.data || []; rides = rideResult.data || [];
+    const saved = await missionStore.get(owner,'active-motorcycle');
+    if (generation !== loadGeneration || owner !== recorder.owner) return;
+    selectedBikeId = bikes.some(bike => String(bike.id) === String(saved)) ? saved : bikes[0]?.id || null;
   }
   window.MotoRideHistory = rideHistory();
   window.dispatchEvent(new CustomEvent('moto-rides-update',{detail:window.MotoRideHistory}));
@@ -69,9 +104,10 @@ async function stop() {
   finally { stopping = false; publish(); }
 }
 window.MotoRide = {
-  getState:rideState, getBikes:() => bikes.map(bike => ({id:bike.id,name:bikeName(bike),odometer:Number(bike.odometer || 0)})),
+  getActiveBike:activeBike, selectBike,
+  getState:rideState, getBikes:() => bikes.map(bike => ({id:bike.id,name:bike.name || bikeName(bike),odometer:Number(bike.odometer || 0)})),
   getRides:rideHistory, refresh, stop,
-  async start(id) { const bike = bikes.find(item => String(item.id) === String(id)); if (!bike) throw new Error('Choose a motorcycle from your garage.'); await recorder.start(bike); return publish(); },
+  async start(id) { await selectBike(id); const bike = bikes.find(item => String(item.id) === String(id)); if (!bike) throw new Error('Choose a motorcycle from your garage.'); await recorder.start(bike); return publish(); },
   async pause() { await recorder.pause(); return publish(); },
   async resume() { await recorder.resume(); return publish(); },
   async retry() { await recorder.sync({manual:true}); await refresh(); return publish(); },
@@ -88,7 +124,16 @@ setInterval(() => { if (recorder.recording) publish(); },1000);
 setInterval(() => { if (recorder.owner && !recorder.recording && !recorder.starting && recorder.ride?.status === 'pending') recorder.sync(); },15000);
 window.addEventListener('online',() => { if (!recorder.recording) recorder.sync(); });
 window.addEventListener('moto-ride-complete',refresh);
+window.addEventListener('moto-garage-updated',refresh);
 window.addEventListener('pagehide',() => { recorder.release(); publish(); });
 window.addEventListener('pageshow',refresh);
-supabase.auth.onAuthStateChange(() => setTimeout(refresh,0));
+supabase.auth.onAuthStateChange((_event,session) => {
+  if (bikeOwner !== session?.user.id) {
+    ++loadGeneration;
+    bikeOwner = null; bikes = []; rides = []; selectedBikeId = null;
+    window.dispatchEvent(new CustomEvent('moto-motorcycles-reset'));
+    publishBike();
+  }
+  setTimeout(refresh,0);
+});
 refresh();

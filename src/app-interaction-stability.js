@@ -135,7 +135,7 @@ function pressFeedback(element){
 }
 
 function repeatAllowed(element){
-  return Boolean(element.closest('[data-ui-repeat],.leaflet-control-zoom,.leaflet-control,[data-map-control]')||element.matches('input,select,textarea,summary'));
+  return Boolean(element.closest('[data-ui-repeat],[data-go],[data-v],#menu,#navClose,.leaflet-control-zoom,.leaflet-control,[data-map-control]')||element.matches('input,select,textarea,summary'));
 }
 
 function closeNavigationForRoute(element){

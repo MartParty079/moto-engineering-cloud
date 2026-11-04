@@ -1,4 +1,4 @@
-import { chromium, webkit } from 'playwright';
+import {chromium,webkit,launchOptions,isolateTestRequests} from './e2e-browser.mjs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
@@ -7,7 +7,7 @@ const engine=String(process.env.E2E_BROWSER||'chromium').toLowerCase();
 const browserType=engine==='webkit'?webkit:chromium;
 const out=path.resolve('test-results/proof',engine);
 await fs.mkdir(out,{recursive:true});
-const browser=await browserType.launch({headless:true});
+const browser=await browserType.launch(launchOptions(engine));
 const context=await browser.newContext({viewport:{width:430,height:932},isMobile:true,hasTouch:true,userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1'});
 await context.addInitScript(()=>{
   const position={coords:{latitude:30.2672,longitude:-97.7431,altitude:160,accuracy:6,heading:45,speed:22},timestamp:Date.now()};
@@ -16,9 +16,10 @@ await context.addInitScript(()=>{
   localStorage.setItem('motocloud-install-seen','1');
 });
 const page=await context.newPage();
+await isolateTestRequests(page,baseURL);
 const errors=[];
 page.on('pageerror',error=>errors.push(String(error)));
-page.on('console',message=>{if(message.type()==='error')errors.push(message.text())});
+page.on('console',message=>{if(message.type()==='error')errors.push(`${message.text()} (${message.location().url})`)});
 let requests=0;
 await page.route('**/api/road-info**',async route=>{
   requests+=1;

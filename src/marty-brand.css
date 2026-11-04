@@ -2,22 +2,22 @@
 html:root {
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
   font-optical-sizing:auto;color-scheme:dark;
-  --bg:#101113;--panel:#1a1c1f;--panel2:#212428;--panel3:#2b2e32;
-  --text:#f2f3f5;--muted:#a4a9b1;--line:#34383e;--card:var(--panel);
-  --accent:#a8ccb7;--accent-text:#163b2a;--accent-soft:#243c30;--accent-rgb:168,204,183;
-  --blue:var(--accent);--green:#8ad5ac;--orange:#edc382;--red:#ffa29c;--purple:#c7bddc;
+  --bg:#102820;--panel:#19342B;--panel2:#214539;--panel3:#2b5143;
+  --text:#FFFFFF;--muted:#b6c9bf;--line:#365346;--card:var(--panel);
+  --accent:#F47716;--accent-text:#18211D;--accent-soft:#423323;--accent-rgb:244,119,22;
+  --blue:var(--accent);--green:#347A39;--orange:#F47716;--red:#ffa29c;--purple:#c7bddc;
   --moto-accent:var(--accent);--moto-accent-strong:var(--accent);--moto-accent-soft:var(--accent-soft);
-  --moto-accent-glow:transparent;--r:20px;--shadow:0 4px 24px #0000000a;
-  --chrome:rgba(16,17,19,.92);--scrim:rgba(0,0,0,.52);--ease-out:cubic-bezier(.23,1,.32,1);
+  --moto-accent-glow:transparent;--r:16px;--shadow:0 4px 24px #0000000a;
+  --chrome:#102820;--scrim:rgba(0,0,0,.52);--ease-out:cubic-bezier(.23,1,.32,1);
   --ease-drawer:cubic-bezier(.32,.72,0,1);--control-radius:12px;
   background:var(--bg)!important;scroll-behavior:auto;-webkit-tap-highlight-color:transparent;
   -webkit-text-size-adjust:100%;
 }
 html[data-theme="light"],body.mission-day {
-  color-scheme:light;--bg:#f5f5f7;--panel:#ffffff;--panel2:#f0f1f3;--panel3:#e6e8ec;
-  --text:#1c1e22;--muted:#616773;--line:#d9dce1;--card:var(--panel);
-  --accent:#286348;--accent-text:#ffffff;--accent-soft:#e8f1ec;--accent-rgb:40,99,72;
-  --green:#246b48;--orange:#805713;--red:#ab302a;--purple:#6d5386;
+  color-scheme:light;--bg:#F5F6F2;--panel:#ffffff;--panel2:#ecf0e9;--panel3:#dde5db;
+  --text:#18211D;--muted:#59655f;--line:#d5ddd5;--card:var(--panel);
+  --accent:#F47716;--accent-text:#18211D;--accent-soft:#fff0df;--accent-rgb:244,119,22;
+  --green:#347A39;--orange:#ac4400;--red:#ab302a;--purple:#6d5386;
   --chrome:rgba(245,245,247,.94);--scrim:rgba(20,25,30,.34);
   --blue:var(--accent);--shadow:0 4px 24px #1c1e2205;
 }

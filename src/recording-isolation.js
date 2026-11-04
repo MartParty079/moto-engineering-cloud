@@ -221,7 +221,8 @@
     isolated = true;
     restoreDashboard = Boolean(document.querySelector('#rideDashOverlay'));
     window.__motoRecordingIsolation = true;
-    document.documentElement.dataset.recordingIsolated = '1';
+    const workspace=Boolean(window.MotoWorkspace)&&params.get('e2e')!=='1';
+    document.documentElement.dataset.recordingIsolated = workspace?'workspace':'1';
     diagnostics.activatedAt = Date.now();
     diagnostics.initialDomNodes = document.getElementsByTagName('*').length;
     diagnostics.maxDomNodes = diagnostics.initialDomNodes;
@@ -230,8 +231,7 @@
     try { window.MotoRideDash?.close?.(false); } catch {}
     document.querySelector('#rideDashOverlay')?.remove();
     document.querySelector('#motoRecordingIsolation')?.remove();
-    document.body.insertAdjacentHTML('beforeend', markup());
-    bind();
+    if(!workspace){document.body.insertAdjacentHTML('beforeend', markup());bind();}
     startHeartbeat();
     scheduleRender(true);
     window.dispatchEvent(new CustomEvent('moto-recording-isolation-change',{detail:{active:true,build:'v41'}}));
@@ -249,7 +249,7 @@
     delete document.documentElement.dataset.recordingIsolated;
     window.__motoRecordingIsolation = false;
     window.dispatchEvent(new CustomEvent('moto-recording-isolation-change',{detail:{active:false,build:'v41'}}));
-    if (restoreDashboard || !document.querySelector('#rideDashOverlay')) {
+    if ((!window.MotoWorkspace || params.get('e2e')==='1') && (restoreDashboard || !document.querySelector('#rideDashOverlay'))) {
       setTimeout(() => { if (!window.MotoRide?.getState?.().active) window.MotoRideDash?.open?.(); }, 120);
     }
     restoreDashboard = false;

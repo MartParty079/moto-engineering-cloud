@@ -67,6 +67,8 @@ function publish() {
   } catch { /* IndexedDB is authoritative; this legacy UI hint is optional. */ }
   window.dispatchEvent(new CustomEvent('moto-ride-state',{detail:state}));
   publishBike();
+  // One bounded presentation snapshot; GPS/motion fan-out stays isolated on iPhone.
+  window.dispatchEvent(new CustomEvent('moto-workspace-ride',{detail:state}));
   return state;
 }
 async function loadData() {

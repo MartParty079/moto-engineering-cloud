@@ -3,8 +3,8 @@ import { supabase } from './supabase.js';
 const ROLE_RANK={rider:1,technician:2,engineer:3,admin:4,owner:5};
 const PREVIEW_ROLES=['rider','technician','engineer','admin'];
 const PREVIEW_KEY='motoPreviewRole';
-const VIEW_FEATURE={routes:'dashboard',settings:'dashboard',devices:'motorcycles',dashboard:'dashboard',garageMode:'garage_mode',garage:'motorcycles',maintenance:'maintenance',rides:'ride_log',parts:'parts',roadmap:'work_packages',engineering:'engineering',pcb:'pcb',firmware:'firmware',notes:'notebook',media:'project_files',ai:'ai_assistant'};
-const VIEW_AREA={routes:'garage',settings:'garage',devices:'garage',dashboard:'garage',garageMode:'garage',garage:'garage',maintenance:'garage',rides:'garage',parts:'engineering',roadmap:'engineering',engineering:'engineering',pcb:'engineering',firmware:'engineering',notes:'engineering',media:'engineering',ai:'engineering'};
+const VIEW_FEATURE={rideCenter:'ride_log',weather:'dashboard',routes:'dashboard',settings:'dashboard',devices:'motorcycles',dashboard:'dashboard',garageMode:'garage_mode',garage:'motorcycles',maintenance:'maintenance',rides:'ride_log',parts:'parts',roadmap:'work_packages',engineering:'engineering',pcb:'pcb',firmware:'firmware',notes:'notebook',media:'project_files',ai:'ai_assistant'};
+const VIEW_AREA={rideCenter:'garage',weather:'garage',routes:'garage',settings:'garage',devices:'garage',dashboard:'garage',garageMode:'garage',garage:'garage',maintenance:'garage',rides:'garage',parts:'engineering',roadmap:'engineering',engineering:'engineering',pcb:'engineering',firmware:'engineering',notes:'engineering',media:'engineering',ai:'engineering'};
 let session=null,profile={role:'rider',display_name:''},flags=[],grants=[],profiles=[],accessReady=false,applying=false,loadToken=0,openLogged=false;
 const $=q=>document.querySelector(q),$$=q=>[...document.querySelectorAll(q)];
 const esc=(s='')=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#039;'}[m]));
@@ -42,3 +42,6 @@ async function setGrant(userId,featureId,enabled){const row={user_id:userId,feat
 const appRoot=$('#app');if(appRoot){const observer=new MutationObserver(()=>queueMicrotask(applyAccess));observer.observe(appRoot,{childList:true})}
 supabase.auth.onAuthStateChange((_event,s)=>{session=s;if(s)setTimeout(loadAccess,50);else{accessReady=false;profile={role:'rider',display_name:''};flags=[];grants=[];profiles=[];openLogged=false;sessionStorage.removeItem(PREVIEW_KEY)}});
 loadAccess();
+
+window.MotoAccess={canView:view=>canUse(flagFor(VIEW_FEATURE[view]))};
+window.addEventListener('moto-workspace-change',applyAccess);

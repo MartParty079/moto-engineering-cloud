@@ -1,6 +1,4 @@
-import { mountMissionPreferences } from './rider-preferences.js';
-import { mountOfflineNavigation } from './offline-navigation-ui.js';
-import { mountRouteLibrary } from './route-library.js';
+import {mountWorkspace} from './workspace-ui.js';
 import { supabase } from './supabase.js';
 
 const REMOVED_VIEWS = new Set(['roadmap', 'engineering', 'parts', 'pcb', 'firmware']);
@@ -55,7 +53,7 @@ function removeEngineeringNavigation() {
   });
 
   const intro = nav.querySelector('.navIntro');
-  const introMarkup = '<span>MOTO MISSION</span><strong>Prepare · Ride · Review</strong><small>Map · Routes · Rides · Bike · Settings</small>';
+  const introMarkup = '<span>MOTO MISSION</span><strong>Prepare · Ride · Review</strong><small>Map · Ride Center · Weather · Garage · Settings</small>';
   if (intro && intro.innerHTML !== introMarkup) intro.innerHTML = introMarkup;
   setText(nav.querySelector('.navFooter small'), 'Ride · Maintain · Explore');
   setText($('.brandCopy h1'), 'Moto Mission');
@@ -84,26 +82,7 @@ function filterSearchResults() {
   }
 }
 
-function renderWelcome() {
-  const main = $('#main');
-  if (!$('#nav [data-v="dashboard"]')?.classList.contains('active') || !main || main.dataset.accessBlocked || main.querySelector('.motoWelcomePage')) return;
-  const username = $('.userButton b')?.textContent?.trim() || 'Rider';
-  main.innerHTML = `<section class="motoWelcomePage">
-    <header class="missionHeading"><div><span class="eyebrow">MAKE TIME FOR THE RIDE</span><h2>The miles ahead.</h2><p>Welcome back, ${esc(username)}. A little preparation. A lot more possibility.</p></div><span class="missionPill">Phone GPS · Invite-only</span></header>
-    <section class="missionExplore"><div class="missionExploreCopy"><span class="eyebrow">EXPLORE YOUR NEXT CHAPTER</span><h3>Less planning.<br>More open road.</h3><p>Find your way, bring a route, and keep the moments that matter.</p><button class="primary" id="missionOpenMap" type="button">Explore the map <span aria-hidden="true">↗</span></button><small>Online map · Saved GPX tracks</small></div><div class="missionRouteArt" aria-hidden="true"><svg viewBox="0 0 560 360" fill="none"><path d="M-20 295C80 245 105 360 195 300S190 175 295 160 375 75 490 95 600 0 620 10"/><path d="M-40 240C50 180 120 265 175 220S195 105 295 100 405 15 475 35 570-35 610-50"/><path d="M-20 350C85 300 115 400 235 350S265 245 340 230 425 140 520 155 620 80 640 70"/><path class="missionRouteLine" d="M55 290C120 260 110 335 195 300S190 175 295 160 375 75 450 92"/><circle cx="55" cy="290" r="9"/><circle cx="450" cy="92" r="9"/></svg><span class="missionArtCaption">Go somewhere that stays with you.</span></div></section>
-    <div class="missionSectionTitle"><h3>Ready when you are</h3><span>Your riding essentials</span></div>
-    <div class="motoWelcomeActions"><button class="motoWelcomeAction" id="welcomeStartRide" type="button"><span class="icon" aria-hidden="true">↗</span><strong>Start a ride</strong><small>Record with phone GPS. Review it later.</small><span class="missionActionArrow" aria-hidden="true">→</span></button><button class="motoWelcomeAction" id="welcomeRoutes" type="button"><span class="icon" aria-hidden="true">⌁</span><strong>Prepare a route</strong><small>GPX, offline roads, and route weather.</small><span class="missionActionArrow" aria-hidden="true">→</span></button><button class="motoWelcomeAction" id="welcomeAddMaintenance" type="button"><span class="icon" aria-hidden="true">◇</span><strong>Add maintenance</strong><small>A well-kept bike is a ready bike.</small><span class="missionActionArrow" aria-hidden="true">→</span></button><button class="motoWelcomeAction" id="welcomeSettings" type="button"><span class="icon" aria-hidden="true">◎</span><strong>Make it yours</strong><small>Display, preferences, and security.</small><span class="missionActionArrow" aria-hidden="true">→</span></button></div>
-    <aside class="missionQuietNote"><span aria-hidden="true">◎</span><p>Your phone is your starting point. Optional motorcycle hardware remains disconnected.</p><button type="button" class="ghost" id="welcomeDevices">Device status</button></aside>
-  </section>`;
-  $('#welcomeRoutes').onclick = () => navigate('routes');
-  $('#welcomeDevices').onclick = () => navigate('devices');
-  $('#missionOpenMap').onclick = () => openMissionMap(false);
-  $('#welcomeStartRide').onclick = () => { if (window.MotoRide?.open) window.MotoRide.open(); else window.dispatchEvent(new CustomEvent('moto-ride-open-request')); };
-  $('#welcomeAddMaintenance').onclick = () => void openMaintenanceModal();
-  $('#welcomeSettings').onclick = openSettingsModal;
-}
-
-async function openMaintenanceModal() {
+export async function openMaintenanceModal() {
   closeOverlay('riderMaintenanceOverlay');
   const [{ data: sessionData }, { data: bikes, error: bikeError }] = await Promise.all([
     supabase.auth.getSession(),
@@ -200,7 +179,6 @@ function scan() {
   removeEngineeringNavigation();
   cleanVisibleCopy();
   filterSearchResults();
-  renderWelcome();
   openRequestedView();
 }
 
@@ -224,34 +202,4 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
 else install();
 
 
-function openMissionMap(routes) {
-  if (window.MotoRide?.getState?.().active) return toast('Return to Ride Mode while recording. Route setup is available after stopping.');
-  const bridge = window.MotoAdventure;
-  if (!bridge) return toast('Map tools are still loading. Try again.');
-  routes ? bridge.openRoutes() : bridge.openMap();
-}
-
-export function renderMissionArea(view, main) {
-  if (!['dashboard', 'routes', 'settings', 'devices'].includes(view)) return false;
-  if (main.dataset.accessBlocked) return true;
-  if (view === 'dashboard') renderWelcome();
-  if (view === 'routes') {
-    main.innerHTML = `<section class="missionPage"><header><span class="eyebrow">PREPARE</span><h2>Routes / GPX</h2><p>Good rides begin with a route. Import, preview, and plan here.</p></header><article class="card"><h3>Plan on the map</h3><p>Open the full map for saved tracks, layers, and route tools.</p><button id="missionRoutesOpen" class="primary" type="button">Open route map <span aria-hidden="true">↗</span></button></article><section id="missionRouteLibrary" class="missionRouteLibrary"></section><details class="missionDisclosure"><summary><span>Offline navigation</span><small>Download a small road network before you go</small></summary><section id="missionOfflineNavigation"></section></details><details class="missionDisclosure"><summary><span>Coverage & capabilities</span><small>What works online and offline</small></summary><div class="missionCapabilityGrid"><article class="card"><span class="missionState">Online map</span><h3>Follow a saved track</h3><p>Track guidance uses existing geometry. It does not provide offline turn-by-turn routing.</p></article><article class="card"><span class="missionState">OSM beta</span><h3>Offline packages</h3><p>Download small OSM road networks above for local routing and vector coverage. Large regional basemaps remain unavailable.</p></article><article class="card"><span class="missionState">Open-Meteo beta</span><h3>Weather along your route</h3><p>Choose Route weather on a saved route for arrival-time forecasts, previous three local days and rolling 72-hour estimates.</p></article></div></details></section>`;
-    main.querySelector('#missionRoutesOpen').onclick = () => openMissionMap(true);
-    void mountRouteLibrary(main.querySelector('#missionRouteLibrary'));
-    void mountOfflineNavigation(main.querySelector('#missionOfflineNavigation')).catch(error=>{
-      const host=main.querySelector('#missionOfflineNavigation');if(host)host.textContent=error.message;
-    });
-  }
-  if (view === 'devices') {
-    main.innerHTML = `<section class="missionPage"><header><span class="eyebrow">BIKE / DEVICES</span><h2>Device status</h2><p>Phone-first riding with explicit measurement sources.</p></header><div class="missionCapabilityGrid"><article class="card"><span class="missionState">Phone source</span><h3>GPS recording</h3><p>Ride Mode uses the existing local GPS recorder. Location permission and a valid GPS fix are required. Continuous iOS background capture is not guaranteed.</p><button class="secondary" type="button" id="missionDeviceRide">Open Ride Mode</button></article><article class="card"><span class="missionState">Disconnected / experimental</span><h3>Motorcycle IMU / ESP32</h3><p>No production hardware transport is connected. Phone motion is not guaranteed chassis lean. Calibration and quality validation are required.</p></article></div></section>`;
-    main.querySelector('#missionDeviceRide').onclick = () => window.MotoRide?.open?.();
-  }
-  if (view === 'settings') {
-    main.innerHTML = `<section class="missionPage"><header><span class="eyebrow">MAKE IT YOURS</span><h2>Settings</h2><p>Your display, your data, your peace of mind.</p></header><div class="missionSettingsActions"><button class="missionSettingsAction" type="button" id="missionPreferences"><span aria-hidden="true">◎</span><div><strong>Rider preferences</strong><small>Motorcycles and ride display</small></div><span aria-hidden="true">↗</span></button><button class="missionSettingsAction" type="button" id="missionSecurity"><span aria-hidden="true">◇</span><div><strong>Account security</strong><small>Password, MFA, and sessions</small></div><span aria-hidden="true">↗</span></button></div><section id="missionDataPreferences"></section><aside class="missionQuietNote"><p>Invitation-only access. Guest and local-only accounts remain deferred. Paused and interrupted rides remain recoverable on this device. Administrators retain role-gated controls in navigation.</p></aside></section>`;
-    void mountMissionPreferences(main.querySelector('#missionDataPreferences')).catch(error=>{const host=main.querySelector('#missionDataPreferences');if(host)host.textContent=error.message});
-    main.querySelector('#missionPreferences').onclick = openSettingsModal;
-    main.querySelector('#missionSecurity').onclick = () => { const button=$('#securityCenterNav'); if(button)button.click();else toast('Security settings are still loading.'); };
-  }
-  return true;
-}
+export function renderMissionArea(view,main){return mountWorkspace(view,main,{openSettingsModal,openMaintenanceModal});}

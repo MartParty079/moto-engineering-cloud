@@ -1,3 +1,4 @@
+import {mountSheet,setSheetState} from './ui-components.js';
 import { parseGPX as readGPX, downloadGPX } from './gpx.js';
 import { localRoutes, routeOwner } from './route-library.js';
 import { supabase } from './supabase.js';
@@ -10,23 +11,41 @@ const miles=(a,b)=>{if(!a||!b)return Infinity;const R=3958.7613,d1=rad(b.lat-a.l
 const bearing=(a,b)=>{if(!a||!b)return 0;const y=Math.sin(rad(b.lon-a.lon))*Math.cos(rad(b.lat));const x=Math.cos(rad(a.lat))*Math.sin(rad(b.lat))-Math.sin(rad(a.lat))*Math.cos(rad(b.lat))*Math.cos(rad(b.lon-a.lon));return(Math.atan2(y,x)*180/Math.PI+360)%360};
 const total=pts=>pts.slice(1).reduce((n,p,i)=>n+miles(pts[i],p),0);
 const styleKey=id=>`motoRouteStyle:${id}`;
-const defaultStyle={color:'#2563eb',weight:6,opacity:.9,dash:'solid',arrows:true};
+const defaultStyle={color:'#F47716',weight:6,opacity:.9,dash:'solid',arrows:true};
 const ORIENTATION_STORE='motoAdventureOrientationV1';
 
 let selectionGeneration=0;
 let session,map,layers={},trackLayer,waypointLayer,poiLayer,directionLayer,rider,rangeCircle,routes=[],activeRoute,lastFix,follow=true,headingUp=localStorage.getItem(ORIENTATION_STORE)==='heading',gpsHandler,addPointMode=false,geometryPointMode=null,activeSheet=null,routePointIndex=0,styleSaveTimer;
 
-async function leaflet(){if(window.L)return;await new Promise((ok,no)=>{let l=document.querySelector('link[data-leaflet]');if(!l){l=document.createElement('link');l.rel='stylesheet';l.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';l.dataset.leaflet='1';document.head.appendChild(l)}let s=document.querySelector('script[data-leaflet]');if(s){if(window.L)return ok();s.addEventListener('load',ok,{once:true});s.addEventListener('error',no,{once:true});return}s=document.createElement('script');s.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';s.dataset.leaflet='1';s.onload=ok;s.onerror=no;document.head.appendChild(s)})}
+async function leaflet(){if(window.L)return;await new Promise((ok,no)=>{let l=document.querySelector('link[data-leaflet]');if(!l){l=document.createElement('link');l.rel='stylesheet';l.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';l.dataset.leaflet='1';document.head.appendChild(l)}let s=document.querySelector('script[data-leaflet]');if(s){if(window.L)return ok();s.addEventListener('load',ok,{once:true});s.addEventListener('error',no,{once:true});return}s=document.createElement('script');s.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';s.dataset.leaflet='1';s.onload=ok;s.onerror=()=>{s.remove();no(new Error('Map renderer unavailable.'));};document.head.appendChild(s)})}
 function geojson(pts,properties={}){return {type:'Feature',properties,geometry:{type:'LineString',coordinates:pts.map(p=>[p.lon,p.lat,Number.isFinite(p.ele)?p.ele:0])}}}
 function nav(){const n=$('#nav');if(!n||$('#adventureNav'))return;const b=document.createElement('button');b.id='adventureNav';b.innerHTML='<span class="navIcon">△</span><span>Adventure Ride</span><em>MAP</em>';b.onclick=open;const g=n.querySelector('[data-v="routes"]')?.closest('.navGroup');b.hidden=true;(g||n).appendChild(b)}
-function close(){selectionGeneration++;window.removeEventListener('moto-gps-fix',gpsHandler);map?.remove();map=null;clearTimeout(styleSaveTimer);document.body.classList.remove('adventure-open','adventure-map-fullscreen');$('#adventureOverlay')?.remove()}
+function destroyMap(){selectionGeneration++;window.removeEventListener('moto-gps-fix',gpsHandler);mapResizeObserver?.disconnect();mapResizeObserver=null;map?.remove();map=null;retainedCamera=null;lastMapSize=null;clearTimeout(styleSaveTimer);document.body.classList.remove('adventure-open','adventure-map-fullscreen');$('#adventureOverlay')?.remove();rider=null;layers={};trackLayer=null;waypointLayer=null;poiLayer=null;directionLayer=null;activeRoute=null;routes=[];mapMountPromise=null;mapFailed=false;window.MotoAdventureMap=null;window.dispatchEvent(new CustomEvent('moto-map-destroyed'));}
+
+let mapMountPromise=null,mapFailed=false,mapResizeObserver=null,retainedCamera=null,lastMapSize=null,resizingMap=false;
+function close(){if($('#adventureOverlay')?.classList.contains('mmEmbedded')){document.body.classList.remove('adventure-map-fullscreen');openSheet(null);return;}destroyMap();}
+function resizeMap(){
+ if(!map)return;const rect=map.getContainer().getBoundingClientRect();if(!rect.width||!rect.height)return;
+ const size=`${rect.width}:${rect.height}`;if(size===lastMapSize)return;
+ const camera=retainedCamera||{center:map.getCenter(),zoom:map.getZoom()};
+ resizingMap=true;
+ try{map.stop?.();map.invalidateSize({pan:false});map.setView(camera.center,camera.zoom,{animate:false,reset:true});lastMapSize=size;retainedCamera=camera;}finally{resizingMap=false;}
+}
+
+async function mountMap(host){
+ if(!host)return;
+ const existing=$('#adventureOverlay');
+ if(existing&&mapFailed&&window.L){destroyMap();return mountMap(host);}
+ if(existing){if(existing.parentElement!==host)host.replaceChildren(existing);existing.classList.add('mmEmbedded');if(mapMountPromise)await mapMountPromise;resizeMap();return;}
+ mapMountPromise=open(null,host);await mapMountPromise;
+}
 
 function sheet(id,title,content){return `<section class="advSheet" id="${id}" aria-hidden="true"><div class="advSheetHandle"></div><header><strong>${title}</strong><button data-sheet-close aria-label="Close panel">×</button></header>${content}</section>`}
 function shell(){return `<section class="adventureShell">
-  <div id="adventureMap"></div>
+  <div id="adventureMap"></div><p id="advMapAvailability" class="mmMapNotice" role="status">Online tiles · not verified</p>
   <header class="advTopBar"><button id="closeAdventure" class="advBack" aria-label="Close map">‹</button><div class="advTopIdentity"><small>MOTO MAP</small><strong id="advTopTitle">Explore</strong></div><div class="advTopStatus"><span id="advGpsDot"></span><b id="advGpsText">GPS</b></div><button id="advSearchOpen" class="advSearchOpen" type="button" aria-label="Search saved routes">⌕ <span>Search routes</span></button><button id="advRideReturn" class="advRideReturn" type="button">RIDE</button></header>
   <div class="advSpeedHud"><div class="advSpeedChip"><strong id="advSpeed">--</strong><small>MPH</small></div><div class="advLimitSign"><strong id="advLimit">--</strong><small>LIMIT</small></div></div>
-  <div class="advMapTools" aria-label="Map shortcuts"><button id="advMapCenter" type="button" aria-label="Recenter on GPS" title="Recenter on GPS">◎</button><button id="advMapLayers" type="button" aria-label="Choose map layer" title="Choose map layer">▱</button></div>
+  <div class="advMapTools" aria-label="Map shortcuts"><button id="advMapCenter" type="button" aria-label="Recenter on GPS" title="Recenter on GPS">◎</button><button id="advMapLayers" type="button" aria-label="Choose map layer" title="Choose map layer">▱</button><button id="advZoomIn" type="button" aria-label="Zoom in">+</button><button id="advZoomOut" type="button" aria-label="Zoom out">−</button></div>
   <nav class="advBottomBar">
     <button data-sheet="advTrackSheet"><span class="advNavGlyph">●</span><b>Track</b></button>
     <button data-sheet="advRoutesSheet" id="advRoutesButton" class="route-empty"><span class="advNavGlyph">⌁</span><b>Routes</b></button>
@@ -42,20 +61,22 @@ function shell(){return `<section class="adventureShell">
   <div id="adventureStatus" class="advToast">Waiting for shared GPS…</div>
 </section>`}
 
-async function open(localId=null){
-  close();
+async function open(localId=null,host=null){
+  if(!host&&window.MotoWorkspace){window.MotoWorkspace.navigate('dashboard','explore');return;}
+  destroyMap();
   const o=document.createElement('div');o.id='adventureOverlay';o.innerHTML=shell();
-  document.body.appendChild(o);document.body.classList.add('adventure-open');bind();
+  if(host){host.replaceChildren(o);o.classList.add('mmEmbedded');}else{document.body.appendChild(o);document.body.classList.add('adventure-open');}bind();
+  for(const panel of o.querySelectorAll('.advSheet')){panel.setAttribute('aria-label',panel.querySelector('header strong')?.textContent||'Map tools');mountSheet(panel,{key:panel.id,group:'map',initial:'hidden'});}
   let timeout;
   try {
     await Promise.race([leaflet(),new Promise((_,reject)=>{timeout=setTimeout(()=>reject(new Error('Map renderer timed out')),10000)})]);
     if(!o.isConnected)return;
-    init();await loadRoutes();
+    init();window.MotoAdventureMap=map;window.dispatchEvent(new CustomEvent('moto-map-created',{detail:{map}}));await loadRoutes();
     if(typeof localId==='string' && o.isConnected){await selectRoute(routes.find(r=>r.local&&r.id===localId));openSheet(null);}
     if(!o.isConnected)return;
     gpsHandler=e=>useFix(e.detail);window.addEventListener('moto-gps-fix',gpsHandler);if(window.MotoGPS)useFix(window.MotoGPS);
   } catch {
-    if(o.isConnected){o.querySelector('#adventureMap').innerHTML='<div class="missionMapFailure" role="status"><h2>Map unavailable</h2><p>Online map resources could not be loaded. Close this map and retry when connected. Ride recording remains available.</p></div>';toast('Map unavailable. Close and retry when connected.');}
+    if(o.isConnected){mapFailed=true;o.querySelector('#adventureMap').innerHTML='<div class="missionMapFailure" role="status"><h2>Map unavailable</h2><p>Online map resources could not be loaded. GPX and downloaded-network tools remain available.</p><button type="button" data-map-retry>Retry map</button></div>';toast('Map unavailable. Retry when connected.');o.querySelector('[data-map-retry]').onclick=()=>{const container=o.parentElement;destroyMap();void mountMap(container);};}
   } finally {clearTimeout(timeout)}
 }
 function bind(){
@@ -65,6 +86,7 @@ function bind(){
   $('#advRouteSearch').oninput=renderRoutes;
   $('#advMapCenter').onclick=center;
   $('#advMapLayers').onclick=()=>openSheet('advLayersSheet');
+  $('#advZoomIn').onclick=()=>map?.zoomIn();$('#advZoomOut').onclick=()=>map?.zoomOut();
   $('#gpxInput').onchange=e=>importGPX(e.target.files?.[0]);
   $('#advCenter').onclick=center;
   $('#advFollow').onclick=()=>{follow=!follow;syncFollowControl()};
@@ -81,18 +103,25 @@ function bind(){
   syncFollowControl();
   syncRouteIndicator();
 }
-function openSheet(id){document.querySelectorAll('.advSheet').forEach(s=>{const on=s.id===id;s.classList.toggle('open',on);s.setAttribute('aria-hidden',String(!on))});document.querySelectorAll('.advBottomBar [data-sheet]').forEach(b=>b.classList.toggle('active',b.dataset.sheet===id));$('.adventureShell').scrollTop=0;activeSheet=id;if(id==='advRoutesSheet'){setRouteTab('library');renderRouteSummary()}setTimeout(()=>map?.invalidateSize(false),230)}
+function openSheet(id){document.querySelectorAll('.advSheet').forEach(s=>{const on=s.id===id;s.classList.toggle('open',on);s.setAttribute('aria-hidden',String(!on));setSheetState(s,on?'half':'hidden')});document.querySelectorAll('.advBottomBar [data-sheet]').forEach(b=>b.classList.toggle('active',b.dataset.sheet===id));$('.adventureShell').scrollTop=0;activeSheet=id;if(id==='advRoutesSheet'){setRouteTab('library');renderRouteSummary()}setTimeout(()=>resizeMap(),230)}
 function setRouteTab(tab){if(tab==='manager'&&!activeRoute){toast('Select a route or track first.');tab='library'}document.querySelectorAll('[data-route-tab]').forEach(button=>button.classList.toggle('active',button.dataset.routeTab===tab));document.querySelectorAll('[data-route-panel]').forEach(panel=>panel.hidden=panel.dataset.routePanel!==tab);if(tab==='manager')renderEditor()}
 function setOrientation(mode){headingUp=mode==='heading';localStorage.setItem(ORIENTATION_STORE,headingUp?'heading':'north');syncOrientationControls();applyRotation();if(headingUp&&!Number.isFinite(lastFix?.heading))toast('Heading Up will activate when GPS provides a course.')}
 function syncOrientationControls(){const mode=headingUp?'heading':'north';document.querySelectorAll('[data-orientation]').forEach(input=>input.checked=input.dataset.orientation===mode)}
 function syncFollowControl(){const button=$('#advFollow');if(!button)return;button.classList.toggle('active',follow);button.querySelector('small').textContent=follow?'Keep rider centered':'Manual map control'}
 function syncRouteIndicator(){const button=$('#advRoutesButton');if(button){button.classList.toggle('route-ready',Boolean(activeRoute));button.classList.toggle('route-empty',!activeRoute);button.setAttribute('aria-label',activeRoute?`Routes, ${activeRoute.name} selected`:'Routes, no route selected')}const manager=$('#advRouteManagerTab');if(manager)manager.disabled=!activeRoute}
-function init(){map=L.map('adventureMap',{zoomControl:false,preferCanvas:true}).setView([31,-99],6);layers.street=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'});layers.satellite=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'© Esri'});layers.terrain=L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{maxZoom:17,attribution:'© OpenTopoMap'});layers.street.addTo(map);poiLayer=L.layerGroup().addTo(map);waypointLayer=L.layerGroup().addTo(map);directionLayer=L.layerGroup().addTo(map);map.on('dragstart zoomstart',()=>{follow=false;syncFollowControl()});map.on('click',e=>{if(geometryPointMode){insertGeometryPoint(e.latlng.lat,e.latlng.lng,geometryPointMode.insertAt);geometryPointMode=null;return}if(addPointMode){addWaypoint(e.latlng.lat,e.latlng.lng);addPointMode=false;$('#advAddPoint')?.classList.remove('active')}});requestAnimationFrame(()=>{map.invalidateSize(true);applyRotation()})}
-function base(k){Object.values(layers).forEach(x=>map.hasLayer(x)&&map.removeLayer(x));layers[k]?.addTo(map)}
+function init(){map=L.map('adventureMap',{zoomControl:false,preferCanvas:true,trackResize:false}).setView([31,-99],6);layers.street=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'});layers.satellite=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'© Esri'});layers.terrain=L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{maxZoom:17,attribution:'© OpenTopoMap'});Object.values(layers).forEach(watchTileAvailability);map.on('layeradd',event=>watchTileAvailability(event.layer));layers.terrain.addTo(map);poiLayer=L.layerGroup().addTo(map);waypointLayer=L.layerGroup().addTo(map);directionLayer=L.layerGroup().addTo(map);map.on('dragstart zoomstart',()=>{follow=false;syncFollowControl()});map.on('click',e=>{if(geometryPointMode){insertGeometryPoint(e.latlng.lat,e.latlng.lng,geometryPointMode.insertAt);geometryPointMode=null;return}if(addPointMode){addWaypoint(e.latlng.lat,e.latlng.lng);addPointMode=false;$('#advAddPoint')?.classList.remove('active')}});retainedCamera={center:map.getCenter(),zoom:map.getZoom()};map.on('moveend zoomend',()=>{if(!resizingMap)retainedCamera={center:map.getCenter(),zoom:map.getZoom()};});mapResizeObserver=new ResizeObserver(resizeMap);mapResizeObserver.observe(map.getContainer());requestAnimationFrame(()=>{resizeMap();applyRotation()})}
+function watchTileAvailability(layer){
+ if(!window.L?.TileLayer||!(layer instanceof L.TileLayer)||layer.options.mmRadar||layer.options.mmAvailabilityBound)return;
+ layer.options.mmAvailabilityBound=true;let loaded=0,failed=0;
+ const message=text=>{const node=$('#advMapAvailability');if(node&&map?.hasLayer(layer)){node.textContent=text;node.hidden=!text;}};
+ layer.on('loading',()=>{loaded=0;failed=0;});layer.on('tileload',()=>{loaded++;});layer.on('tileerror',()=>{failed++;});
+ layer.on('load',()=>message(failed?(loaded?'Some map tiles are unavailable.':'Map tiles unavailable; saved tracks remain usable.') :''));
+}
+function base(k){if(!map)return;Object.values(layers).forEach(x=>map.hasLayer(x)&&map.removeLayer(x));layers[k]?.addTo(map)}
 function useFix(d){if(!Number.isFinite(d?.latitude)||!Number.isFinite(d?.longitude))return;lastFix={lat:d.latitude,lon:d.longitude,heading:d.heading,speed:d.speed,accuracy:d.accuracy,altitude:d.altitude};if(!rider)rider=L.marker([lastFix.lat,lastFix.lon],{icon:L.divIcon({className:'advRider',html:'<span>▲</span>',iconSize:[36,36],iconAnchor:[18,18]})}).addTo(map);else rider.setLatLng([lastFix.lat,lastFix.lon]);const el=rider.getElement()?.querySelector('span');if(el)el.style.transform=`rotate(${Number.isFinite(d.heading)?d.heading:0}deg)`;if(follow)map.panTo([lastFix.lat,lastFix.lon],{animate:true,duration:.3});$('#advGpsDot')?.classList.add('locked');if($('#advGpsText'))$('#advGpsText').textContent=Number.isFinite(d.accuracy)?`±${Math.round(d.accuracy*3.28084)} ft`:'GPS';if($('#advSpeed'))$('#advSpeed').textContent=Number.isFinite(d.speed)?`${Math.round(d.speed)}`:'--';if($('#advCourse'))$('#advCourse').textContent=Number.isFinite(d.heading)?`${Math.round(d.heading)}°`:'--';if($('#advAltitude'))$('#advAltitude').textContent=Number.isFinite(d.altitude)?`${Math.round(d.altitude*3.28084)} ft`:'--';if($('#advAccuracy'))$('#advAccuracy').textContent=Number.isFinite(d.accuracy)?`±${Math.round(d.accuracy*3.28084)} ft`:'--';updateStats();applyRotation()}
 function applyRotation(){const mapNode=$('#adventureMap'),pane=mapNode?.querySelector('.leaflet-map-pane');if(!mapNode||!pane)return;const heading=headingUp&&Number.isFinite(lastFix?.heading)?-lastFix.heading:0,rect=mapNode.getBoundingClientRect(),angle=Math.abs(heading%180)*Math.PI/180,cos=Math.abs(Math.cos(angle)),sin=Math.abs(Math.sin(angle)),scale=Math.max(cos+(rect.height/Math.max(rect.width,1))*sin,cos+(rect.width/Math.max(rect.height,1))*sin,1)+.025;pane.style.transformOrigin='50% 50%';pane.style.rotate=`${heading}deg`;pane.style.scale=String(scale);pane.style.willChange=heading?'transform, rotate, scale':'';mapNode.style.overflow='hidden'}
 function center(){if(lastFix){follow=true;syncFollowControl();map.setView([lastFix.lat,lastFix.lon],16)}else toast('Start Ride Center to provide GPS.')}
-async function fullscreen(){try{if(document.fullscreenElement)await document.exitFullscreen();else if($('#adventureOverlay')?.requestFullscreen)await $('#adventureOverlay').requestFullscreen();else document.body.classList.toggle('adventure-map-fullscreen')}catch{document.body.classList.toggle('adventure-map-fullscreen')}setTimeout(()=>map?.invalidateSize(true),150)}
+async function fullscreen(){try{if(document.fullscreenElement)await document.exitFullscreen();else if($('#adventureOverlay')?.requestFullscreen)await $('#adventureOverlay').requestFullscreen();else document.body.classList.toggle('adventure-map-fullscreen')}catch{document.body.classList.toggle('adventure-map-fullscreen')}setTimeout(()=>resizeMap(),150)}
 function toast(msg){const e=$('#adventureStatus');if(!e)return;e.textContent=msg;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),3000)}
 
 async function importGPX(file){
@@ -168,5 +197,11 @@ const observer=new MutationObserver(nav);observer.observe(document.querySelector
 window.addEventListener('moto-local-route-open',event=>{
   const id=event.detail?.id;
   if(typeof id!=='string'||window.MotoRide?.getState?.().active)return;
-  void open(id);
+  if(window.MotoWorkspace&&!window.MotoWorkspace.navigate('dashboard','navigate'))return;
+  void (async()=>{const host=$('#missionMapViewport');if(host)await mountMap(host);else await open(id);if(map){await loadRoutes();await selectRoute(routes.find(route=>route.local&&route.id===id));openSheet(null);}})().catch(error=>toast(error.message));
 });
+
+window.MotoMapWorkspace={mount:mountMap,destroy:destroyMap,openPanel:openSheet,resize:()=>requestAnimationFrame(()=>resizeMap()),setStyle:base,getCamera:()=>map?{center:map.getCenter(),zoom:map.getZoom()}:null,updateRecorderPosition:state=>{if(map&&state.active&&Number.isFinite(state.gpsTimestamp)&&Date.now()-state.gpsTimestamp<15000)useFix({latitude:state.latitude,longitude:state.longitude,speed:state.speedMph,heading:state.heading,altitude:state.altitudeFt==null?null:state.altitudeFt/3.28084,accuracy:state.accuracyFt==null?null:state.accuracyFt/3.28084});}};
+window.dispatchEvent(new CustomEvent('moto-map-workspace-ready'));
+
+window.addEventListener('resize',()=>requestAnimationFrame(resizeMap));

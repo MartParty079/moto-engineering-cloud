@@ -2,7 +2,7 @@ import {riderPreferences} from './rider-preferences.js';
 import {supabase} from './supabase.js';
 import {MissionStore} from './mission-store.js';
 import {routeOwner} from './route-library.js';
-import {weatherTimeline,fetchRouteWeather,rainCoverage,surfacePotential} from './route-weather.js';
+import {weatherTimeline,fetchRouteWeather,rainCoverage,surfacePotential,reserveWeatherBudget} from './route-weather.js';
 
 const store=new MissionStore(supabase.supabaseUrl||location.origin);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
@@ -29,7 +29,7 @@ export async function mountRouteWeather(host,route,isCurrent) {
       if(departure<Date.now()-3600000||departure>Date.now()+6*86400000)throw new Error('Choose departure within the next six days.');
       const samples=weatherTimeline(route,departure,speed),day=new Date().toISOString().slice(0,10);
       // Atomic per-device reservation counts failures too. This is not a cross-device project quota.
-      await store.update('device',`weather-budget:${day}`,used=>{used=Number(used)||0;if(used+samples.length>96)throw new Error('This device’s daily route-weather allowance is exhausted. Cached forecasts remain available.');return used+samples.length});
+      await reserveWeatherBudget(store,samples.length,day);
       if(!await isCurrent()||!host.isConnected)return;
       status.textContent='Fetching arrival-time forecasts…';
       const fetched=await fetchRouteWeather(samples);

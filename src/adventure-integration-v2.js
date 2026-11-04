@@ -1,6 +1,7 @@
 const $=(q,r=document)=>r.querySelector(q);
 const ROUTE_KEY='motoActiveRouteV2';
-let activeRoute=(()=>{try{return JSON.parse(localStorage.getItem(ROUTE_KEY)||'null')}catch{return null}})();
+// The former unscoped summary is not proof of ownership or an active route.
+let activeRoute=null;
 let overlayObserver=null;
 let lastSignature=activeRoute?JSON.stringify({active:activeRoute.active,name:activeRoute.name,progress:activeRoute.progress,remaining:activeRoute.remaining,offRoute:activeRoute.offRoute,offRouteState:activeRoute.offRouteState}):'';
 
@@ -40,10 +41,11 @@ function openAdventure(){
   nav.click();return true;
 }
 function openRoutes(){
+  if(window.MotoWorkspace){window.MotoWorkspace.navigate('dashboard','routes');return;}
   if(!$('#adventureOverlay')){if(openAdventure())requestAnimationFrame(()=>$('#adventureOverlay [data-sheet="advRoutesSheet"]')?.click());return;}
   $('#adventureOverlay [data-sheet="advRoutesSheet"]')?.click();
 }
-function openMap(){if(!$('#adventureOverlay'))openAdventure();}
+function openMap(){if(window.MotoWorkspace){window.MotoWorkspace.navigate('dashboard','explore');return;}if(!$('#adventureOverlay'))openAdventure();}
 
 function addReturnButton(overlay){
   const top=$('.advTopBar',overlay);if(!top||$('.advRideReturn',top))return;
@@ -80,3 +82,5 @@ observer.observe(document.body,{childList:true,subtree:true});
 window.MotoAdventure={openLocalRoute:id=>{window.MotoRideDash?.close?.();window.dispatchEvent(new CustomEvent('moto-local-route-open',{detail:{id}}))},open:openAdventure,openMap,openRoutes,returnToRide,close:()=>$('#closeAdventure')?.click(),getState:()=>activeRoute||routeFromUi()||{active:false,name:'No active route'}};
 if(activeRoute)queueMicrotask(()=>window.dispatchEvent(new CustomEvent('moto-route-update',{detail:activeRoute})));
 scan();
+
+window.addEventListener('moto-workspaces-reset',()=>{activeRoute=null;lastSignature='';});

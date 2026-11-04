@@ -1,3 +1,4 @@
+const canonical=view=>({routes:'dashboard',rides:'rideCenter',devices:'rideCenter'}[view]||view);
 const STORAGE_KEY='motoCurrentView';
 let restoring=false;
 let restoreQueued=false;
@@ -6,7 +7,7 @@ let lastApplied='';
 function rememberView(target){
   const button=target?.closest?.('[data-v]');
   if(!button?.dataset?.v || button.hidden || button.disabled)return;
-  const next=button.dataset.v;
+  const next=canonical(button.dataset.v);
   lastApplied=next;
   localStorage.setItem(STORAGE_KEY,next);
   if(location.hash!==`#${next}`)history.replaceState(null,'',`#${next}`);
@@ -16,7 +17,9 @@ function restoreView(){
   if(restoring)return;
   const nav=document.querySelector('#nav');
   if(!nav)return;
-  const requested=(location.hash||'').replace(/^#/,'')||localStorage.getItem(STORAGE_KEY);
+  const legacy=(location.hash||'').replace(/^#/,'')||localStorage.getItem(STORAGE_KEY);
+  const requested=canonical(legacy);
+  if(legacy&&legacy!==requested){localStorage.setItem(STORAGE_KEY,requested);history.replaceState(null,'',`#${requested}`);window.MotoWorkspace?.navigate(legacy);return;}
   if(!requested)return;
   const button=nav.querySelector(`[data-v="${CSS.escape(requested)}"]`);
   if(!button||button.hidden||button.classList.contains('active')){
@@ -52,4 +55,5 @@ window.addEventListener('hashchange',queueRestore);
 
 window.addEventListener('moto-page-ready',queueRestore);
 window.addEventListener('moto-access-ready',queueRestore);
+window.addEventListener('moto-workspace-change',event=>rememberView(document.querySelector(`#nav [data-v="${CSS.escape(event.detail.view)}"]`)));
 queueRestore();

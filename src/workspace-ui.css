@@ -1,0 +1,124 @@
+/* MM-UI-007 layouts. Tokens live in marty-brand.css; domain owners keep their services. */
+html:root{--mm-bottom-height:calc(64px + env(safe-area-inset-bottom,0px));}
+body.mm-shell{overflow:hidden;padding-bottom:0!important;}
+body.mm-shell #app .top{--text:#fff;--muted:#c0d0c7;--panel:#19342B;--panel2:#214539;--line:#365346;min-height:calc(60px + env(safe-area-inset-top))!important;height:auto;padding:env(safe-area-inset-top) 12px 0!important;gap:10px;background:#102820!important;color:#fff;}
+body.mm-shell #app .brand{min-width:0;flex:1;gap:8px;}
+body.mm-shell #app .brandMark,body.mm-shell #app .brandCopy h1,body.mm-shell #app .topSearch,body.mm-shell #app .systemStatus,body.mm-shell #app .userButton{display:none!important;}
+body.mm-shell #app .brandCopy{min-width:0;flex:1;}
+body.mm-shell #app .brandCopy:before{content:'MOTO MISSION';display:block;font-size:9px;letter-spacing:.1em;color:#b6c9bf;}
+body.mm-shell #app .brandCopy .motorcycleChip{max-width:100%;width:100%;font-size:.8rem;}
+body.mm-shell #app .menuButton{display:block;flex-shrink:0;min-width:44px;min-height:44px;padding:8px;}
+body.mm-shell #app #missionRideMode{min-height:44px;font-size:.75rem;padding:8px;}
+body.mm-shell #app .topActions{gap:6px;margin-left:0;}
+body.mm-shell #app .layout{display:block!important;position:fixed;inset:var(--app-header-h,60px) 0 var(--mm-bottom-height);height:auto;padding:0;}
+.workspaceDeck{height:100%;min-width:0;position:relative;}
+body.mm-shell #app .workspaceDeck>main{position:absolute;inset:0;box-sizing:border-box;max-width:none;width:100%;height:100%;overflow-y:auto!important;overflow-x:hidden!important;padding:12px!important;overscroll-behavior-y:contain;}
+body.mm-shell #app .workspaceDeck>main[hidden]{display:none!important;}
+body.mm-shell #app #main[data-workspace="dashboard"]{padding:0!important;overflow:hidden!important;}
+body.mm-shell #app #nav{display:none!important;position:fixed;z-index:20000;inset:var(--app-header-h,60px) auto var(--mm-bottom-height) 0!important;top:var(--app-header-h,60px)!important;width:min(340px,92vw);height:calc(100dvh - var(--app-header-h,60px) - var(--mm-bottom-height))!important;padding:12px 16px!important;background:var(--bg);overflow:auto;box-sizing:border-box;}
+body.mm-shell #app #nav.open{display:flex!important;flex-direction:column;}
+body.mm-shell #app #navClose{display:block!important;}
+.missionLegacyRoutes{display:none!important;}
+body.mm-shell #motoBottomNav{display:grid!important;position:fixed;z-index:9000;left:0!important;right:0!important;bottom:0!important;height:var(--mm-bottom-height)!important;grid-template-columns:repeat(5,minmax(0,1fr));padding:4px max(4px,env(safe-area-inset-right)) max(4px,env(safe-area-inset-bottom)) max(4px,env(safe-area-inset-left))!important;box-sizing:border-box;border:0;border-top:1px solid #365346;border-radius:0!important;background:#102820!important;box-shadow:none;backdrop-filter:none;}
+body.mm-shell #motoBottomNav button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;height:54px!important;min-height:44px!important;min-width:0;padding:4px 2px;border:0;border-radius:12px!important;background:transparent!important;color:#c0d0c7!important;font-size:clamp(10px,.65rem,12px)!important;font-weight:600;}
+body.mm-shell #motoBottomNav button.active{color:#F47716!important;background:#19342B!important;}
+body.mm-shell #motoBottomNav svg{width:21px;height:21px;}
+body.mm-shell #motoBottomNav button[hidden]{display:none!important;}
+.mmWorkspace{height:100%;display:flex;flex-direction:column;min-height:0;gap:8px;}
+.mmPageHeader{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:28px;flex-shrink:0;}
+body #app #main .mmPageHeader h2,body #app #main .section h2{font-size:1.2rem!important;line-height:1.25!important;margin:0;}
+.mmRecordingStatus{font-size:.7rem;color:var(--muted);}
+.mmWorkspaceBody{min-height:0;flex:1;}
+.mmWorkspace:not([data-page="Map"]) .mmWorkspaceBody{flex:none;}
+.mmWorkspace .mmSegments{flex-shrink:0;}
+.mmWorkspace [hidden],.mmMetricGrid>[hidden]{display:none!important;}
+.mmMapStage{position:relative;overflow:hidden;}
+.mmMapViewport{position:absolute;inset:0;z-index:0;background:#19342B;}
+.mmMapStage:has(.advSheet[data-panel-state="half"],.advSheet[data-panel-state="expanded"],.advSheet[data-panel-state="fullscreen"])>.mmMapViewport{z-index:700;}
+.mmMapLoading{padding:24px;color:#fff;}
+.mmMapNotice{position:absolute;z-index:450;bottom:60px;left:8px;max-width:75%;padding:6px 9px;border-radius:12px;background:var(--panel);color:var(--text);font-size:.7rem;pointer-events:none;}
+.mmMapNotice[hidden]{display:none!important;}
+body #app #main[data-workspace="dashboard"] .mmPageHeader{padding:4px 12px 0;}
+body #app #main[data-workspace="dashboard"] [data-workspace-modes]{margin:0 8px;}
+.mmMapBadges{position:absolute;z-index:500;left:8px;right:64px;top:8px;display:flex;gap:4px;flex-wrap:wrap;pointer-events:none;}
+.mmMapBadges button{pointer-events:auto;min-height:44px;padding:6px 9px;font-size:.7rem;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--text);}
+.mmNavigationSummary{position:absolute;z-index:500;left:8px;right:64px;top:64px;display:flex;gap:12px;align-items:center;padding:10px;border-radius:16px;border:1px solid var(--line);background:var(--panel);color:var(--text);}
+.mmNavigationSummary>strong{font-size:2rem;flex-shrink:0;}
+.mmNavigationSummary>div{min-width:0;display:grid;gap:4px;font-size:.75rem;}
+.mmNavigationSummary button{min-width:44px;min-height:44px;}
+.mmNavigationSummary span{overflow-wrap:anywhere;}
+#main[data-mode="navigate"] .mmMapBadges{display:none;}
+.mmFullscreenNavigation :is(#advMapLayers,#advZoomIn,#advZoomOut){display:none!important;}
+.mmFullscreenNavigation{position:fixed;inset:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);z-index:25000;background:var(--bg);}
+body.mm-navigation-fullscreen #motoBottomNav{display:none!important;}
+.mmMapViewport #adventureOverlay.mmEmbedded{position:absolute;inset:0;z-index:auto;height:100%;overflow:hidden;touch-action:pan-x pan-y;}
+.mmMapViewport .adventureShell{height:100%;background:#19342B;}
+.mmMapViewport .advTopBar,.mmMapViewport .advBottomBar,.mmMapViewport .advSpeedHud,.mmMapViewport .advRideRouteBridge{display:none!important;}
+.mmMapViewport .advMapTools{top:8px;right:8px;bottom:auto;z-index:550;}
+.mmMapViewport .advMapTools button{min-width:44px;min-height:44px;}
+.mmMapViewport .leaflet-control-attribution{margin-bottom:52px;max-width:80%;font-size:10px;}
+.mmMapViewport .missionMapFailure{margin:100px 20px 60px;padding:16px;background:var(--panel);color:var(--text);border-radius:16px;}
+.mmMapViewport .advSheet.mmSheet{inset:auto 8px 0;transform:none!important;visibility:visible;opacity:1;pointer-events:auto;background:var(--panel);color:var(--text);overflow:hidden;}
+.mmMapViewport .advSheet.mmSheet>.mmSheetContent>header,.mmMapViewport .advSheet.mmSheet .advSheetHandle{display:none;}
+.mmMapViewport .advSheet.mmSheet[data-panel-state="fullscreen"]{inset:0;}
+.mmMapViewport #adventureStatus{bottom:56px;}
+body .mmWorkspace :is(.card,.mmMetricCard,.mmSheet),body .mmWorkspace .mmSpeedGauge,body.mm-shell #main[data-workspace="garage"] .card{--panel:#F5F6F2;--panel2:#e9eee6;--panel3:#dde5db;--text:#18211D;--muted:#59655f;--line:#d5ddd5;--accent-soft:#fff0df;background:var(--panel);color:var(--text);}
+body .mmWorkspace .card{border:1px solid var(--line);border-radius:16px!important;padding:12px!important;margin-bottom:8px;box-shadow:none;}
+body .mmWorkspace :is(h3,.card h3){font-size:1rem;margin:8px 0;}
+body .mmWorkspace p{font-size:.85rem;line-height:1.5;margin:8px 0;}
+body .mmWorkspace summary{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px;cursor:pointer;font-size:.95rem;font-weight:650;}
+body .mmWorkspace details>summary::after{content:'+';font-size:1.1rem;flex-shrink:0;}
+body .mmWorkspace details[open]>summary::after{content:'−';}
+.mmWorkspace .missionFormGrid{grid-template-columns:repeat(auto-fit,minmax(min(100%,160px),1fr));gap:10px;}
+.mmWorkspace :is(input,select,textarea){box-sizing:border-box;max-width:100%;}
+.mmWorkspace button{min-height:44px;padding:8px 12px;white-space:normal;overflow-wrap:anywhere;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:12px;}
+.mmWorkspace .mmSegments button[aria-selected="true"]{background:var(--accent);color:var(--accent-text);}
+.mmWorkspace .mmSheetHeader button{background:transparent;border:0;}
+.mmWorkspace .actions{flex-wrap:wrap;gap:6px;}
+.mmWorkspace .actions>button{font-size:.8rem;}
+.mmWorkspace .missionSavedRoute{padding:12px!important;}
+.mmWorkspace .missionSavedRoute h3{font-size:1rem;}
+.mmWorkspace .missionCapabilityGrid{grid-template-columns:1fr;}
+.mmBikeContext{display:flex;gap:8px;justify-content:space-between;align-items:center;margin:8px 0;}
+.mmBikeContext .motorcycleChip{flex:1;min-width:0;}
+.mmBikeContext>button{font-size:.75rem;}
+.mmSpeedGauge{padding:16px;text-align:center;border-radius:18px;border:1px solid var(--line);margin-bottom:8px;}
+.mmSpeedGauge>small{font-size:.75rem;}
+.mmSpeedGauge>strong{font-size:clamp(3rem,12vw,5.5rem);line-height:1.1;display:block;font-variant-numeric:tabular-nums;}
+.mmSpeedGauge>span{font-size:1rem;}
+.mmRideActions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;}
+.mmRideActions button{font-size:.875rem;padding:8px 4px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--text);}
+.mmSensorList dl{display:grid;grid-template-columns:auto 1fr;gap:8px;font-size:.85rem;}
+.mmSensorList dd{margin:0;overflow-wrap:anywhere;}
+.mmSensor summary>strong{margin-right:auto;}
+.mmWorkspace .mmMetricGrid{margin:8px 0;}
+body.mm-shell #main .section{margin-bottom:12px;}
+body.mm-shell #main .section .eyebrow{font-size:.65rem;}
+body.mm-shell #main .bikeHero{border-radius:16px!important;min-height:0;}
+body.mm-shell #main .garageCardCompact{margin-bottom:10px;}
+.mmGarageIdentity{display:flex;gap:12px;padding:12px;margin-bottom:12px;background:#19342B;color:#fff;border-radius:16px;align-items:center;}
+.mmGarageIdentity img{width:80px;height:80px;object-fit:cover;border-radius:12px;}
+.mmGarageIdentity>div{min-width:0;flex:1;}
+.mmGarageIdentity small{font-size:.65rem;color:#b6c9bf;}
+.mmGarageIdentity .motorcycleChip{max-width:100%;background:transparent;border-color:#365346;color:white;}
+.mmGarageIdentity p{font-size:.8rem;margin:4px 0;color:#c0d0c7;}
+.mmHourly{display:flex;gap:10px;overflow-x:auto;padding:8px 0;}
+.mmHourly>div{display:grid;gap:5px;min-width:80px;padding:8px;background:var(--panel2);border-radius:12px;}
+.mmWeatherRadarStage{height:320px;position:relative;border-radius:14px;overflow:hidden;}
+.mmRadarFullscreen{position:fixed;inset:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);z-index:25000;background:var(--panel);padding:12px;display:flex;flex-direction:column;}
+.mmRadarFullscreen .mmWeatherRadarStage{height:auto;flex:1;}
+html[data-density="comfortable"] .mmWorkspace{gap:12px;}
+html[data-density="comfortable"] .mmWorkspace .card{padding:18px!important;}
+html[data-ride-mode="enduro"] .mmWorkspace[data-page="Ride Center"] .mmSpeedGauge p{display:none;}
+@media(min-width:900px){.mmWorkspace:not([data-page="Map"]){max-width:1100px;margin:auto;}.mmWorkspace[data-page="Ride Center"] [data-pane="live"]{display:grid;grid-template-columns:1fr 1fr;gap:12px;}.mmBikeContext,.mmRideActions,#missionRideActionStatus{grid-column:1/-1;}.mmSpeedGauge{grid-row:2/4;}.mmMapStage>.mmSheet{max-width:520px;left:auto;}}
+@media(orientation:landscape) and (max-height:600px){:root{--mm-bottom-height:calc(54px + env(safe-area-inset-bottom));}body.mm-shell #motoBottomNav button{height:46px!important;flex-direction:row;font-size:.7rem!important;gap:5px;}body.mm-shell #motoBottomNav svg{width:18px;height:18px;}body.mm-shell #app .top{min-height:48px!important;}body.mm-shell #app .top .motorcycleChip{min-height:44px;}body.mm-shell #app #main[data-workspace="dashboard"] .mmPageHeader{display:none;}.mmMapViewport .advSheet.mmSheet{inset:8px 8px 8px auto;width:min(350px,45%);}.mmMapViewport .advSheet.mmSheet[data-panel-state="minimized"]{top:auto;}.mmNavigationSummary{right:auto;width:min(350px,45%);top:auto;bottom:60px;}.mmWorkspace[data-page="Ride Center"] [data-pane="live"]{display:grid;grid-template-columns:1fr 1fr;gap:8px;}.mmBikeContext,.mmRideActions,#missionRideActionStatus{grid-column:1/-1;}}
+@media(prefers-reduced-motion:reduce){.mmWorkspace,.mmWorkspace *{scroll-behavior:auto!important;}}
+
+body.mm-shell #motoBottomNav button span{line-height:1.15;white-space:nowrap;}
+body.mm-shell #main .bikeHero h2{font-size:1.25rem;}
+body.mm-shell #main .bikeHero.has-bike-photo{--text:#fff;--muted:#fff;}
+.mmRadarDialog{margin:0;box-sizing:border-box;inset:0;width:100vw;height:100dvh;max-width:none;max-height:none;border:0;padding:max(8px,env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left));}
+.mmRadarDialog[open]{display:flex;flex-direction:column;gap:8px;}
+.mmRadarDialog header{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+.mmRadarDialog header button{min-width:44px;min-height:44px;border:1px solid var(--line);border-radius:12px;background:var(--panel2);color:var(--text);}
+.mmRadarDialog::backdrop{background:#102820;}

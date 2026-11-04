@@ -109,6 +109,7 @@ try {
   accessUnavailable = false;
   await page.locator('#retryWorkspaceAccess').click();
   await page.waitForFunction(() => !document.querySelector('#main')?.dataset.accessBlocked);
+  await page.waitForFunction(() => !document.querySelector('#retryWorkspaceAccess') && Boolean(document.querySelector('#main .mmWorkspace')));
   assert.deepEqual(errors, []);
   console.log('PASS: browser IndexedDB survives reload, interrupted recovery is explicit, accounts are isolated, lost upload receipts retry without duplicate sample IDs, and completion clears pending state.');
 } finally { await context.close(); await browser.close(); }

@@ -1,3 +1,4 @@
+import {openArea} from './workspace-helpers.mjs';
 import { pathToFileURL } from 'node:url';
 import { mkdtemp, mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -41,18 +42,18 @@ try {
   await page.setViewportSize({width:390,height:844});await capture('signin-light-mobile');
   assert.equal(await page.getByRole('button',{name:'Create account',exact:true}).count(),0);
   await page.evaluate(user=>localStorage.setItem('sb-127-auth-token',JSON.stringify({access_token:btoa(JSON.stringify({alg:'HS256',typ:'JWT'}))+'.'+btoa(JSON.stringify({sub:user.id,role:'authenticated',aal:'aal1',exp:Math.floor(Date.now()/1000)+3600}))+'.test',refresh_token:'test',expires_at:Math.floor(Date.now()/1000)+3600,token_type:'bearer',user})),user);
-  await page.reload();await page.locator('.motoWelcomePage').waitFor();assert.equal(await page.locator('#missionSignOut').count(),1);
+  await page.reload();await page.locator('.mmWorkspace[data-page="Map"]').waitFor();assert.equal(await page.locator('#missionSignOut').count(),1);
   for(const mode of ['light','dark']){
     await theme(mode);
     for(const [width,height] of [[1440,1000],[390,844],[320,740]]){
-      await page.setViewportSize({width,height});await contrast('.missionHeading p');await capture(`home-${mode}-${width}`);
+      await page.setViewportSize({width,height});await contrast('.mmPageHeader h2');await capture(`home-${mode}-${width}`);
       const toggle=page.locator('[data-theme-toggle]').first(),box=await toggle.boundingBox();assert.ok(box.height>=43&&box.width>=43);
     }
     await page.setViewportSize({width:1440,height:1000});
     for(const view of ['routes','rides','garage','settings','devices']){
-      await page.locator(`#nav [data-v="${view}"]`).click();
+      await openArea(page,view);
       if(view==='routes')await page.locator('#missionGpxInput').waitFor();
-      if(view==='settings'){await page.locator('#missionDataPreferences form').waitFor();assert.equal(await page.locator('#missionDataPreferences [name=theme]').inputValue(),mode==='light'?'day':'night');}
+      if(view==='settings'){await page.locator('#missionDataPreferences form').waitFor();assert.equal(await page.locator('#main [name=theme]').inputValue(),mode==='light'?'day':'night');}
       if(view==='rides')await page.locator('.unifiedRideLog').waitFor();
       await capture(`${view}-${mode}-desktop`);
       if(view==='settings'){await page.locator('#missionSecurity').click();await page.locator('#securityCenterOverlay').waitFor();await contrast('.securityCard h3');await capture(`security-${mode}`);await page.locator('#closeSecurityCenter').click();}
@@ -60,10 +61,10 @@ try {
       await page.setViewportSize({width:390,height:844});await capture(`${view}-${mode}-mobile`);await page.setViewportSize({width:1440,height:1000});
     }
     await page.locator('#missionRideMode').click();await page.locator('#rideDashOverlay').waitFor();assert.equal(await page.locator('.widget-speed').first().evaluate(e=>getComputedStyle(e).backgroundImage),'none','Speed panel follows the selected theme');await contrast('.dashSpeedNumber');await contrast('#rideV3Title');await capture(`cockpit-${mode}-desktop`);await page.setViewportSize({width:390,height:844});await capture(`cockpit-${mode}-mobile`);await page.locator('#dashClose').click();await page.setViewportSize({width:1440,height:1000});
-    await page.locator('#nav [data-v="dashboard"]').click();await page.locator('.motoWelcomePage').waitFor();
-    await page.reload();await page.locator('.motoWelcomePage').waitFor();assert.equal(await page.locator('html').getAttribute('data-theme'),mode,'Theme survives reload');
+    await openArea(page,'dashboard');await page.locator('.mmWorkspace[data-page="Map"]').waitFor();
+    await page.reload();await page.locator('.mmWorkspace[data-page="Map"]').waitFor();assert.equal(await page.locator('html').getAttribute('data-theme'),mode,'Theme survives reload');
   }
   await page.setViewportSize({width:390,height:844});await page.evaluate(()=>document.documentElement.style.fontSize='200%');await capture('home-dark-large-text');assert.ok(await page.evaluate(()=>document.querySelector('#main').getBoundingClientRect().top>=document.querySelector('.top').getBoundingClientRect().bottom),'Large text must not overlap header');await page.evaluate(()=>document.documentElement.style.fontSize='');
-  await page.emulateMedia({reducedMotion:'reduce'});assert.equal(await page.locator('#welcomeStartRide').evaluate(e=>getComputedStyle(e).transitionDuration),'0s');
+  await page.emulateMedia({reducedMotion:'reduce'});assert.equal(await page.locator('#missionRideMode').evaluate(e=>getComputedStyle(e).transitionDuration),'0s');
   assert.deepEqual(errors,[]);console.log(JSON.stringify({passed:['light/dark theme and reload persistence','invite-only boundary','desktop/mobile five areas','320px long-name layout','200% type','reduced motion','cockpit both themes'],screenshots:out,errors}));
 }catch(error){console.log({message:error.message,errors,screenshots:out});throw error}finally{await context.close();await browser.close()}

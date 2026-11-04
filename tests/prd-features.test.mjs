@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {editRoute,summarizeGeometry} from '../src/route-editing.js';
 import {MissionStore} from '../src/mission-store.js';
 import {RouteStore} from '../src/route-store.js';
-import {weatherTimeline,weatherAtArrival,rainCoverage,surfacePotential} from '../src/route-weather.js';
+import {weatherTimeline,weatherAtArrival,rainCoverage,surfacePotential,reserveWeatherBudget} from '../src/route-weather.js';
 import {osmGraph,routeOffline,nearestNode} from '../src/offline-routing.js';
 import {rideJournal} from '../src/ride-journal.js';
 import {RideRecorder} from '../src/ride-recorder.js';
@@ -22,8 +22,8 @@ test('derived routes preserve originals, gaps and ownership; editing validates c
 
 test('atomic local weather reservations cannot exceed cap across 100 concurrent requests',async()=>{
   const store=new MissionStore('https://budget.test');
-  const reservations=await Promise.allSettled(Array.from({length:100},()=>store.update('device','budget',n=>{n=n||0;if(n>=10)throw new Error('cap');return n+1})));
-  assert.equal(reservations.filter(r=>r.status==='fulfilled').length,10);assert.equal(await store.get('device','budget'),10);assert.equal(await store.get('other','budget'),undefined);
+  const reservations=await Promise.allSettled(Array.from({length:100},()=>reserveWeatherBudget(store,1,'fixture-day')));
+  assert.equal(reservations.filter(r=>r.status==='fulfilled').length,96);assert.equal(await store.get('device','weather-budget:fixture-day'),96);assert.equal(await store.get('other','weather-budget:fixture-day'),undefined);
 });
 
 test('route weather uses arrival time, local full days, separate rolling hours and unknown surface factors',()=>{
@@ -32,6 +32,9 @@ test('route weather uses arrival time, local full days, separate rolling hours a
   const now=Date.parse('2026-10-09T12:30:00Z'),time=Array.from({length:120},(_,i)=>(Date.parse('2026-10-05T00:00:00Z')+i*3600000)/1000);
   const data={timezone:'America/Chicago',hourly:{time,precipitation:time.map(()=>1),precipitation_probability:time.map((t)=>t*1000>=departure?90:0),temperature_2m:time.map(()=>20),wind_speed_10m:time.map(()=>12)},daily:{time:[6,7,8,9].map(d=>Date.parse(`2026-10-${String(d).padStart(2,'0')}T05:00:00Z`)/1000),precipitation_sum:[1,2,3,4]}};
   const condition=weatherAtArrival(samples[0],data,now);assert.equal(condition.probability,90);assert.equal(condition.rolling72Mm,72);assert.deepEqual(condition.previousDays.map(d=>d.date),['2026-10-08','2026-10-07','2026-10-06']);assert.deepEqual(condition.previousDays.map(d=>d.mm),[3,2,1]);
+  assert.equal(condition.rolling24Mm,24);assert.equal(condition.rolling48Mm,48);
+  const missing={...data,hourly:{...data.hourly,precipitation:data.hourly.precipitation.map((rain,i)=>i===100?null:rain)}};
+  assert.equal(weatherAtArrival(samples[0],missing,now).rolling24Mm,null,'A missing hour cannot count as zero rain');
   assert.equal(rainCoverage([condition]).percent,100);assert.equal(rainCoverage([{...condition,probability:null}]).percent,null);assert.equal(surfacePotential(condition).mud,'unknown');assert.equal(surfacePotential(condition,{surface:'unpaved',drainage:'poor',soil:'clay'}).dust,'unknown');
 });
 

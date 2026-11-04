@@ -1,3 +1,4 @@
+import {openArea} from './workspace-helpers.mjs';
 import {pathToFileURL} from 'node:url';
 import {mkdtemp} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
@@ -45,7 +46,7 @@ try {
   await page.locator(`[data-select-bike="${bikes[1].id}"]`).click();
   await page.waitForFunction(()=>!document.querySelector('#motorcycleSelector'));
   for(const view of ['routes','rides','garage','settings','dashboard']){
-    await page.locator(`#nav [data-v="${view}"]`).click();
+    await openArea(page,view);
     assert.equal(await page.locator('#missionMotorcycle').textContent(),bikes[1].name);
   }
   await page.reload();await page.waitForFunction(()=>window.MotoRide?.getActiveBike()?.id.endsWith('004'));
@@ -55,7 +56,7 @@ try {
   assert.equal(await page.evaluate(()=>window.MotoRide.getActiveBike().id),bikes[1].id,'A failed save must not advertise a new motorcycle');
   await page.evaluate(async()=>{const {missionStore}=await import('/src/rider-preferences.js');missionStore.put=window.restoreMotorcycleStorage;});
   await page.keyboard.press('Escape');await page.waitForFunction(()=>!document.querySelector('#motorcycleSelector'));
-  await page.locator('#nav [data-v="routes"]').click();await page.locator('#missionGpxInput').waitFor();
+  await openArea(page,'routes');await page.locator('#missionGpxInput').waitFor();
   const fileInput=await page.locator('#missionGpxInput').elementHandle();
   await page.locator('#missionMotorcycle').click();await page.keyboard.press('Escape');
   assert.equal(await fileInput.evaluate(node=>node===document.querySelector('#missionGpxInput')),true,'Opening and closing selection preserves the route workspace');

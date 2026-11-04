@@ -1,0 +1,470 @@
+MASTER PRODUCT REQUIREMENTS DOCUMENT \| SYSTEM OVERHAUL & OSMAND FEATURE INTEGRATION
+
+Version 2.0 Draft • 4 November 2026 • Owner: Moto Mission • Status: Proposed requirements, not implementation audit
+
+An implementation-ready target specification. Statements marked SHALL are requirements. The current implementation status of each is unverified unless independently audited against the repository.
+
+# Executive decision
+
+Moto Mission shall be a motorcycle-first, local-first navigation and telemetry system combining advanced road/trail maps, precise GPX guidance, ride recording and analysis, active-bike-aware personalization, environmental intelligence, and optional connected hardware. It shall preserve all capabilities and user data from Master PRD v1.0 (8 Oct 2026), implement the OsmAnd-inspired catalog below, and avoid introducing major architectural or interface clutter.
+
+# 0. Principles, scope and release contract
+
+- Core riding loop: PREPARE → RIDE → REVIEW. Every advanced feature has a clear home in one of these stages.
+
+- Always-visible active motorcycle identity and immediate switcher. Current omission/burial is a critical UX regression.
+
+- Separate data, services, and UI state; no navigation or telemetry resets merely because a panel or map layer is changed.
+
+- Use original GPX as immutable source; snapped, edited and navigable routes are versioned derived artifacts.
+
+- Preserve free core capabilities, optional advanced paid features, and strictly zero unapproved paid-provider overage.
+
+- Web/PWA first, deploy to Vercel, data in Supabase; platform-capability adapters for native iOS/Android where required.
+
+- Offline maps must be backed by locally usable roads/paths, search indexes and routing graph, not just cached rasters.
+
+- Never represent inferred trail passability, real-time weather, road speed limits, lean or sensor measurements as authoritative when source is stale or uncertain.
+
+# 1. Baseline preservation and backward compatibility
+
+**BASE-001 \[P0\] Preserve existing scope.** Retain all six prior requirement rounds, including street/adventure/performance modes, route planning, navigation, live dashboard, GPX, ride history/review, onboard sensor telemetry, media, voice and alerts, device setup, account tiers, administrator usage controls and security.
+
+**BASE-002 \[P0\] Existing data.** Migrate motorcycles, devices, preferences, routes, tracks, rides, telemetry metadata, imagery and account choices without loss; never overwrite originals.
+
+**BASE-003 \[P0\] Existing implementations.** Before refactoring, inventory actual screens, APIs, database schema, feature flags, deployments, and GitHub issues. Classify each planned requirement as implemented, partial, absent, regressed or deprecated.
+
+**BASE-004 \[P0\] Non-destructive changes.** Migrations require rollback, snapshots, forward-compatible serializers and offline data migrations; existing cloud records remain readable through transition.
+
+**BASE-005 \[P0\] Feature parity gate.** No previous user-visible capability may disappear from production without explicit replacement and test approval.
+
+**BASE-006 \[P1\] Technical debt.** Consolidate UI patch layers, obsolete forks/files, stale state, duplicated routing interfaces, and deprecated logic only after dependency and usage audits.
+
+# 2. Information architecture and redesigned UX
+
+Primary persistent navigation: Map/Ride, Routes/GPX, Rides/Review, Garage/Devices, Settings. Planning tools and map settings open as drawers/sheets, not independent cluttered dashboards. An Admin workspace appears only to authorized users.
+
+**UX-001 \[P0\] Active bike at top level.** Place an always-visible bike chip (name/model/icon) in the header and Ride cockpit; tapping opens a one-screen bike switcher with search, recent bikes, add-bike and default selection.
+
+**UX-002 \[P0\] Garage first-class destination.** Provide a dedicated Garage/Devices tab containing motorcycle cards, specifications, profiles, installed devices, maintenance and calibration. Never hide bike selection solely under settings.
+
+**UX-003 \[P0\] Bike context persistence.** The selected motorcycle persists across launches and reloads; ride creation captures an immutable motorcycle ID and setup snapshot.
+
+**UX-004 \[P0\] Switching guard.** Mid-ride bike switching prompts to finish or split into a new ride segment; no silent attribution of recordings to a different bike.
+
+**UX-005 \[P1\] First launch.** Offer location and motion permissions at appropriate use points; show permissions rationale, granular choices, offline guest capability and a clear Continue path.
+
+**UX-006 \[P0\] Ride cockpit.** Fullscreen map by default, minimal persistent chips for speed/limit, road, heading, next turn and active bike, plus one-tap recording and emergency recenter.
+
+**UX-007 \[P1\] Custom widgets.** Drag/reorder/enable dashboard widgets, profile-specific layouts, adjustable size/contrast and persistent saved presets.
+
+**UX-008 \[P0\] Motion-safe UI.** Provide oversized tap targets, strong contrast, glove-friendly controls, reduced interaction while moving, landscape mode and readable offline-status indication.
+
+**UX-009 \[P0\] Stateful panes.** Closing route planner, weather controls, garage picker or other overlay shall not destroy map camera, navigation progress or recording session.
+
+**UX-010 \[P1\] Accessibility.** Support screen-reader semantics, dynamic type, colorblind-safe palettes, voice guidance and keyboard access for desktop planning.
+
+# 3. Motorcycle garage, selection and profiles
+
+**BIKE-001 \[P0\] Motorcycle schema.** Store manufacturer, model, model year, nickname, image, vehicle type, wheel/tire sizes, estimated range, fuel capacity, riding setup, preferred units and user-set routing parameters. Optional VIN is private.
+
+**BIKE-002 \[P0\] Multiple bikes.** Unlimited locally stored motorcycle profiles subject only to disclosed sync/storage policy; guest profiles work offline.
+
+**BIKE-003 \[P0\] Bike avatar and quick switching.** Show bike name/image at entry, in map header, in start-ride dialog and in post-ride summary; recent bikes are one tap away.
+
+**BIKE-004 \[P1\] Bike-aware navigation.** Map each bike to preferred riding style, avoidances, predicted speed, road class restrictions and route-cost tuning. Confirm only when a route materially changes on switch.
+
+**BIKE-005 \[P1\] Device association.** Pair ESP32, BLE and OBD sensors to specific motorcycles and separately to the current phone; switching bikes selects associated device configuration.
+
+**BIKE-006 \[P1\] Calibration and provenance.** Per-bike IMU offset/mounting orientation, wheel circumference, sensor IDs, GPS quality and speed estimation source; distinguish measured from estimated parameters.
+
+**BIKE-007 \[P1\] Garage management.** Add, edit, duplicate, archive and restore bike profiles. Archive never deletes ride records.
+
+**BIKE-008 \[P0\] Quick-start defaults.** First bike becomes default; blank state invites Add Motorcycle; ride can start in anonymous generic bike mode if explicitly selected.
+
+# 4. Maps, rendering and offline map packs
+
+**MAP-001 \[P0\] Offline download.** Download and update selectable region packs for vector base maps, route graph, POIs, addresses, elevation and compatible overlays; disclose pack sizes and versions.
+
+**MAP-002 \[P1\] Map styles.** Road, adventure, off-road/topo, high-contrast and night presets with user customization.
+
+**MAP-003 \[P1\] Sources and overlays.** Support legally licensed raster/satellite tiles, external styles, map overlays/underlays, independent opacity and proper attribution.
+
+**MAP-004 \[P1\] Terrain.** Contours, hillshade, slope gradient, elevation shading, perspective and optional 3D terrain with graceful lower-end-device fallback.
+
+**MAP-005 \[P3\] 3D buildings.** Provide optional building extrusion in supported locations.
+
+**MAP-006 \[P0\] Surface data.** Render road class, access restriction, paved/unpaved, surface, smoothness, track type, seasonal access and trail classification when known; unknown remains unknown.
+
+**MAP-007 \[P2\] Trail layers.** Optional recognized hike/bike/route relation layers with labels and selectable visibility, without treating non-motor-vehicle paths as rideable.
+
+**MAP-008 \[P2\] Location coordinates.** Support latitude/longitude, alternate format and coordinate grids; measurement and radius tools.
+
+**MAP-009 \[P0\] Caching.** Cache frequently traversed tiles, local road geometry and speed-limit lookup context bounded by device storage and policy.
+
+**MAP-010 \[P0\] Persistent widgets.** Maintain last known reliable speed limit/road title while updates are pending, visually mark aged/uncertain data, and transition only when improved source evidence exists.
+
+**MAP-011 \[P0\] Heading aware.** Limit map-match candidate roads using heading, connectivity, travel progress and hysteresis to avoid jumping to adjacent roads.
+
+**MAP-012 \[P1\] Map availability.** Show data age, offline coverage boundaries, update availability, licensing notice and download controls.
+
+# 5. Routing engine and navigation
+
+**NAV-001 \[P0\] Multi-mode.** Support road, adventure, mixed-surface, off-road and performance-oriented routing with independently tunable cost functions.
+
+**NAV-002 \[P0\] Routable network.** Build or license a routable offline motor-vehicle-appropriate road/trail graph, including access rules, turn restrictions, directionality and lane metadata where available.
+
+**NAV-003 \[P1\] Waypoints.** Unlimited practical multistop routes within documented performance limits, drag-and-reorder, stops/via points/shaping points with distinct semantics.
+
+**NAV-004 \[P0\] Navigation modes.** Fastest, shortest, scenic/curvy, dirt-preferred, paved-preferred and strict imported-track following; user control over highway, toll, ferry and road exclusions.
+
+**NAV-005 \[P0\] Voice.** Spoken turn cues, off-route warning, road names when available, route event prompts and selectable muting; avoid overwhelming rider.
+
+**NAV-006 \[P0\] Persistent active session.** Restore active route progress after app view transitions and supported app relaunches; background limitations are explicitly shown.
+
+**NAV-007 \[P0\] Off-route.** Use map-matched position, cross-track distance, heading and speed-aware hysteresis; do not reroute because of one noisy GPS fix.
+
+**NAV-008 \[P0\] Detours.** Allow return-to-track, navigate to nearest safe future route point, or calculate alternate route; preserve strict-track mode by default.
+
+**NAV-009 \[P1\] Lane and limit.** Show lane guidance, speed limit, current street and remaining distance/ETA with reliable source attribution and unavailable-data states.
+
+**NAV-010 \[P1\] Alerts.** Provide speed warning, safety warnings, approaching maneuver, optional event types and configurable thresholds.
+
+**NAV-011 \[P0\] Provider fallback.** Enforce TomTom primary, Google secondary and permitted free/offline fallback only where licenses and product terms allow; never assume provider outputs are interchangeable.
+
+**NAV-012 \[P0\] Costs and failures.** Enforce quotas, caching, idempotency and cost budget before paid calls; no unapproved spending.
+
+# 6. GPX suite and Fit to Road / Trail \[CRITICAL\]
+
+Two route objects must always exist: SOURCE_TRACK (immutable GPX data) and DERIVED_ROUTE (road-attached, versioned candidate). The user chooses whether to follow original line, navigate attached graph route, or navigate mixed strict/free segments.
+
+**GPX-001 \[P0\] Ingestion.** Accept .gpx through Files/share sheet, drag/drop, local import and supported links; preserve track, route, waypoint and extension payloads without unsafe external entities or oversized uploads.
+
+**GPX-002 \[P0\] Original preservation.** Store immutable imported bytes and parsed geometry; show route provenance, import time, file hash and revision chain.
+
+**GPX-003 \[P0\] Track types.** Handle trk/trkseg/trkpt, rte/rtept, wpt and GPX extensions where valid; tolerate missing time/elevation and multi-segment disconnections.
+
+**GPX-004 \[P0\] Fit to Road action.** Expose explicit “Fit to Road / Trail” button immediately after import and in every track detail view.
+
+**GPX-005 \[P0\] Matching algorithm.** Use HMM/Viterbi or comparable graph-aware multi-candidate sequence matching, GPS accuracy weighting, heading, temporal speed when present, road connectivity and path cost; nearest-edge-only matching is insufficient.
+
+**GPX-006 \[P0\] Fit-distance tolerance.** Offer presets Tight 15 m, Balanced 50 m, Loose 100 m and custom threshold; configurable defaults per riding profile. Thresholds are UI proposals to validate in field tests.
+
+**GPX-007 \[P0\] Motorcycle access.** Respect motorcycle and motor-vehicle legal access restrictions and directionality. Never auto-snap to pedestrian/cycling-only networks merely because they are geometrically nearest.
+
+**GPX-008 \[P0\] Gap behavior.** Do not invent a legal route through unconnected trails. Mark unmatched portions, show confidence and offer Preserve raw segment, manually edit or route around.
+
+**GPX-009 \[P0\] Mixed segments.** Represent road-attached, original-GPX/freeform and straight-line connector segments separately and display transitions.
+
+**GPX-010 \[P0\] Preview and compare.** Show original dashed route, fitted solid route, deviation heatmap, unmatched gaps, length/elevation changes, confidence and affected road sections before Apply.
+
+**GPX-011 \[P0\] Waypoints and stops.** Preserve GPX waypoints, named stops, original start/finish and explicit must-pass points during matching; protect against silently skipping a shaping point.
+
+**GPX-012 \[P1\] Editable fit.** Allow dragging fit anchors, prohibiting a candidate edge, manual segment profile assignment, undo/redo and segment-level accept/reject.
+
+**GPX-013 \[P0\] Turn synthesis.** Compute maneuver events from graph edges: turn, fork, continue, roundabout exit, U-turn and arrived; add distance/time, street name and lane metadata when available.
+
+**GPX-014 \[P0\] Turn reliability.** Suppress bogus prompts on tiny bends and sparse trail geometry; support configurable trail fork prompts and voice verbosity.
+
+**GPX-015 \[P0\] Reversibility.** Keep original/source track; derived route may be renamed, compared, re-fitted, exported as new GPX and reverted at any time.
+
+**GPX-016 \[P0\] Partial success.** Never report successful full fit when any required section is unmatched, inaccessible, implausible or beyond deviation bounds.
+
+**GPX-017 \[P0\] Offline processing.** Enable local fit using downloaded routable map graph; distinguish unavailable offline map coverage from actual unmatched trail.
+
+**GPX-018 \[P0\] Route guidance.** Create turn-by-turn navigation from attached segments, using route graph plus explicit raw-track guidance on unmatched segments.
+
+**GPX-019 \[P0\] Deviation limits.** Apply per-segment maximum allowable path displacement and detour ratio; request confirmation for material deviations.
+
+**GPX-020 \[P1\] Track editing.** Support split, join, reverse, trim, reorder sections, route points and mixed road-following/direct-line path creation.
+
+**GPX-021 \[P1\] Visual styling.** Support lines by color, width and gradients: speed, elevation, slope, road class, surface, smoothness and eligible sensor metrics.
+
+**GPX-022 \[P1\] Track collections.** Multi-track overlays, folders, favorites, named collections, sorting, search, share and offline storage.
+
+**GPX-023 \[P1\] Track statistics.** Graphs of elevation, grade, speed, travel time and distance, synchronized map cursor and missing-data notices.
+
+**GPX-024 \[P0\] Source geometry warnings.** Display that attachment may change distance, ascent, speed and timing; keep calculations associated with their correct version.
+
+# 6.1 Fit-to-road execution and UI state machine
+
+IMPORT → PARSE → VALIDATE → CHOOSE PROFILE → CHECK LOCAL GRAPH COVERAGE → GENERATE MATCH CANDIDATES → SCORE CONNECTED PATH → FLAG AMBIGUITIES/GAPS → PREVIEW DIFF → USER APPLY → BUILD MANEUVERS → SAVE DERIVED ROUTE → NAVIGATE. Cancel at any stage must preserve the original and permit retry. Backgrounded or failed matching must not corrupt existing routes.
+
+# 6.2 Fit scoring concept (implementation choice, validate empirically)
+
+Candidate score combines perpendicular distance, heading compatibility, observed speed, road class, surface preference, legal access, topology, transition time, turn plausibility and penalty for skipping original track. Use emissions/transitions rather than independent nearest-edge snaps. Calculate route-level confidence plus per-section confidence and surface the latter to the user. Exact algorithm/weights are engineering decisions validated on recorded field tracks.
+
+# 6.3 Acceptance tests: Fit to Road / Trail
+
+| Case                                   | Expected result                                                                  |
+|----------------------------------------|----------------------------------------------------------------------------------|
+| 100 km mixed road/dirt track           | Produce editable attached route with navigable prompts and preserve raw original |
+| Parallel road vs trail 12 m apart      | No unjustified road hopping; uncertain section flagged for review                |
+| Trail missing in OSM                   | Raw section retained; no invented connection; no false turn instructions         |
+| Footpath-only crossing                 | Do not label as legal motorcycle route without applicable access rules           |
+| Two segments with a true gap           | Keep separate or show explicit manual connector; never silently bridge           |
+| GPX with multiple tracks/waypoints     | Select tracks/segments; preserve all source points and named locations           |
+| No cell service with map pack          | Fit, preview, save, navigate and record function offline                         |
+| Poor GPS precision                     | Use confidence and heading where possible; do not overfit noise                  |
+| Route re-fit after bike switch         | Original unchanged; new derived version and explicit diff                        |
+| Off-route while following strict track | Offer rejoin/continue/reroute according to configured mode                       |
+
+# 7. Recording, ride review and analytics
+
+**RIDE-001 \[P0\] Session lifecycle.** Manual and eligible auto start; pause/resume; stop; crash-safe persistence; correct moving and paused durations.
+
+**RIDE-002 \[P0\] Trip data.** Record timestamped GPS, accuracy, course, elevation, speed, active bike, route ID, weather snapshot and permitted sensor streams with units and source.
+
+**RIDE-003 \[P0\] Automatic review.** After completion display ride summary and ask whether to save/export GPX, not just silently discard trace.
+
+**RIDE-004 \[P1\] Performance analytics.** Distance, elapsed/moving time, average/maximum speed, speeding time/distance, stops, elevation, turn behavior and optional lean angle based on calibrated quality.
+
+**RIDE-005 \[P0\] Lean guardrail.** Phone-only lean remains an experimental estimate until mounting, IMU fusion and validation justify measured lean reporting.
+
+**RIDE-006 \[P1\] Replay.** Scrub synchronized map, route progress and sensor/velocity/elevation graphs by time and distance.
+
+**RIDE-007 \[P2\] Ride comparison.** Compare rides on the same route or motorcycle, preserving raw and normalized indicators.
+
+**RIDE-008 \[P0\] Track export.** Export source and recorded tracks via GPX; supplemental metrics via GPX extensions or CSV/JSON.
+
+**RIDE-009 \[P2\] Media.** Optional geotagged photos, ride notes and event markers; explicit retention and location privacy.
+
+**RIDE-010 \[P0\] Segment integrity.** Preserve ride segment boundaries across pause, offline recovery, route changes and mid-ride bike-change guard.
+
+# 8. Weather, precipitation and route conditions
+
+**WX-001 \[P1\] Map layers.** Forecast precipitation/rain probability, clouds, wind, temperature and pressure where provider licensing and data allow.
+
+**WX-002 \[P0\] Route timeline.** Show forecast conditions sampled along a route at expected arrival times, not a single city forecast.
+
+**WX-003 \[P0\] Coverage.** Render probability, expected intensity and estimated affected distance/percentage of a planned route with model/time/source labels.
+
+**WX-004 \[P0\] History.** Show actual or estimated precipitation accumulation over previous 24, 48 and 72 hours for route corridors and selected areas; distinguish historical estimates from forecasts.
+
+**WX-005 \[P1\] Mud/dust.** Create explainable estimated wet/muddy/dusty indicators using precipitation history, surface/soil, temperature, drainage, drying and elevation where available.
+
+**WX-006 \[P0\] Uncertainty.** Expose missing soil/history coverage and confidence; never claim guaranteed passability or safe conditions.
+
+**WX-007 \[P1\] Alerts.** Warn before departure and during ride about material forecast rain or changes ahead; safe audio frequency and opt-out.
+
+**WX-008 \[P1\] Offline forecast.** Cache provider-permitted forecast slices with fetch time, expiry and stale warning; no fabricated offline updates.
+
+**WX-009 \[P0\] Provider abstraction.** Normalize forecast grids, probability, accumulation, spatial resolution, update intervals and license terms, with cost enforcement.
+
+# 9. POI, bookmarks and place information
+
+**POI-001 \[P1\] Offline search.** Find nearby fuel, camping, food, repair, lodging, viewpoints, trailheads and addresses in downloaded map regions.
+
+**POI-002 \[P1\] Saved places.** Favorites, custom icon/color/category, labels, waypoint attachment and collections; parking position shortcut.
+
+**POI-003 \[P2\] Place metadata.** Show hours, contact, access and source freshness only when available.
+
+**POI-004 \[P3\] Explore extensions.** Optional street imagery (including supported Mapillary), OSM edits, Wikipedia/Wikivoyage and specialized recreational map layers; never crowd the core cockpit.
+
+**POI-005 \[P3\] Special modes.** Nautical, skiing and transit layers behind optional plug-ins, not in motorcycle default UI.
+
+# 10. Sensors, devices and motorcycle hardware
+
+**HW-001 \[P1\] BLE.** Pair and identify permitted BLE devices; monitor connect, disconnect, battery and sensor availability in iOS-compatible implementations.
+
+**HW-002 \[P0\] ESP32.** Implement a versioned, authenticated and bounded telemetry protocol for ESP32 logger; buffer locally, reconnect, timestamp, validate, and deduplicate records.
+
+**HW-003 \[P1\] OBD.** Support compatible vehicle OBD adapters only when protocol support and available PIDs are verified per bike/adapter; isolate from vehicle control networks.
+
+**HW-004 \[P1\] IMU.** Support configurable ICM-42688-class IMU orientation/calibration, quality and drift correction, and unambiguous measured vs inferred indicators.
+
+**HW-005 \[P1\] Hardware inputs.** Integrate GPS, IMU, RPM, temperatures and compatible diagnostics while maintaining phone-only baseline.
+
+**HW-006 \[P0\] Safety.** No automatic brake-light or vehicle-control actions without separate hardware safety analysis, fail-safe design and validation; telemetry and actuation remain architecturally separate.
+
+**HW-007 \[P1\] Sensor records.** Display sample rate, dropouts, latency, calibration and estimated uncertainties in ride review.
+
+**HW-008 \[P1\] BLE lifecycle.** Graceful loss/reconnect, explicit permission prompts, pairing retry and bike-specific device assignments.
+
+# 11. Synchronization, accounts, privacy and cost
+
+**SEC-001 \[P0\] Accounts.** Guest first; optional email, Google and Apple sign-in; guest-to-account migration without losing local data.
+
+**SEC-002 \[P1\] Selective sync.** Per-category syncing of bikes, routes, tracks, rides, weather cache, media and sensor datasets with user-set policies and quotas.
+
+**SEC-003 \[P0\] Local-first.** Offline edits and recordings persist until sync; deterministic conflict handling, version history and explicit resolution for contested edits.
+
+**SEC-004 \[P1\] Storage policies.** Clearly disclose local and cloud storage use, retention, export and deletion; provide secure removal with backup safeguards.
+
+**SEC-005 \[P0\] Row-level security.** Supabase RLS and storage authorization enforced server-side for all user records; deny by default.
+
+**SEC-006 \[P0\] Secrets.** Keep API keys server-side; separate provider-token access, scoped service role and admin permissions.
+
+**SEC-007 \[P0\] No surprise bill.** Paid provider requests fail closed at hard quota; reserve costs up front, cache where terms permit, track call and spend at user/provider/environment level.
+
+**SEC-008 \[P1\] Admin operations.** Authorized admin console: provider quotas, caches, error rates, feature flags, request logs, active user data and releases without exposing secrets.
+
+**SEC-009 \[P0\] Privacy.** Location and ride traces private by default; no automatic public sharing; granular analytics opt-in and protected exports.
+
+**SEC-010 \[P1\] Subscription.** Free core app, advanced optional paid features with clearly indicated restrictions; essential safety and data access cannot disappear on plan downgrade.
+
+# 12. Target modular architecture
+
+PWA React/TypeScript frontend deployed on Vercel; Supabase auth/Postgres/RLS/Storage for eligible synced objects; IndexedDB/OPFS/Cache Storage for offline durable objects; Web Workers for heavy GPX parsing, graph route work and map matching; adapters for platform-specific sensors/background location/CarPlay. Exact routing implementation may require a native wrapper or licensed offline SDK; web feasibility must be verified before claiming offline routing on iOS.
+
+| Service / module        | Responsibilities                                           | Isolation contract                           |
+|-------------------------|------------------------------------------------------------|----------------------------------------------|
+| App Shell               | Auth, navigation, bike chip, profiles, accessibility       | No domain-specific provider calls            |
+| Garage                  | Motorcycle profiles, active context, devices               | Switch cannot reset current nav or recording |
+| Map Renderer            | Layers, camera, overlays, download status                  | No ownership of route or ride truth          |
+| Map Data & Packs        | Offline vector tiles, routable graph, POI indexes, terrain | Atomic versioned pack updates                |
+| Route Domain            | Routes, waypoints, profiles, source/derived revisions      | Immutable source track                       |
+| Fit Engine              | Graph matching, confidence, segment mismatch, preview      | Cancelable local job, no overwrite           |
+| Guidance Engine         | Maneuvers, progress, off-route and voice                   | Continuous session state independent of UI   |
+| Ride Recorder           | Timestamped location/sensors and lifecycle                 | Durable buffered write and replay            |
+| Telemetry Adapter       | Phone/BLE/ESP32/OBD acquisition                            | Versioned typed events and quality metadata  |
+| Weather                 | Forecast/history, route samples, condition inference       | Source time and confidence mandatory         |
+| Sync & Storage          | Conflict resolution, queues, user rules                    | Offline first; eventual sync                 |
+| Provider Gateway        | TomTom/Google/free permitted providers, quotas             | No client secrets, hard-spend ceilings       |
+| Admin & Release         | Metrics, flags, migrations, audit logs                     | Role-based access                            |
+| Native Capability Layer | iOS/Android background tracking, CarPlay, BLE              | Feature detection, independent fallbacks     |
+
+# 12.1 Canonical domain entities
+
+| Entity          | Required fields / relationships                                                 |
+|-----------------|---------------------------------------------------------------------------------|
+| Motorcycle      | id, owner, nickname, make/model/year, active flag, profile settings, devices    |
+| Device          | id, type, firmware, motorcycle_id, capabilities, calibration, last_seen         |
+| RouteSource     | id, owner, GPX hash/blob URI, parsed geometry, source metadata, immutable       |
+| RouteVersion    | id, source_id, parent_version, road graph version, profile, segments, fit stats |
+| RouteSegment    | id, route_version, segment_type, geometry, match confidence, annotations        |
+| Maneuver        | id, segment, offset, type, direction, instructions, lane/street attrs           |
+| Ride            | id, owner, motorcycle_id, route_version, session state, start/end, statistics   |
+| RidePoint       | ride_id, timestamp, location, accuracy, speed, heading, altitude, source        |
+| TelemetrySample | ride_id, device, sensor, units, value, quality, timestamp                       |
+| MapPack         | id, region, graph revision, asset types, size, license, download status         |
+| WeatherSlice    | provider, grid/time, forecast or historical, expiry, units, uncertainty         |
+| UserPreferences | owner, active bike, navigation profile, widgets, privacy, sync policies         |
+| SyncOperation   | id, entity, revision, change vector, encrypted payload reference, state         |
+
+# 13. Navigation state and data contracts
+
+Explicit states: Idle → RouteLoaded → Preparing → Navigating → Paused → OffRoute → Rejoining → Completed / Cancelled. Recording lifecycle is independent: Idle → Recording → Paused → Finalizing → Saved / FailedRecoverable. GPS fixes are timestamped and quality-scored. Provider/road lookups are cancellable and stale responses must never overwrite newer accepted position/road context.
+
+Speed-limit display contract: continue rendering last validated limit only for the same plausible road context; attach source, age and confidence; mark stale and clear when continuity is invalid. Bike selection changes route preferences only after explicit confirmation and does not invalidate ride recordings. Offline queue operations are idempotent, retries bounded and user-visible failures recoverable.
+
+# 14. Technical nonfunctional targets (initial proposed budgets)
+
+| Domain             | Proposed release acceptance target                                                                  |
+|--------------------|-----------------------------------------------------------------------------------------------------|
+| Startup            | Warm app interactive \< 2 s typical mid-range device, excluding download                            |
+| Active bike switch | Picker opens \< 300 ms and changes persistent context \< 1 s                                        |
+| Map interaction    | Target 50–60 FPS in normal road mode; degradations documented in 3D/terrain                         |
+| Map position       | Visible movement smooth across GPS fixes; no blank navigation badges during refresh                 |
+| Fit computation    | 100 km normal GPX under 30 s on representative supported device, or explicit progress/fallback      |
+| Route replan       | Local rejoin guidance under 5 s for normal covered sections, measured under lab conditions          |
+| Ride persistence   | Crash/power-loss replay loses \<= 5 s of locally flushed trip data, subject to OS behavior          |
+| Offline operation  | 100% of benchmark route, recording and local search scenarios work in full airplane mode            |
+| Battery            | Measure consumption over 1 h navigation + logging; set device-specific baseline and regression gate |
+| Provider spend     | Unapproved paid overage \$0; hard block when budget exhausted                                       |
+| Accessibility      | Critical ride actions screen-reader labeled, contrast-tested, motion-safe                           |
+| Security           | No exposed production secret; no unauthorized cross-user data access                                |
+
+All performance numbers above are proposed targets, not measured capabilities. Establish representative test devices, route sizes, environmental conditions and thresholds during architecture spike.
+
+# 15. Testing and release gates
+
+**TEST-001 \[P0\] Unit.** Route costs, GPX parsing, coordinate conversion, bike-state transitions, timestamps, weather math and deterministic map-match scoring.
+
+**TEST-002 \[P0\] Integration.** Supabase RLS and conflict simulation, provider quotas, offline-pack updates, BLE reconnect, route/ride separation and resume.
+
+**TEST-003 \[P0\] GPS replay.** Fixture tracks: parallel roads, dirt paths, tunnel, roundabout, U-turn, noisy fixes, poor coverage, speed-limit handoffs and off-route.
+
+**TEST-004 \[P0\] Offline.** Airplane-mode route import, fit, planning, guidance, ride record, review, search, start/finish and app resume.
+
+**TEST-005 \[P0\] Mobile hardware.** iPhone Safari/PWA and Android browser: GPS, foreground/background lifecycle, battery, storage quotas, motion/BLE permission behavior and voice.
+
+**TEST-006 \[P0\] Field.** Motorcycle rides across pavement, gravel, legal dirt roads and mapped/unmapped trails, with rider-independent turn truth labels.
+
+**TEST-007 \[P0\] Migration.** Restore v1 user bikes, routes, ride histories and settings; force failure mid-migration and verify rollback.
+
+**TEST-008 \[P0\] Security.** Tenant isolation, API key exfiltration, guest migration, malicious GPX input, flood/rate limit and storage abuse.
+
+**TEST-009 \[P0\] Release approval.** Dev → Beta → Production must pass automated tests and human ride UX/release checklist with tracked rollback.
+
+# 16. Phased implementation roadmap
+
+| Phase                          | Work and exit gate                                                                                                                                                                |
+|--------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 0 — Inventory & recovery       | Audit repo, deployed endpoints, API/provider spend, unused files and actual implementation; reproduce motorcycle selector regression; snapshot DB/storage; test harness baseline. |
+| 1 — Foundation / garage        | State separation, navigation shell, bike selector persistent in header, garage cards, local-first schemas, migration tests and permissions; ship regression fix early.            |
+| 2 — Map & GPX foundation       | Offline asset packs, road/trail graph, GPX import/versioning, route editor, route profiles, map layers and road badges.                                                           |
+| 3 — Fit to Road MVP            | Offline snap pipeline, unmatched segments, preview/diff, fit controls, turns, voice prompts, strict-track mode, GPS replay and field tests.                                       |
+| 4 — Rider cockpit & review     | Persistent dashboard, sensor input, reliable recording, GPX export, analytics and synchronized route replay.                                                                      |
+| 5 — Environment & discovery    | Weather corridor forecast, 72h history, mud/dust estimation, POIs, favorites and terrain/gradient views.                                                                          |
+| 6 — Advanced / platform parity | Native background / BLE / CarPlay integrations where feasible, advanced 3D, cloud sync, optional specialist layers and performance optimization.                                  |
+
+# 17. Prioritized work orders for engineering
+
+- WO-001: Recover and permanently expose active bike switcher on all primary screens; add automated UI regression tests.
+
+- WO-002: Audit current repo/data/services and create feature registry with actual implementation status.
+
+- WO-003: Freeze canonical RouteSource/RouteVersion schema and preserve GPX originals.
+
+- WO-004: Prove offline, motor-legal road/trail graph on iOS PWA versus native wrapper; document feasible options.
+
+- WO-005: Implement Fit to Road import → match → preview → edit → apply → voice workflow.
+
+- WO-006: Decouple road/speed-limit context caching from map refresh and GPS update cadence.
+
+- WO-007: Stabilize ride/route recording, pause semantics, resume and GPX export/review.
+
+- WO-008: Create authoritative bike/device binding and sensor quality source handling.
+
+- WO-009: Implement weather route corridor and prior-72h rainfall proof of concept with confidence metadata.
+
+- WO-010: Harden local/cloud migrations, quotas, environment segregation and release gates.
+
+# 18. Risks and explicit engineering decisions
+
+| Risk                                            | Required decision / mitigation                                                                              |
+|-------------------------------------------------|-------------------------------------------------------------------------------------------------------------|
+| iOS PWA background tracking and BLE limitations | Run device capability spike; use native component/packaging only where needed; no false parity claims.      |
+| Offline motor-routing data licensing            | Verify rights to distribute map packs, road graph, imagery, cached paid provider responses and attribution. |
+| Trail legal-access errors                       | Default caution: mapped trail ≠ legal motorbike access; mark unknown; protect against unsafe automatic fit. |
+| GPX track change on snapping                    | Keep immutable source, reversible derived route, preview deviation and fit confidence.                      |
+| OSM coverage gaps                               | Raw-track navigation fallback, explicit unknown markers and manual anchors.                                 |
+| Weather overprecision                           | Distinguish forecast vs historic observations and modeled mud/dust confidence; no safe-to-ride promise.     |
+| PWA storage eviction                            | Detect available storage, provide offline pack health, persist critical recordings and warn clearly.        |
+| Scope explosion                                 | Release by vertical slices with test gates; advanced recreation content behind optional menus.              |
+| Existing PRD mismatch                           | Treat Oct 8 master PRD and verified deployed code as inputs; log every conflict and migration decision.     |
+
+# 19. Definition of done for Moto Mission 2.0
+
+- A user can open Moto Mission, immediately identify/select the active motorcycle, see devices and begin a ride without searching Settings.
+
+- An adventure GPX can be imported, fitted to permitted mapped roads/trails, reviewed side by side with source geometry, edited and navigated with meaningful voice turns without cell service where packs exist.
+
+- Routes remain usable even when fit is partial; the app explains ambiguous or unmatched segments and never fabricates complete road matches.
+
+- Normal road/limit and cockpit badges persist reliably through GPS updates, connectivity changes and map overlays with clear stale-data treatment.
+
+- A finished ride can be reviewed, scrubbed, compared, linked to the correct bike and saved/exported as GPX.
+
+- Users can view rain probability/coverage along their route and historical 72h precipitation with caveated mud/dust estimates.
+
+- Core app works as a guest, all permitted data stays private by default, paid API spend is hard capped, sync is selective, and release pipelines are test-gated.
+
+- Migration tests verify legacy data and feature preservation; targeted mobile/offline/field tests pass before full production launch.
+
+# 20. References and traceability
+
+- Moto Mission Master PRD v1.0, October 8, 2026: six decision rounds, backend/security and weather addendum (prior user-approved product requirements).
+
+- OsmAnd: Plan a Route / Attach track to roads — https://www.osmand.net/docs/user/plan-route/create-route/?current-os=ios
+
+- OsmAnd: Navigate by Track / Attach to roads — https://osmand.net/docs/user/navigation/setup/gpx-navigation/?current-os=ios
+
+- OsmAnd: Detailed Track Guidance — https://www.osmand.net/docs/user/navigation/guidance/navigation-settings/?current-os=ios
+
+- OsmAnd: Track Appearance — https://www.osmand.net/docs/user/map/tracks/appearance/?current-os=ios
+
+- OsmAnd: External Sensors — https://www.osmand.net/docs/user/plugins/external-sensors/?current-os=ios
+
+Document control: This PRD is a proposed target specification. Before implementation, assign owners, confirm component feasibility/licensing, audit actual repository code and turn each requirement ID into tracked GitHub issues and verification cases.

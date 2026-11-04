@@ -20,6 +20,8 @@ The 2026-10-13 design continuation adds light/dark appearance, a quieter shared 
 
 ## V1 system boundary
 
+The 2026-11-04 Moto Mission 2.0 continuation retains invitation-only verified access and MFA by explicit user decision, overriding guest-first language in the new proposed PRD. The first local slice restores active motorcycle context in the shell/cockpit with owner/project-scoped persistence and a guard against changing bikes during recoverable rides. See [MOTO_MISSION_2_DELIVERY.md](MOTO_MISSION_2_DELIVERY.md) for requirement status, remaining gates and release checks. This does not establish deployment, full offline regional maps, GPX graph matching, paid-provider enablement or native/hardware parity.
+
 ### Included
 
 - User authentication and per-user data separation

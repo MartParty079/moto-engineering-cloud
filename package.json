@@ -16,6 +16,7 @@
     "test:browser": "node tests/browser-smoke.mjs",
     "test:browser:rides": "node tests/browser-durable.mjs",
     "test:browser:design": "node tests/browser-design.mjs",
+    "test:browser:motorcycle": "node tests/browser-motorcycle.mjs",
     "test:browser:prd": "node tests/browser-prd.mjs",
     "test:browser:gpx": "node tests/browser-gpx.mjs",
     "docs:inventory": "node scripts/app-inventory.mjs"

@@ -1,3 +1,4 @@
+import {mountMotorcycleSelector} from './motorcycle-selector.js';
 const $ = q => document.querySelector(q);
 const esc = (s = '') => String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
 
@@ -158,6 +159,7 @@ function open(){
         <button id="dashClose" type="button" aria-label="Close">×</button>
       </div>
     </header>
+    <button id="dashMotorcycle" type="button">Select motorcycle</button>
     <div class="dashRideControl" id="dashRideControl">
       <div class="dashRideIdentity"><span id="dashRideDot"></span><div><small id="dashRideStatus">NOT RECORDING</small><strong id="dashRideBike">Select a motorcycle to begin</strong></div></div>
       <button id="dashRideToggle" type="button">START RIDE</button><button id="dashPauseRide" type="button" hidden>PAUSE</button>
@@ -168,6 +170,7 @@ function open(){
     <footer><button id="dashPrev" aria-label="Previous display">‹</button><div id="dashDots"></div><button id="dashAddPage">＋ DISPLAY</button><button id="dashNext" aria-label="Next display">›</button></footer>
   </section>`;
   document.body.appendChild(overlay);
+  mountMotorcycleSelector($('#dashMotorcycle'));
   applyStyle();
 
   $('#dashClose').onclick = () => close(true);
@@ -392,7 +395,8 @@ function showRidePicker(){
   if(rideActionBusy) return;
   const controller = window.MotoRide;
   if(!controller){ alert('Ride logger is still loading. Try again in a moment.'); return; }
-  const bikes = controller.getBikes?.() || [];
+  const activeId = controller.getActiveBike?.()?.id;
+  const bikes = (controller.getBikes?.() || []).sort((a,b) => Number(String(b.id) === String(activeId)) - Number(String(a.id) === String(activeId)));
   $('#dashRidePicker')?.remove();
   const modal = document.createElement('div');
   modal.id = 'dashRidePicker';
@@ -461,7 +465,7 @@ function renderRideControl(){
   control.classList.toggle('starting',starting || rideActionBusy);
   dot.classList.toggle('live',active);
   setText(status,active ? 'RECORDING' : starting ? 'STARTING LOGGER' : ride.gpsError ? 'GPS NEEDS ATTENTION' : 'SYSTEM READY');
-  setText(bike,active ? (ride.bikeName || 'Motorcycle') : starting ? 'Preparing GPS and ride storage…' : ride.gpsError || 'Select a motorcycle to begin');
+  setText(bike,active ? (ride.bikeName || 'Motorcycle') : starting ? 'Preparing GPS and ride storage…' : ride.gpsError || window.MotoRide?.getActiveBike?.()?.name || 'Select a motorcycle to begin');
   toggle.disabled = starting || rideActionBusy;
   setText(toggle,active ? (rideActionBusy ? 'SAVING…' : 'STOP & SAVE') : (starting || rideActionBusy ? 'STARTING…' : 'START RIDE'));
   if(active && !runtime.rideWasActive) resetRuntime();

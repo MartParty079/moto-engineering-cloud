@@ -30,3 +30,13 @@ window.addEventListener('pageshow',scheduleUpdate,{passive:true});
 window.visualViewport?.addEventListener('resize',scheduleUpdate,{passive:true});
 window.visualViewport?.addEventListener('scroll',scheduleUpdate,{passive:true});
 matchMedia('(display-mode: standalone)').addEventListener?.('change',scheduleUpdate);
+
+let measuredHeader,headerObserver;
+function observeHeader(){
+  const header=document.querySelector('#app .top');if(!header||header===measuredHeader)return;
+  headerObserver?.disconnect();measuredHeader=header;
+  const measure=()=>root.style.setProperty('--app-header-h',`${Math.ceil(header.getBoundingClientRect().height)}px`);
+  headerObserver=new ResizeObserver(measure);headerObserver.observe(header);measure();
+}
+window.addEventListener('moto-page-ready',observeHeader);
+window.addEventListener('moto-workspace-change',observeHeader);
